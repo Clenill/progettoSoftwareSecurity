@@ -1,0 +1,13 @@
+Installato Fastapi
+pip install fastapi uvicorn
+Installato SQLAlchemy
+pip install sqlalchemy asyncpg
+Installato dotenv
+pip install python-dotenv
+Installato validatore mail
+pip install "pydantic[email]"
+Installato hashing password
+pip install bcrypt==4.0.1
+
+Avvio server
+uvicorn app.main:app --reload
