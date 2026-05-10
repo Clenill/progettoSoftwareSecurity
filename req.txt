@@ -10,6 +10,7 @@ Installato validatore mail
 pip install "pydantic[email]"
 Installato hashing password
 pip install bcrypt==4.0.1
+pip install "passlib[bcrypt]"
 
 Avvio server
 uvicorn app.main:app --reload
