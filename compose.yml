@@ -1,0 +1,50 @@
+
+services:
+    database:
+        container_name: database
+        image: postgres:18-alpine
+        environment:
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+            POSTGRES_PORT: ${DB_PORT}
+            POSTGRES_DB: ${DB_NAME}
+        ports:
+            - "${DB_PORT}:${DB_PORT}"
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -p ${DB_PORT} -d ${DB_NAME}"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        secrets:
+            - db_password
+        networks:
+            - app
+    app:
+        container_name: app
+        build:
+            dockerfile: ./app.Dockerfile
+        environment:
+            APP_PORT: ${APP_PORT}
+            DB_USERNAME: ${DB_USERNAME}
+            DB_PASSWORD_FILE: /run/secrets/db_password
+            DB_HOST: ${DB_HOST}
+            DB_PORT: ${DB_PORT}
+            DB_NAME: ${DB_NAME}
+        ports:
+            - "${APP_PORT}:${APP_PORT}"
+        depends_on:
+            database:
+                condition: service_healthy
+        secrets:
+            - db_password
+        networks:
+            - app
+
+secrets:
+    db_password:
+        file: ./secrets/db_password
+
+networks:
+    app:
+        driver: bridge
+

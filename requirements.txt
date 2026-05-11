@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+sqlalchemy
+asyncpg
+python-dotenv
+pydantic[email]
+bcrypt==4.0.1
+passlib[bcrypt]
+web3
+
