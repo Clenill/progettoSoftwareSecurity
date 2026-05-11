@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+import uuid
 
 from app.db.database import get_db
 from app.db.models import User
 from app.models.schemas import UserCreate, UserResponse
 from app.core.security import hash_password
+from app.enum.ruolo import ruolo
 
 router = APIRouter()
 
@@ -36,9 +38,12 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
 
     # ✅ creazione utente
     new_user = User(
+        id= uuid.uuid4(),
         name=user.name,
         email=user.email,
-        hashed_password=hashed_pw
+        hashed_password=hashed_pw,
+        attivo=user.attivo,
+        ruolo= user.ruolo
     )
 
     db.add(new_user)
