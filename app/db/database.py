@@ -7,19 +7,16 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-with open('/run/secrets/db_password', 'r') as f:
-    db_password = f.read()
 
 DATABASE_URL = (
     f"postgresql+asyncpg://"
     f"{os.getenv('DB_USERNAME')}:"
-    f"{db_password}@"
+    f"{os.getenv('DB_PASSWORD')}@"
     f"{os.getenv('DB_HOST')}:"
     f"{os.getenv('DB_PORT')}/"
     f"{os.getenv('DB_NAME')}"
 )
 
-del db_password
 engine = create_async_engine(DATABASE_URL, echo=True)
 
 SessionLocal = async_sessionmaker(
