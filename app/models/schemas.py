@@ -7,8 +7,8 @@ class UserCreate(BaseModel):
     name: str = Field(min_length=2, max_length=25)
     email: EmailStr
     password: str = Field(min_length=3, max_length=72)
-    attivo: bool = Field(False)
-    ruolo: str
+    attivo: bool = False
+    ruolo: rules
 
 # dati in uscita (response)
 class UserResponse(BaseModel):
