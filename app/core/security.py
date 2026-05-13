@@ -61,7 +61,7 @@ async def get_current_user(
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
-    except JWTError:
+    except:
         raise credentials_exception
     
     # Ricerca utente nel DB - Usa il metodo statico della classe
@@ -72,3 +72,4 @@ async def get_current_user(
         raise credentials_exception
         
     return user
+
