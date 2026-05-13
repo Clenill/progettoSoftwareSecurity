@@ -39,3 +39,11 @@ class VisitResponse(BaseModel):
     medico: Optional[UUID4]
     timestamp: Optional[datetime]
 
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+

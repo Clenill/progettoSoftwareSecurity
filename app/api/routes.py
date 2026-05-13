@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
-from app.models.schemas import UserCreate, UserResponse, VisitCreate, VisitUpdate, VisitResponse
+from app.models.schemas import UserCreate, UserResponse, LoginRequest, Token, VisitCreate, VisitUpdate, VisitResponse
 from app.service.user_service import UserService
 from app.service.visit_service import VisitService
 
+from app.core.security import get_current_user
+from app.db.models import User
 import uuid
 
 router = APIRouter()
@@ -16,7 +18,10 @@ def test():
 
 # READ users
 @router.get("/getusers")
-async def get_users(db: AsyncSession = Depends(get_db)):
+async def get_users(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user) # aggiunto controllo
+):
     return await UserService.get_user(db)
 
 @router.post("/users", response_model=UserResponse)
@@ -29,6 +34,17 @@ async def get_user_by_email(
     db: AsyncSession = Depends(get_db)
 ):
     return await UserService.get_user_by_email(email, db)
+
+@router.post("/login", response_model=Token)
+async def login(login_data: LoginRequest, db: AsyncSession = Depends(get_db)):
+    return await UserService.authenticate_user(login_data, db)
+
+# Controllo di autorizzazione basato sui ruoli
+@router.get("/admin-only")
+async def accesso_admin(current_user: User = Depends(get_current_user)):
+    if current_user.ruolo != "admin":
+        raise HTTPException(status_code=403, detail="Accesso consentito solo agli admin")
+    return {"message": "Benvenuto!"}
 
 @router.get("/visits", response_model=list[VisitResponse])
 async def get_visits(db: AsyncSession = Depends(get_db)):
@@ -46,3 +62,4 @@ async def edit_visit(visit: VisitUpdate, id: uuid.UUID, db: AsyncSession = Depen
 async def delete_visit(id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     await VisitService.delete_visit(id, db)
     return "Visita eliminata"
+
