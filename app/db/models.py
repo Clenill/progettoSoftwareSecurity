@@ -1,9 +1,10 @@
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy import Column, String, UUID, Boolean, Enum, DateTime, ForeignKey, ForeignKeyConstraint, CheckConstraint, UniqueConstraint
 from app.enum.ruolo import ruolo
+from app.enum.prova import TipoProva
 from pydantic import UUID4
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 Base = declarative_base()
 
@@ -48,6 +49,12 @@ class Visit(Base):
         nullable=False, default=ruolo.MEDICO
     )
 
+    prove = relationship(
+        "Evidence", 
+        cascade="all, delete-orphan", 
+        lazy="selectin"
+    )
+
     __table_args__ = (
         ForeignKeyConstraint(
             ["paziente", "ruolo_paziente"], 
@@ -60,6 +67,25 @@ class Visit(Base):
             ["users.id", "users.ruolo"], 
             ondelete="CASCADE", 
             onupdate="CASCADE"
-        )
+        ), 
+        UniqueConstraint("medico", "timestamp", name="unique_medico_timestamp") 
+    )
+
+class Evidence(Base):
+    __tablename__ = "evidences"
+
+    visita = Column(
+        UUID(), ForeignKey("visits.id", ondelete="CASCADE"), 
+        primary_key=True, 
+        nullable=False
+    )
+    tipo = Column(
+        Enum(TipoProva, values_callable=lambda obj: [e.value for e in obj]), 
+        primary_key=True, 
+        nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint("visita", "tipo", name="unique_visita_tipo"), 
     )
 

@@ -1,15 +1,17 @@
 
 from uuid import UUID, uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, or_
 import sqlalchemy.exc as exc
-from app.db.models import Visit
+from sqlalchemy.orm import joinedload
+from app.enum.prova import TipoProva
+from app.db.models import Visit, Evidence, User
 from app.models.schemas import VisitCreate, VisitUpdate
 
 class VisitRepository:
 
     @staticmethod
-    async def create(db: AsyncSession, visit_data: VisitCreate):
+    async def create(db: AsyncSession, visit_data: VisitCreate, user: User):
         visit = Visit(
             id = uuid4(), 
             paziente = visit_data.paziente, 
@@ -23,18 +25,35 @@ class VisitRepository:
         return visit
     
     @staticmethod
-    async def get_all(db: AsyncSession):
-        return (await db.execute(select(Visit))).scalars().all()
+    async def get_all(db: AsyncSession, user: User | None = None):
+        statement = select(Visit).options(joinedload(Visit.prove))
+        if user:
+            statement = statement.where(
+                or_(Visit.paziente == user.id, Visit.medico == user.id)
+            )
+        return (await db.execute(statement)).scalars().unique().all()
     
     @staticmethod
-    async def get_by_id(db: AsyncSession, id: UUID):
-        return (await db.execute(
-            select(Visit).where(Visit.id == id)
-        )).scalar_one_or_none()
+    async def get_by_id(db: AsyncSession, id: UUID, user: User | None = None):
+        statement = (
+            select(Visit)
+            .options(joinedload(Visit.prove))
+            .where(Visit.id == id)
+        )
+        if user:
+            statement = statement.where(
+                or_(Visit.paziente == user.id, Visit.medico == user.id)
+            )
+        return (await db.execute(statement)).unique().scalar_one_or_none()
     
     @staticmethod
-    async def edit_visit(db: AsyncSession, id: UUID, visit_data: VisitUpdate):
-        visit = await VisitRepository.get_by_id(db, id)
+    async def edit_visit(
+        db: AsyncSession, 
+        id: UUID, 
+        user: User | None, 
+        visit_data: VisitUpdate
+    ):
+        visit = await VisitRepository.get_by_id(db, id, user)
         if not visit:
             raise exc.NoResultFound("Visita non trovata")
         data = visit_data.model_dump(exclude_unset=True)
@@ -52,3 +71,31 @@ class VisitRepository:
         else:
             await db.delete(visit)
             await db.commit()
+
+    @staticmethod
+    async def add_evidence(
+        db: AsyncSession, 
+        id: UUID, 
+        tipo: TipoProva, 
+        user: User
+    ):
+        visit = await VisitRepository.get_by_id(db, id, user)
+        if not visit:
+            raise exc.NoResultFound("Visita non trovata")
+        evidences = set((await db.execute(
+            select(Evidence.tipo).where(Evidence.visita == id)
+        )).scalars().all())
+
+        if tipo in evidences:
+            raise ValueError("Prova già inserita")
+        
+        evidence = Evidence(
+            visita = id, 
+            tipo = tipo
+        )
+
+        db.add(evidence)
+        await db.commit()
+        await db.refresh(evidence)
+        return evidence
+
