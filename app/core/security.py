@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import os
 
 from app.db.database import get_db
+from app.db.models import User
+from app.enum.ruolo import ruolo
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -61,7 +63,7 @@ async def get_current_user(
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
-    except JWTError:
+    except:
         raise credentials_exception
     
     # Ricerca utente nel DB - Usa il metodo statico della classe
@@ -72,3 +74,11 @@ async def get_current_user(
         raise credentials_exception
         
     return user
+
+def has_role_in(roles: list[ruolo]):
+    def _has_role_in(user: User = Depends(get_current_user)):
+        if user.ruolo not in roles:
+            raise HTTPException(status_code=403)
+        return user
+    return _has_role_in
+
