@@ -7,13 +7,10 @@ from app.db.models import User
 from app.models.schemas import UserCreate, LoginRequest
 from app.repositories.user_repository import UserRepository
 from app.core.security import hash_password
-from app.core.exceptions import (
-    UserNotFoundException,
-    EmailAlreadyExistsException,
-    PasswordTooLongException
-)
+from app.core.exceptions import *
 from app.core.security import hash_password, verify_password, create_access_token
 from app.core.security import verify_password, create_access_token
+from typing import cast
 
 class UserService:
 
@@ -68,15 +65,11 @@ class UserService:
     async def authenticate_user(login_data: LoginRequest, db: AsyncSession):
         user = await UserRepository.get_by_email(db, login_data.email)
         
-        if not user or not verify_password(login_data.password, user.hashed_password):
-            raise HTTPException(
-                status_code=401,
-                detail="Credenziali non valide",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+        if not user or not verify_password(login_data.password, cast(str, user.hashed_password)):
+            raise InvalidCredentials()
         
-        if not user.attivo:
-            raise HTTPException(status_code=400, detail="Account non attivo")
+        if not cast(bool, user.attivo):
+            raise UserNotActive()
 
         # Generiamo il token includendo email e ruolo (opzionale)
         token_data = {"sub": user.email, "role": user.ruolo}

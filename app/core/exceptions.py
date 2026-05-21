@@ -23,6 +23,23 @@ class UserNotFoundException(AppException):
             error_code=ErrorCode.USER_NOT_FOUND
         )
 
+class InvalidCredentials(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=401,
+            detail="Credenziali non valide",
+            error_code=ErrorCode.INVALID_CREDENTIAL
+        )
+
+class UserNotActive(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="Utente non attivo",
+            error_code=ErrorCode.NOT_ACTIVE_USER
+        )
 
 class EmailAlreadyExistsException(AppException):
 
