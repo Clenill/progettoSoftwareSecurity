@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
-import os
 
 from app.db.database import get_db
 from app.db.models import User
@@ -20,9 +19,17 @@ oauth2_scheme = APIKeyHeader(name="Authorization", auto_error=False)
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
+_secret_key = os.getenv("SECRET_KEY")
+_algorithm = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+
+if _secret_key is None:
+    raise ValueError("SECRET_KEY non configurata")
+if _algorithm is None:
+    raise ValueError("ALGORITHM non configurato")
+
+SECRET_KEY: str = _secret_key
+ALGORITHM: str = _algorithm
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
@@ -55,8 +62,9 @@ async def get_current_user(
             
         # Decodifica JWT
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
+        email = payload.get("sub")
+
+        if email is None or not isinstance(email, str):
             raise credentials_exception
     except:
         raise credentials_exception
