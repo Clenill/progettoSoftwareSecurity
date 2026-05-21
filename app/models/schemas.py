@@ -1,5 +1,8 @@
 from pydantic import BaseModel, EmailStr, UUID4, Field
 from app.enum.ruolo import ruolo as rules
+from app.enum.prova import TipoProva
+from datetime import datetime
+from typing import Optional, List
 import uuid
 
 # dati in ingresso (request)
@@ -20,3 +23,36 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True  # necessario per SQLAlchemy
+
+class VisitCreate(BaseModel):
+    paziente: UUID4
+    medico: Optional[UUID4] = None
+    timestamp: Optional[datetime] = None
+
+class VisitUpdate(BaseModel):
+    paziente: Optional[UUID4] = None
+    medico: Optional[UUID4] = None
+    timestamp: Optional[datetime] = None
+
+class EvidenceCreate(BaseModel):
+    tipo: TipoProva
+
+class VisitResponse(BaseModel):
+    id: UUID4
+    paziente: UUID4
+    medico: Optional[UUID4]
+    timestamp: Optional[datetime]
+
+    prove: List['EvidenceCreate'] = []
+
+    class Config:
+        from_attributes = True
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+

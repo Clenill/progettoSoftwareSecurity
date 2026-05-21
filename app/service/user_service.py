@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from app.db.models import User
-from app.models.schemas import UserCreate
+from app.models.schemas import UserCreate, LoginRequest
 from app.repositories.user_repository import UserRepository
 from app.core.security import hash_password
 from app.core.exceptions import (
@@ -12,6 +12,8 @@ from app.core.exceptions import (
     EmailAlreadyExistsException,
     PasswordTooLongException
 )
+from app.core.security import hash_password, verify_password, create_access_token
+from app.core.security import verify_password, create_access_token
 
 class UserService:
 
@@ -61,3 +63,23 @@ class UserService:
     @staticmethod
     async def get_user(db: AsyncSession):
         return await UserRepository.get_all(db)
+    
+    @staticmethod
+    async def authenticate_user(login_data: LoginRequest, db: AsyncSession):
+        user = await UserRepository.get_by_email(db, login_data.email)
+        
+        if not user or not verify_password(login_data.password, user.hashed_password):
+            raise HTTPException(
+                status_code=401,
+                detail="Credenziali non valide",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        if not user.attivo:
+            raise HTTPException(status_code=400, detail="Account non attivo")
+
+        # Generiamo il token includendo email e ruolo (opzionale)
+        token_data = {"sub": user.email, "role": user.ruolo}
+        token = create_access_token(token_data)
+        
+        return {"access_token": token, "token_type": "bearer"}
