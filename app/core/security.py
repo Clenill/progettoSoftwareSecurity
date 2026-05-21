@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.exceptions import InvalidCredentials
 
 from app.db.database import get_db
 from app.db.models import User
@@ -49,11 +50,6 @@ async def get_current_user(
     token: str = Depends(oauth2_scheme), 
     db: AsyncSession = Depends(get_db)
 ):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Impossibile validare le credenziali",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     
     try:
         # AGGIUNGI QUESTE RIGHE: Rimuove "Bearer " se presente
@@ -65,16 +61,16 @@ async def get_current_user(
         email = payload.get("sub")
 
         if email is None or not isinstance(email, str):
-            raise credentials_exception
+            raise InvalidCredentials()
     except:
-        raise credentials_exception
+        raise InvalidCredentials
     
     # Ricerca utente nel DB - Usa il metodo statico della classe
     from app.service.user_service import UserService
     user = await UserService.get_user_by_email(email, db)
     
     if user is None:
-        raise credentials_exception
+        raise InvalidCredentials
         
     return user
 
