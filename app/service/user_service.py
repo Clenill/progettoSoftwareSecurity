@@ -6,6 +6,12 @@ from sqlalchemy.exc import IntegrityError
 from app.db.models import User
 from app.models.schemas import UserCreate, LoginRequest
 from app.repositories.user_repository import UserRepository
+from app.core.security import hash_password
+from app.core.exceptions import (
+    UserNotFoundException,
+    EmailAlreadyExistsException,
+    PasswordTooLongException
+)
 from app.core.security import hash_password, verify_password, create_access_token
 from app.core.security import verify_password, create_access_token
 
@@ -21,16 +27,11 @@ class UserService:
         )
 
         if len(user_data.password.encode("utf-8")) > 72:
-            raise HTTPException(
-            status_code=400,
-            detail="Password troppo lunga"
-            )
+            raise PasswordTooLongException()
 
         if existing_user:
-            raise HTTPException(
-                status_code=400,
-                detail="Email già registrata"
-            )
+            raise EmailAlreadyExistsException()
+        
         # hashing password
         hashed_pw = hash_password(user_data.password)
 
@@ -48,20 +49,15 @@ class UserService:
         except IntegrityError:
             await db.rollback()
 
-            raise HTTPException(
-                status_code=400,
-                detail="Email già registrata"
-            )
+            raise EmailAlreadyExistsException()
     
     @staticmethod
     async def get_user_by_email(email: str, db:AsyncSession):
         user = await UserRepository.get_by_email(db, email)
 
         if not user:
-            raise HTTPException(
-                status_code=404,
-                detail="Utente non trovato"
-            )
+            raise UserNotFoundException()
+        
         return user
     
     @staticmethod

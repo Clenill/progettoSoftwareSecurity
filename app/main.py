@@ -1,10 +1,11 @@
-from fastapi import FastAPI
-from app.api.routes import router
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
 from app.db.database import engine
 from app.db.models import Base
 from app.api.routes import router
+from app.core.exceptions import AppException
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,3 +27,17 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(router, prefix="/api")
+
+@app.exception_handler(AppException)
+async def app_exception_handler(
+    request: Request,
+    exc: AppException
+):
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error_code": exc.error_code,
+            "detail": exc.detail
+        }
+    )
