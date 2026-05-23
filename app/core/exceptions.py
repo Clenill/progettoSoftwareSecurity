@@ -59,3 +59,21 @@ class PasswordTooLongException(AppException):
             detail="Password troppo lunga",
             error_code=ErrorCode.PASSWORD_TOO_LONG
         )
+
+class InvalidDoctorIdException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=403,
+            detail="Id non corrisponde all'id Medico della visita",
+            error_code=ErrorCode.INVALID_DOCTOR_ID
+        )
+
+class InvalidVisitDateException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=403,
+            detail="Data visita non valida, controllare il formato o che non sia passata",
+            error_code=ErrorCode.INVALID_DATE
+        )

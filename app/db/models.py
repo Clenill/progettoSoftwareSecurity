@@ -1,24 +1,51 @@
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    mapped_column,
+    relationship
+)
 from sqlalchemy import Column, String, UUID, Boolean, Enum, DateTime, ForeignKey, ForeignKeyConstraint, CheckConstraint, UniqueConstraint
-from app.enum.ruolo import ruolo
+from app.enum.ruolo import ruolo as rules
 from app.enum.prova import TipoProva
-from pydantic import UUID4
+import uuid
 from datetime import datetime
 from typing import Optional, List
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(UUID, primary_key=True, index=True)
-    name = Column(String)
-    email = Column(String, unique=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    attivo = Column(Boolean, default=False)
-    ruolo = Column(
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID,
+        primary_key=True,
+        index=True,
+        default=uuid.uuid4
+    )
+    name: Mapped[str] = mapped_column(
+        String,
+        nullable=False
+    )
+    email: Mapped[str] = mapped_column(
+        String,
+        unique=True,
+        nullable=False
+    )
+
+    hashed_password: Mapped[str] = mapped_column(
+        String,
+        nullable=False
+    )
+    attivo: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
+
+    ruolo: Mapped[rules] = mapped_column(
         Enum(
-            ruolo,
+            rules,
             values_callable=lambda obj: [e.value for e in obj]
         ),
         nullable=False
@@ -32,26 +59,41 @@ class User(Base):
 class Visit(Base):
     __tablename__ = "visits"
 
-    id = Column(UUID(), primary_key=True, index=True)
-    paziente = Column(UUID(), nullable=False)
-    medico = Column(UUID(), nullable=True, default=None)
-    timestamp = Column(DateTime(timezone=True), nullable=True, default=None)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID,
+        primary_key=True,
+        index=True,
+        default=uuid.uuid4
+    )
+    paziente: Mapped[uuid.UUID] = mapped_column(
+        UUID,
+        nullable=False
+    )
+    medico: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID,
+        nullable=True,
+        default=None
+    )
+    timestamp: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None
+    )
 
     # per vincolare il ruolo degli utenti coinvolti nella visita
     ruolo_paziente = Column(
-        Enum(ruolo, values_callable=lambda obj: [e.value for e in obj]), 
+        Enum(rules, values_callable=lambda obj: [e.value for e in obj]), 
         CheckConstraint("ruolo_paziente = 'utente'"), 
-        nullable=False, default=ruolo.PAZIENTE
+        nullable=False, default=rules.PAZIENTE
     )
     ruolo_medico = Column(
-        Enum(ruolo, values_callable=lambda obj: [e.value for e in obj]), 
+        Enum(rules, values_callable=lambda obj: [e.value for e in obj]), 
         CheckConstraint("ruolo_medico = 'staff'"), 
-        nullable=False, default=ruolo.MEDICO
+        nullable=False, default=rules.MEDICO
     )
 
-    prove = relationship(
-        "Evidence", 
-        cascade="all, delete-orphan", 
+    prove: Mapped[List["Evidence"]] = relationship(
+        cascade="all, delete-orphan",
         lazy="selectin"
     )
 
@@ -74,14 +116,21 @@ class Visit(Base):
 class Evidence(Base):
     __tablename__ = "evidences"
 
-    visita = Column(
-        UUID(), ForeignKey("visits.id", ondelete="CASCADE"), 
-        primary_key=True, 
+    visita: Mapped[uuid.UUID] = mapped_column(
+        UUID,
+        ForeignKey(
+            "visits.id",
+            ondelete="CASCADE"
+        ),
+        primary_key=True,
         nullable=False
     )
-    tipo = Column(
-        Enum(TipoProva, values_callable=lambda obj: [e.value for e in obj]), 
-        primary_key=True, 
+    tipo: Mapped[TipoProva] = mapped_column(
+        Enum(
+            TipoProva,
+            values_callable=lambda obj: [e.value for e in obj]
+        ),
+        primary_key=True,
         nullable=False
     )
 

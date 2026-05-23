@@ -1,66 +1,39 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
-from app.models.schemas import UserCreate, UserResponse, LoginRequest, Token, VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate
-from app.service.user_service import UserService
+from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate
 from app.service.visit_service import VisitService
-
+from app.core.exceptions import InvalidDoctorIdException, InvalidVisitDateException
 from app.core.security import get_current_user, has_role_in
 from app.db.models import User
 from app.enum.ruolo import ruolo
-from app.enum.prova import TipoProva, PROVE_RUOLI
+from app.enum.prova import PROVE_RUOLI
 from uuid import UUID
 from datetime import datetime, timezone
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/visit",
+    tags=["Visit"]
+)
 
-@router.get("/")
-def test():
-    return {"message": "API OK"}
-
-# READ users
-@router.get("/getusers")
-async def get_users(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user) # aggiunto controllo
-):
-    return await UserService.get_user(db)
-
-@router.get("/users/byemail", response_model=UserResponse)
-async def get_user_by_email(
-    email: str,
-    db: AsyncSession = Depends(get_db)
-):
-    return await UserService.get_user_by_email(email, db)
-
-# Controllo di autorizzazione basato sui ruoli
-@router.get("/admin-only")
-async def accesso_admin(current_user: User = Depends(get_current_user)):
-    if current_user.ruolo != "admin":
-        raise HTTPException(status_code=403, detail="Accesso consentito solo agli admin")
-    return {"message": "Benvenuto!"}
-
-@router.post("/visits", response_model=VisitResponse)
+@router.post("/newvisit", response_model=VisitResponse)
 async def create_visit(
     visit: VisitCreate, 
-    current_user: User = Depends(has_role_in([ruolo.MEDICO, ruolo.AUTORITY])), 
+    current_user: User = Depends(has_role_in([ruolo.MEDICO])), 
     db: AsyncSession = Depends(get_db)
 ):
-    is_owner = current_user.id in { visit.medico, visit.paziente }
-    if current_user.ruolo != ruolo.AUTORITY and not is_owner:
-        raise HTTPException(status_code=403)
-    if current_user.ruolo == ruolo.MEDICO:
-        if current_user.id != visit.medico:
-            raise HTTPException(
-                status_code=403, 
-                detail="Il medico indicato non corrisponde all'utente corrente"
-            )
-        if visit.timestamp and visit.timestamp <= datetime.now(timezone.utc):
-            raise HTTPException(
-                status_code=400, 
-                detail="La visita non può essere nel passato"
-            )
+    # Il medico può creare solo visite proprie
+    if current_user.id != visit.medico:
+        raise InvalidDoctorIdException()
+    
+    # Data visita solo nel futuro
+    if (
+        visit.timestamp is not None 
+        and visit.timestamp <= datetime.now(timezone.utc)
+    ):
+        raise InvalidVisitDateException()
+    
     return await VisitService.create_visit(visit, current_user, db)
 
 @router.get("/visits", response_model=list[VisitResponse])
@@ -72,14 +45,12 @@ async def get_visits(
         return await VisitService.get_visits(None, db)
     return await VisitService.get_visits(current_user, db)
 
-@router.get("/visits/{id}", response_model=VisitResponse)
+@router.get("/dettagliovisita/{id}", response_model=VisitResponse)
 async def get_visit_by_id(
     id: UUID, 
     current_user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
-    if current_user.ruolo == ruolo.AUTORITY:
-        return await VisitService.get_visit_by_id(id, db)
     return await VisitService.get_visit_by_id(id, current_user, db)
 
 @router.put("/visits/{id}", response_model=VisitResponse)
@@ -96,11 +67,13 @@ async def edit_visit(
             status_code=400, 
             detail="Il medico può essere cambiato solo dall'autorità"
         )
+    
+    if visit.timestamp is None:
+        raise InvalidVisitDateException()
+    
     if visit.timestamp < datetime.now(timezone.utc):
-        raise HTTPException(
-            status_code=400, 
-            detail="La visita non può essere nel passato"
-        )
+        raise InvalidVisitDateException()
+    
     return await VisitService.edit_visit(id, visit, current_user, db)
 
 @router.delete("/visits/{id}")
@@ -126,4 +99,3 @@ async def add_evidence(
         )
     await VisitService.add_evidence(id, evidence.tipo, current_user, db)
     return { "message": "Prova aggiunta" }
-
