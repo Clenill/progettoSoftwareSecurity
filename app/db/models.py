@@ -16,7 +16,6 @@ class Base(DeclarativeBase):
 
 class User(Base):
     __tablename__ = "users"
-
     id: Mapped[uuid.UUID] = mapped_column(
         UUID,
         primary_key=True,
@@ -32,7 +31,6 @@ class User(Base):
         unique=True,
         nullable=False
     )
-
     hashed_password: Mapped[str] = mapped_column(
         String,
         nullable=False
@@ -42,7 +40,6 @@ class User(Base):
         default=False,
         nullable=False
     )
-
     ruolo: Mapped[rules] = mapped_column(
         Enum(
             rules,
@@ -53,32 +50,16 @@ class User(Base):
 
     __table_args__ = (
         # coppie (id, ruolo) uniche in tabella (necessario per foreign key)
-        UniqueConstraint("id", "ruolo", name="unique_users_id_ruolo"), 
+        UniqueConstraint("id", "ruolo", name="uq_users_id_ruolo"), 
     )
 
 class Visit(Base):
     __tablename__ = "visits"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID,
-        primary_key=True,
-        index=True,
-        default=uuid.uuid4
-    )
-    paziente: Mapped[uuid.UUID] = mapped_column(
-        UUID,
-        nullable=False
-    )
-    medico: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID,
-        nullable=True,
-        default=None
-    )
-    timestamp: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        default=None
-    )
+    confermata: Mapped[bool] = mapped_column(Boolean, default=False)
+    id = Column(UUID(), primary_key=True, index=True)
+    paziente = Column(UUID(), nullable=False)
+    medico = Column(UUID(), nullable=True, default=None)
+    timestamp = Column(DateTime, nullable=True, default=None)
 
     # per vincolare il ruolo degli utenti coinvolti nella visita
     ruolo_paziente = Column(
@@ -93,7 +74,7 @@ class Visit(Base):
     )
 
     prove: Mapped[List["Evidence"]] = relationship(
-        cascade="all, delete-orphan",
+        cascade="all, delete-orphan", 
         lazy="selectin"
     )
 
@@ -137,4 +118,12 @@ class Evidence(Base):
     __table_args__ = (
         UniqueConstraint("visita", "tipo", name="unique_visita_tipo"), 
     )
+
+class Disponibilita(Base):
+    __tablename__ = "disponibilita"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    medico = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    timestamp = Column(DateTime, nullable=False)
+    occupato = Column(Boolean, default=False)
 

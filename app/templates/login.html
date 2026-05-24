@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Security Project</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f9; }
+        .login-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); width: 300px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; }
+        .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .error { color: red; margin-top: 10px; font-size: 14px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <h2>Accesso al Sistema</h2>
+    <div id="error-msg" class="error">Credenziali errate</div>
+    <form id="loginForm">
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+            <label>Password:</label>
+            <input type="password" id="password" required>
+        </div>
+        <button type="submit">Accedi</button>
+    </form>
+</div>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const errorMsg = document.getElementById('error-msg');
+
+    try {
+        const response = await fetch('/auth/login', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, password: password })
+        });
+
+        if (!response.ok) {
+            errorMsg.style.display = 'block';
+            return;
+        }
+
+        const data = await response.json();
+        
+        // Salviamo il token JWT nel localStorage per le chiamate future
+        localStorage.setItem('token', data.access_token);
+
+        // Decodifica JWT lato client per capire il ruolo
+        const payload = JSON.parse(atob(data.access_token.split('.')[1]));
+        const role = payload.role;
+
+        // Reindirizzamento in base al ruolo dell'enum
+        if (role === 'utente') {
+            window.location.href = '/dashboard/utente';
+        } else if (role === 'staff') {
+            window.location.href = '/dashboard/staff';
+        } else if (role === 'admin') {
+            window.location.href = '/dashboard/admin';
+        } else {
+            alert('Ruolo non riconosciuto.');
+        }
+
+    } catch (err) {
+        errorMsg.textContent = "Errore di connessione al server";
+        errorMsg.style.display = 'block';
+    }
+});
+</script>
+</body>
+</html>

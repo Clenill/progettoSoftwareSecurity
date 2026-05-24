@@ -7,11 +7,14 @@ from sqlalchemy.orm import joinedload
 from app.enum.prova import TipoProva
 from app.db.models import Visit, Evidence, User
 from app.models.schemas import VisitCreate, VisitUpdate
+from datetime import timezone
 
 class VisitRepository:
 
     @staticmethod
     async def create(db: AsyncSession, visit_data: VisitCreate, user: User):
+        if visit_data.timestamp is not None and visit_data.timestamp <= datetime.now():
+            raise InvalidVisitDateException()
         visit = Visit(
             id = uuid4(), 
             paziente = visit_data.paziente, 
@@ -98,4 +101,22 @@ class VisitRepository:
         await db.commit()
         await db.refresh(evidence)
         return evidence
+    
+    @staticmethod
+    async def get_visits_by_doctor(db: AsyncSession, medico_id: UUID):
+        # Recupera tutte le visite per un dato medico
+        result = await db.execute(
+            select(Visit).where(Visit.medico == medico_id)
+        )
+        return result.scalars().all()
+
+    @staticmethod
+    async def confirm_visit(db: AsyncSession, visit_id: UUID):
+        visit = await db.get(Visit, visit_id)
+        if not visit:
+            raise Exception("Visita non trovata")
+        visit.confermata = True
+        await db.commit()
+        await db.refresh(visit)
+        return visit
 

@@ -1,0 +1,227 @@
+<style>
+    /* Reset e font base */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f0f2f5;
+        color: #333;
+        margin: 0;
+        padding: 20px;
+    }
+
+    /* Contenitore principale */
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    /* Titoli */
+    h3, h4, h5 { color: #2c3e50; margin-bottom: 15px; }
+
+    /* Tabelle */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    th { background-color: #f8f9fa; color: #495057; }
+    th, td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #dee2e6;
+    }
+    tr:hover { background-color: #f1f1f1; }
+
+    /* Bottoni */
+    button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.3s;
+    }
+    button:hover { background-color: #0056b3; }
+    
+    /* Bottoni specifici per slot */
+    .slot-btn {
+        margin: 5px;
+        background-color: #28a745;
+    }
+    .slot-btn:hover { background-color: #218838; }
+
+    /* Form e Select */
+    select {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
+    }
+
+    /* Badge Stato */
+    .status-confirmed { color: #28a745; font-weight: bold; }
+    .status-pending { color: #ffc107; font-weight: bold; }
+</style>
+
+<div id="booking-section">
+    <select id="medicoSelect" required>
+        <option value="">Seleziona un medico</option>
+    </select>
+    <div id="disponibilitaContainer"></div>
+</div>
+
+<h3>Le tue visite</h3>
+<ul id="listaVisite"></ul>
+
+<script>
+let mioIdPaziente = null;
+
+async function caricaMedici() {
+    try {
+        const response = await fetch('/api/getusers', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const users = await response.json();
+        const select = document.getElementById('medicoSelect');
+        
+        select.innerHTML = '<option value="">Seleziona un medico</option>';
+        
+        users.forEach(user => {
+            if (user.ruolo === 'staff') { 
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.name;
+                select.appendChild(option);
+            }
+        });
+    } catch (err) {
+        console.error("Errore nel caricamento dei medici:", err);
+    }
+}
+
+async function caricaStorico() {
+    try {
+        const response = await fetch('/api/visits', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const visite = await response.json();
+        const lista = document.getElementById('listaVisite');
+        lista.innerHTML = '';
+        visite.forEach(v => {
+            const li = document.createElement('li');
+            li.textContent = `Visita del ${v.timestamp} - Medico ID: ${v.medico}`;
+            lista.appendChild(li);
+        });
+    } catch (err) {
+        console.error("Errore caricaStorico:", err);
+    }
+}
+
+async function prenotaVisita(medicoId, timestamp) {
+    if (!mioIdPaziente) {
+        alert("Errore: Profilo non caricato. Ricarica la pagina.");
+        return;
+    }
+
+    const payload = {
+        paziente: mioIdPaziente,
+        medico: medicoId,
+        timestamp: timestamp
+    };
+
+    try {
+        const response = await fetch('/api/visits/prenota', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}` 
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            alert("Prenotazione effettuata!");
+            caricaStorico();
+            caricaDisponibilita();
+        } else {
+            alert("Errore nella prenotazione.");
+        }
+    } catch (err) {
+        console.error("Errore:", err);
+    }
+}
+
+async function caricaDisponibilita() {
+    const medicoId = document.getElementById('medicoSelect').value;
+    const container = document.getElementById('disponibilitaContainer');
+    
+    if (!medicoId) {
+        container.innerHTML = '';
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/disponibilita/${medicoId}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (!response.ok) {
+            container.innerHTML = '<p>Nessuna disponibilità trovata.</p>';
+            return;
+        }
+
+        const data = await response.json();
+        container.innerHTML = '<h4>Disponibilità:</h4>';
+        
+        const raggruppati = data.reduce((acc, slot) => {
+            const dataGiorno = slot.valore.split('T')[0];
+            if (!acc[dataGiorno]) acc[dataGiorno] = [];
+            acc[dataGiorno].push(slot);
+            return acc;
+        }, {});
+
+        for (const [dataGiorno, orari] of Object.entries(raggruppati)) {
+            const gruppo = document.createElement('div');
+            gruppo.innerHTML = `<h5>${dataGiorno}</h5>`;
+            
+            orari.forEach(s => {
+                const btn = document.createElement('button');
+                btn.textContent = s.orario;
+                btn.className = 'slot-btn';
+                btn.onclick = () => prenotaVisita(medicoId, s.valore);
+                gruppo.appendChild(btn);
+            });
+            container.appendChild(gruppo);
+        }
+    } catch (err) {
+        console.error("Errore caricamento:", err);
+    }
+}
+
+async function recuperaProfilo() {
+    try {
+        const response = await fetch('/api/getusers/me', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const utente = await response.json();
+            mioIdPaziente = utente.id; // Salviamo l'UUID corretto
+        }
+    } catch (err) {
+        console.error("Errore recupero profilo:", err);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    caricaMedici();
+    caricaStorico();
+    document.getElementById('medicoSelect').addEventListener('change', caricaDisponibilita);
+    recuperaProfilo();
+});
+</script>

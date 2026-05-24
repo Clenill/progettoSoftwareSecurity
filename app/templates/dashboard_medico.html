@@ -1,0 +1,119 @@
+<style>
+    /* Reset e font base */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f0f2f5;
+        color: #333;
+        margin: 0;
+        padding: 20px;
+    }
+
+    /* Contenitore principale */
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    /* Titoli */
+    h3, h4, h5 { color: #2c3e50; margin-bottom: 15px; }
+
+    /* Tabelle */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    th { background-color: #f8f9fa; color: #495057; }
+    th, td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #dee2e6;
+    }
+    tr:hover { background-color: #f1f1f1; }
+
+    /* Bottoni */
+    button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.3s;
+    }
+    button:hover { background-color: #0056b3; }
+    
+    /* Bottoni specifici per slot */
+    .slot-btn {
+        margin: 5px;
+        background-color: #28a745;
+    }
+    .slot-btn:hover { background-color: #218838; }
+
+    /* Form e Select */
+    select {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
+    }
+
+    /* Badge Stato */
+    .status-confirmed { color: #28a745; font-weight: bold; }
+    .status-pending { color: #ffc107; font-weight: bold; }
+</style>
+
+<h3>La mia Agenda</h3>
+<table id="agendaTable">
+    <thead>
+        <tr>
+            <th>Paziente</th>
+            <th>Data/Ora</th>
+            <th>Stato</th>
+            <th>Azione</th>
+        </tr>
+    </thead>
+    <tbody id="agendaBody"></tbody>
+</table>
+
+<script>
+async function caricaAgenda() {
+    const response = await fetch('/visit/visits/my-agenda', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    });
+    const visite = await response.json();
+    const body = document.getElementById('agendaBody');
+    body.innerHTML = '';
+
+    visite.forEach(v => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${v.paziente}</td>
+            <td>${v.timestamp}</td>
+            <td>${v.confermata ? '✅ Confermata' : '⏳ In attesa'}</td>
+            <td>${!v.confermata ? `<button onclick="confermaVisita('${v.id}')">Conferma</button>` : ''}</td>
+        `;
+        body.appendChild(row);
+    });
+}
+
+async function confermaVisita(visitId) {
+    const response = await fetch(`/visit/visits/${visitId}/confirm`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    });
+    
+    if (response.ok) {
+        alert("Visita confermata!");
+        caricaAgenda(); // Ricarica la tabella
+    }
+}
+
+document.addEventListener('DOMContentLoaded', caricaAgenda);
+</script>

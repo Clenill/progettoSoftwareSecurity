@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.db.database import get_db
 from app.models.schemas import UserCreate, UserResponse, LoginRequest, Token, VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate
@@ -7,7 +8,7 @@ from app.service.user_service import UserService
 from app.service.visit_service import VisitService
 
 from app.core.security import get_current_user, has_role_in
-from app.db.models import User
+from app.db.models import User, Visit, Disponibilita
 from app.enum.ruolo import ruolo
 from app.enum.prova import TipoProva, PROVE_RUOLI
 from uuid import UUID
@@ -72,6 +73,22 @@ async def get_visits(
         return await VisitService.get_visits(None, db)
     return await VisitService.get_visits(current_user, db)
 
+@router.post("/visits/prenota", response_model=VisitResponse)
+async def prenota_visita(
+    visit: VisitCreate, 
+    current_user: User = Depends(has_role_in([ruolo.PAZIENTE])), 
+    db: AsyncSession = Depends(get_db)
+):
+    # Il paziente prenota per sé
+    if visit.paziente != current_user.id:
+        raise HTTPException(status_code=403, detail="Non autorizzato")
+    
+    # Il medico deve essere presente per rispettare il modello
+    if not visit.medico:
+        raise HTTPException(status_code=400, detail="Il medico deve essere specificato")
+        
+    return await VisitService.create_visit(visit, current_user, db)
+
 @router.get("/visits/{id}", response_model=VisitResponse)
 async def get_visit_by_id(
     id: UUID, 
@@ -127,3 +144,36 @@ async def add_evidence(
     await VisitService.add_evidence(id, evidence.tipo, current_user, db)
     return { "message": "Prova aggiunta" }
 
+@router.get("/disponibilita/{medico_id}")
+async def get_disponibilita(medico_id: str, db: AsyncSession = Depends(get_db)):
+    query_slots = select(Disponibilita).where(Disponibilita.medico == medico_id).order_by(Disponibilita.timestamp)
+    result_slots = await db.execute(query_slots)
+    tutti_gli_slot = result_slots.scalars().all()
+  
+    query_visite = select(Visit.timestamp).where(Visit.medico == medico_id)
+    result_visite = await db.execute(query_visite)
+    
+    visite_prenotate = []
+    for v in result_visite.all():
+        dt = v[0]
+        if dt.tzinfo is not None:
+            dt = dt.replace(tzinfo=None)
+        visite_prenotate.append(dt)
+    slots_disponibili = []
+    for s in tutti_gli_slot:
+        s_ts = s.timestamp
+        if s_ts.tzinfo is not None:
+            s_ts = s_ts.replace(tzinfo=None)
+        
+        if s_ts not in visite_prenotate:
+            slots_disponibili.append(s)
+    return [{
+    "data": s.timestamp.strftime("%d/%m/%Y"), 
+    "orario": s.timestamp.strftime("%H:%M"),
+    # isofromat() manterrà l'informazione UTC corretta
+    "valore": s.timestamp.isoformat() 
+} for s in slots_disponibili]
+
+@router.get("/getusers/me")
+async def get_me(current_user: User = Depends(get_current_user)):
+    return current_user

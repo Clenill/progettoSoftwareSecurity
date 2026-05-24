@@ -11,6 +11,7 @@ from app.enum.ruolo import ruolo
 from app.enum.prova import PROVE_RUOLI
 from uuid import UUID
 from datetime import datetime, timezone
+from app.repositories.visit_repository import VisitRepository
 
 router = APIRouter(
     prefix="/visit",
@@ -99,3 +100,20 @@ async def add_evidence(
         )
     await VisitService.add_evidence(id, evidence.tipo, current_user, db)
     return { "message": "Prova aggiunta" }
+
+
+@router.get("/visits/my-agenda")
+async def get_my_agenda(
+    current_user: User = Depends(has_role_in([ruolo.MEDICO])),
+    db: AsyncSession = Depends(get_db)
+):
+    # Ritorna tutte le visite assegnate a questo medico
+    return await VisitRepository.get_visits_by_doctor(db, current_user.id)
+
+@router.put("/visits/{id}/confirm")
+async def confirm_visit(
+    id: UUID,
+    current_user: User = Depends(has_role_in([ruolo.MEDICO])),
+    db: AsyncSession = Depends(get_db)
+):
+    return await VisitRepository.confirm_visit(db, id)
