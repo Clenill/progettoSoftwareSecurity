@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate
 from app.service.visit_service import VisitService
-from app.core.exceptions import InvalidDoctorIdException, InvalidVisitDateException
+from app.core.exceptions import *
 from app.core.security import get_current_user, has_role_in
 from app.db.models import User
 from app.enum.ruolo import ruolo
@@ -37,8 +37,8 @@ async def create_visit(
     
     return await VisitService.create_visit(visit, current_user, db)
 
-@router.get("/visits", response_model=list[VisitResponse])
-async def get_visits(
+@router.get("/allvisits", response_model=list[VisitResponse])
+async def get_all_visits(
     current_user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
@@ -54,7 +54,7 @@ async def get_visit_by_id(
 ):
     return await VisitService.get_visit_by_id(id, current_user, db)
 
-@router.put("/visits/{id}", response_model=VisitResponse)
+@router.put("/updatevisits/{id}", response_model=VisitResponse)
 async def edit_visit(
     visit: VisitUpdate, 
     id: UUID, 
@@ -64,10 +64,7 @@ async def edit_visit(
     if current_user.ruolo == ruolo.AUTORITY:
         return await VisitService.edit_visit(id, visit, None, db)
     if visit.medico and visit.medico != current_user.id:
-        raise HTTPException(
-            status_code=400, 
-            detail="Il medico può essere cambiato solo dall'autorità"
-        )
+        raise MissingVisitDetailsException(detail="Il medico può essere cambiato solo dall'autorità")
     
     if visit.timestamp is None:
         raise InvalidVisitDateException()
@@ -77,7 +74,8 @@ async def edit_visit(
     
     return await VisitService.edit_visit(id, visit, current_user, db)
 
-@router.delete("/visits/{id}")
+#Return message non sta ne in cielo ne in terra
+@router.delete("/deletevisits/{id}")
 async def delete_visit(
     id: UUID, 
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
@@ -86,7 +84,7 @@ async def delete_visit(
     await VisitService.delete_visit(id, db)
     return { "message": "Visita eliminata" }
 
-@router.post("/visits/{id}")
+@router.post("/addevidence/{id}")
 async def add_evidence(
     evidence: EvidenceCreate, 
     id: UUID, 
@@ -94,10 +92,8 @@ async def add_evidence(
     db: AsyncSession = Depends(get_db)
 ):
     if evidence.tipo not in PROVE_RUOLI[current_user.ruolo]:
-        raise HTTPException(
-            status_code=403, 
-            detail="Prova non ammessa per il ruolo corrente"
-        )
+        raise InvalidCredentials()
+    
     await VisitService.add_evidence(id, evidence.tipo, current_user, db)
     return { "message": "Prova aggiunta" }
 
@@ -117,3 +113,19 @@ async def confirm_visit(
     db: AsyncSession = Depends(get_db)
 ):
     return await VisitRepository.confirm_visit(db, id)
+
+@router.post("/visits/prenota", response_model=VisitResponse)
+async def prenota_visita(
+    visit: VisitCreate, 
+    current_user: User = Depends(has_role_in([ruolo.PAZIENTE])), 
+    db: AsyncSession = Depends(get_db)
+):
+    # Il paziente prenota per sé
+    if visit.paziente != current_user.id:
+        raise UserNotAuthorizedException()
+    
+    # Il medico deve essere presente per rispettare il modello
+    if not visit.medico:
+        raise MissingVisitDetailsException(detail="Il medico deve essere specificato")
+        
+    return await VisitService.create_visit(visit, current_user, db)

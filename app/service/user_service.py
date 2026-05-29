@@ -8,6 +8,7 @@ from app.models.schemas import UserCreate, LoginRequest
 from app.repositories.user_repository import UserRepository
 from app.core.security import hash_password
 from app.core.exceptions import *
+from app.enum.ruolo import ruolo
 from app.core.security import hash_password, verify_password, create_access_token
 from app.core.security import verify_password, create_access_token
 from typing import cast
@@ -76,3 +77,26 @@ class UserService:
         token = create_access_token(token_data)
         
         return {"access_token": token, "token_type": "bearer"}
+    
+    @staticmethod
+    async def get_users_by_role(
+        role: ruolo,
+        db: AsyncSession
+    ):
+        return await UserRepository.get_by_role(
+            db,
+            role
+        )
+    
+    @staticmethod
+    async def get_user_by_id(
+        user_id,
+        db: AsyncSession
+    ):
+        user = await UserRepository.get_by_id(
+            db,
+            user_id
+        )
+        if not user:
+            raise UserNotFoundException()
+        return user

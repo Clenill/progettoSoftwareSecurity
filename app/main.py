@@ -9,6 +9,7 @@ from app.api.ui_routes import ui_router
 from app.core.exceptions import AppException
 from app.api.auth_routes import router as auth_router
 from app.api.visit_routes import router as visit_router
+from app.api.admin_routes import router as admin_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -17,7 +18,6 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
 
     print("\n===== SERVER AVVIATO =====")
-    print("Home: http://127.0.0.1:8000/api/")
     print("Swagger Docs: http://127.0.0.1:8000/docs")
     print("ReDoc: http://127.0.0.1:8000/redoc")
     print("==========================\n")
@@ -36,6 +36,8 @@ app.include_router(router, prefix="/api")
 app.include_router(auth_router)
 
 app.include_router(visit_router)
+
+app.include_router(admin_router)
 
 @app.exception_handler(AppException)
 async def app_exception_handler(

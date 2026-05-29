@@ -8,6 +8,8 @@ from app.enum.prova import TipoProva
 from app.db.models import Visit, Evidence, User
 from app.models.schemas import VisitCreate, VisitUpdate
 from datetime import timezone
+from app.core.exceptions import InvalidVisitDateException
+from datetime import datetime, timezone
 
 class VisitRepository:
 

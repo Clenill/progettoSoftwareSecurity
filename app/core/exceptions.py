@@ -22,6 +22,14 @@ class UserNotFoundException(AppException):
             detail="Utente non trovato",
             error_code=ErrorCode.USER_NOT_FOUND
         )
+class UserNotAuthorizedException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=403,
+            detail="Autorizzazione mancante",
+            error_code=ErrorCode.USER_NOT_AUTHORIZED
+        )
 
 class InvalidCredentials(AppException):
 
@@ -30,6 +38,16 @@ class InvalidCredentials(AppException):
             status_code=401,
             detail="Credenziali non valide",
             error_code=ErrorCode.INVALID_CREDENTIAL
+        )
+
+class MissingVisitDetailsException(AppException):
+    DEFAULT_DETAIL = "Qualcosa è andato storto nella richiesta"
+
+    def __init__(self, detail: str | None = None):
+        super().__init__(
+            status_code=400,
+            detail=detail or self.DEFAULT_DETAIL,
+            error_code=ErrorCode.MISSING_VISIT_DETAILS
         )
 
 class UserNotActive(AppException):
@@ -69,6 +87,15 @@ class InvalidDoctorIdException(AppException):
             error_code=ErrorCode.INVALID_DOCTOR_ID
         )
 
+class InvalidUserRoleException(AppException):
+    DEFAULT_DETAIL= "Ruolo non corrisponde all'Id."
+
+    def __init__(self, detail: str | None = None):
+        super().__init__(
+            status_code=404,
+            detail=detail or self.DEFAULT_DETAIL,
+            error_code=ErrorCode.INVALID_ROLE
+        )
 class InvalidVisitDateException(AppException):
 
     def __init__(self):

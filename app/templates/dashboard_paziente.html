@@ -136,7 +136,7 @@ async function prenotaVisita(medicoId, timestamp) {
     };
 
     try {
-        const response = await fetch('/api/visits/prenota', {
+        const response = await fetch('/visit/visits/prenota', {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',

@@ -8,6 +8,9 @@ from app.db.models import User, Evidence
 from app.enum.ruolo import ruolo
 from app.enum.prova import TipoProva
 from uuid import UUID
+from datetime import datetime, timezone
+from app.core.exceptions import *
+from app.service.user_service import UserService
 
 class VisitService:
 
@@ -84,3 +87,35 @@ class VisitService:
                 detail=str(e)
             )
 
+    @staticmethod
+    async def admin_create_visit(
+        visit: VisitCreate,
+        db: AsyncSession,
+        current_user: User
+    ):
+        if (
+            visit.timestamp is not None
+            and visit.timestamp <= datetime.now(timezone.utc)
+        ):
+            raise InvalidVisitDateException()
+        
+        medico = await UserService.get_user_by_id(
+            visit.medico,
+            db
+        )
+
+        paziente = await UserService.get_user_by_id(
+            visit.paziente,
+            db
+        )
+
+        if medico.ruolo != ruolo.MEDICO:
+            raise InvalidUserRoleException(detail="Ruolo Medico non corrisponde all'Id utente.")
+        if paziente.ruolo != ruolo.PAZIENTE:
+            raise InvalidUserRoleException(detail="Ruolo Paziente non corrisponde all'Id utente.")
+        
+        return await VisitRepository.create(
+            db,
+            visit,
+            current_user
+        )

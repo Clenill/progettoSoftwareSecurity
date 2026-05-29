@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.db.models import User
+from app.enum.ruolo import ruolo
 
 class UserRepository:
 
@@ -27,4 +28,22 @@ class UserRepository:
         result = await db.execute(select(User))
         return result.scalars().all()
     
+    @staticmethod
+    async def get_by_id(
+        db: AsyncSession,
+        user_id
+    ):
+        result = await db.execute(
+            select(User).where(User.id == user_id)
+        )
+        return result.scalar_one_or_none()
     
+    @staticmethod
+    async def get_by_role(
+        db: AsyncSession,
+        role: ruolo
+    ):
+        result = await db.execute(
+            select(User).where(User.ruolo == role)
+        )
+        return result.scalars().all()
