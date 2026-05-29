@@ -63,8 +63,6 @@ async def add_evidence(
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
     db: AsyncSession = Depends(get_db)
 ):
-    if evidence.tipo not in PROVE_RUOLI[current_user.ruolo]:
-        raise InvalidCredentials()
     
     await VisitService.add_evidence(id, evidence.tipo, current_user, db)
     return { 

@@ -16,6 +16,13 @@ PROVE_RUOLI = {
         TipoProva.ATTREZZATURA, 
         TipoProva.PRESCRIZIONE, 
         TipoProva.GPS
+    },
+    ruolo.AUTORITY: {
+        TipoProva.SINTOMI, 
+        TipoProva.ATTREZZATURA, 
+        TipoProva.PRESCRIZIONE, 
+        TipoProva.GPS,
+        TipoProva.CONFERMA
     }
 }
 
