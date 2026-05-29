@@ -59,7 +59,7 @@ class Visit(Base):
     id = Column(UUID(), primary_key=True, index=True)
     paziente = Column(UUID(), nullable=False)
     medico = Column(UUID(), nullable=True, default=None)
-    timestamp = Column(DateTime, nullable=True, default=None)
+    timestamp = Column(DateTime(timezone=True), nullable=True, default=None)
 
     # per vincolare il ruolo degli utenti coinvolti nella visita
     ruolo_paziente = Column(
@@ -124,6 +124,6 @@ class Disponibilita(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     medico = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    timestamp = Column(DateTime, nullable=False)
+    timestamp = Column(DateTime(timezone=True), nullable=False)
     occupato = Column(Boolean, default=False)
 

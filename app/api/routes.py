@@ -33,33 +33,16 @@ async def get_user_by_email(
 
 @router.get("/disponibilita/{medico_id}")
 async def get_disponibilita(medico_id: str, db: AsyncSession = Depends(get_db)):
-    query_slots = select(Disponibilita).where(Disponibilita.medico == medico_id).order_by(Disponibilita.timestamp)
+    query_slots = select(Disponibilita).where(Disponibilita.medico == medico_id , Disponibilita.occupato == False).order_by(Disponibilita.timestamp)
     result_slots = await db.execute(query_slots)
     tutti_gli_slot = result_slots.scalars().all()
-  
-    query_visite = select(Visit.timestamp).where(Visit.medico == medico_id)
-    result_visite = await db.execute(query_visite)
     
-    visite_prenotate = []
-    for v in result_visite.all():
-        dt = v[0]
-        if dt.tzinfo is not None:
-            dt = dt.replace(tzinfo=None)
-        visite_prenotate.append(dt)
-    slots_disponibili = []
-    for s in tutti_gli_slot:
-        s_ts = s.timestamp
-        if s_ts.tzinfo is not None:
-            s_ts = s_ts.replace(tzinfo=None)
-        
-        if s_ts not in visite_prenotate:
-            slots_disponibili.append(s)
     return [{
     "data": s.timestamp.strftime("%d/%m/%Y"), 
     "orario": s.timestamp.strftime("%H:%M"),
     # isofromat() manterrà l'informazione UTC corretta
     "valore": s.timestamp.isoformat() 
-} for s in slots_disponibili]
+} for s in tutti_gli_slot]
 
 @router.get("/getusers/me")
 async def get_me(current_user: User = Depends(get_current_user)):

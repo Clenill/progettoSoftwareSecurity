@@ -107,7 +107,7 @@ async function caricaMedici() {
 
 async function caricaStorico() {
     try {
-        const response = await fetch('/api/visits', {
+        const response = await fetch('/visit/allmyvisits', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const visite = await response.json();
