@@ -18,13 +18,6 @@ router = APIRouter(
     tags=["Admin"]
 )
 
-# Controllo di autorizzazione basato sui ruoli
-@router.get("/admin-only")
-async def accesso_admin(current_user: User = Depends(get_current_user)):
-    if current_user.ruolo != "admin":
-        raise UserNotAuthorizedException()
-    return {"message": "Benvenuto!"}
-
 # La chiamata va triggerata e gli si deve passare id medico e paziente
 @router.post("/newvisit", response_model=VisitResponse)
 async def admin_create_visit(
