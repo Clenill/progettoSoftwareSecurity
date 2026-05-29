@@ -47,3 +47,20 @@ class UserRepository:
             select(User).where(User.ruolo == role)
         )
         return result.scalars().all()
+    
+    @staticmethod
+    async def active_new_user_by_id(
+        db: AsyncSession,
+        user_id
+    ):
+        result = await db.execute(
+            select(User).where(User.id == user_id)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            return None
+        user.attivo = True
+        await db.commit()
+        await db.refresh(user)
+
+        return user

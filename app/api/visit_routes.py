@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
@@ -37,13 +37,11 @@ async def create_visit(
     
     return await VisitService.create_visit(visit, current_user, db)
 
-@router.get("/allvisits", response_model=list[VisitResponse])
+@router.get("/allmyvisits", response_model=list[VisitResponse])
 async def get_all_visits(
     current_user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)
 ):
-    if current_user.ruolo == ruolo.AUTORITY:
-        return await VisitService.get_visits(None, db)
     return await VisitService.get_visits(current_user, db)
 
 @router.get("/dettagliovisita/{id}", response_model=VisitResponse)
@@ -74,16 +72,6 @@ async def edit_visit(
     
     return await VisitService.edit_visit(id, visit, current_user, db)
 
-#Return message non sta ne in cielo ne in terra
-@router.delete("/deletevisits/{id}")
-async def delete_visit(
-    id: UUID, 
-    current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
-    db: AsyncSession = Depends(get_db)
-):
-    await VisitService.delete_visit(id, db)
-    return { "message": "Visita eliminata" }
-
 @router.post("/addevidence/{id}")
 async def add_evidence(
     evidence: EvidenceCreate, 
@@ -95,7 +83,11 @@ async def add_evidence(
         raise InvalidCredentials()
     
     await VisitService.add_evidence(id, evidence.tipo, current_user, db)
-    return { "message": "Prova aggiunta" }
+    return { 
+        "message": "Prova aggiunta con successo",
+        "visit_id": id,
+        "evidence_type": evidence.tipo
+        }
 
 
 @router.get("/visits/my-agenda")
