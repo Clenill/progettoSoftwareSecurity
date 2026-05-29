@@ -22,3 +22,17 @@ pip install jinja2
 SECRET_KEY="09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM="HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+Frontend
+-Registrazione
+-Pagina benvenuto utenti
+- Due viste per il medico e utente (accettazione visite e storico visite).
+- Per le visite in corso il medico può caricare le sue prove.
+- Per l'utente con visita in corso può confermare la presenza del dottore.
+- Viste admin
+
+Backend
+- Check orario visita prima di crearla (5 minuti variabile .env)
+- Medico può rifiutare la visita e questa verrà cancellata a DB
+- La cancellazione visita può essere fatta se la visita non è avvenuta
+- query sulle visite ed evitare che queste si sovrappongono 
