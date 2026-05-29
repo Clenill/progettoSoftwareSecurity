@@ -59,6 +59,15 @@ class UserNotActive(AppException):
             error_code=ErrorCode.NOT_ACTIVE_USER
         )
 
+class UserAlreadyActive(AppException):
+    
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="Utente già attivo.",
+            error_code=ErrorCode.USER_IS_ACTIVE
+        )
+
 class EmailAlreadyExistsException(AppException):
 
     def __init__(self):
