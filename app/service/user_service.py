@@ -100,3 +100,22 @@ class UserService:
         if not user:
             raise UserNotFoundException()
         return user
+    
+    @staticmethod
+    async def active_user(
+        user_id,
+        db: AsyncSession
+    ):
+        user = await UserService.get_user_by_id(
+            user_id,
+            db
+        )
+        if user.attivo:
+            raise UserAlreadyActive()
+        user_attivo = UserRepository.active_new_user_by_id(db, user_id)
+        
+        if user_attivo is None:
+            raise UserNotFoundException()
+        
+        return user_attivo
+        

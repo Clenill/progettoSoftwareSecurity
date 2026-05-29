@@ -23,7 +23,7 @@ class VisitService:
         try:
             return await VisitRepository.create(db, visit_data, user)
         except IntegrityError:
-            raise HTTPException(status_code=400, detail="Dati visita errati")
+            raise MissingVisitDetailsException(detail="Dati visita errati.")
 
     @staticmethod
     async def get_visits(user: User | None, db: AsyncSession):
@@ -33,7 +33,7 @@ class VisitService:
     async def get_visit_by_id(id: UUID, user: User | None, db: AsyncSession):
         visit = await VisitRepository.get_by_id(db, id, user)
         if not visit:
-            raise HTTPException(status_code=404, detail="Visita non trovata")
+            raise MissingVisitDetailsException(detail="Visita non trovata.")
         return visit
 
     @staticmethod
@@ -46,15 +46,9 @@ class VisitService:
         try:
             visit = (await VisitRepository.edit_visit(db, id, user, visit_data))
         except NoResultFound as err:
-            raise HTTPException(
-                status_code=404, 
-                detail=str("Visita non trovata")
-            )
+            raise MissingVisitDetailsException(detail="Visita non trovata.")
         except IntegrityError as err:
-            raise HTTPException(
-                status_code=400, 
-                detail="Dati visita errati"
-            )
+            raise MissingVisitDetailsException(detail="Dati visita errati.")
         return visit
 
     @staticmethod
@@ -62,10 +56,7 @@ class VisitService:
         try:
             await VisitRepository.delete_visit(db, id)
         except NoResultFound as err:
-            raise HTTPException(
-                status_code=404, 
-                detail=str(err)
-            )
+            raise MissingVisitDetailsException(detail="Visita non trovata.")
     
     @staticmethod
     async def add_evidence(
@@ -77,10 +68,7 @@ class VisitService:
         try:
             await VisitRepository.add_evidence(db, id, tipo, user)
         except NoResultFound as e:
-            raise HTTPException(
-                status_code=404, 
-                detail=str(e)
-            )
+            raise MissingVisitDetailsException(detail="Visita non trovata.")
         except ValueError as e:
             raise HTTPException(
                 status_code=409, # CONFLICT
