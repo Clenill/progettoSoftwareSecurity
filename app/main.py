@@ -33,6 +33,8 @@ app = FastAPI(lifespan=lifespan)
 # Configura la cartella dei file statici
 app.mount("/css", StaticFiles(directory="app/css"), name="static")
 
+app.mount("/images", StaticFiles(directory="app/images"), name="images")
+
 app.include_router(ui_router)
 
 app.include_router(router, prefix="/api")

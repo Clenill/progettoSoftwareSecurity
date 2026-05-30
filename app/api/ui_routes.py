@@ -20,6 +20,11 @@ async def login_page(request: Request):
     """Pagina di login"""
     return templates.TemplateResponse(request=request, name="login.html")
 
+@ui_router.get("/registrazione", response_class=HTMLResponse)
+async def register_page(request: Request):
+    """Pagina di registrazione"""
+    return templates.TemplateResponse(request=request, name="registrazione.html")
+
 @ui_router.get("/dashboard/utente", response_class=HTMLResponse)
 async def dashboard_paziente(request: Request):
     return templates.TemplateResponse(request=request, name="home_paziente.html")

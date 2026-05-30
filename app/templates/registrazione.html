@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Registrazione - Security Project</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo"><img src="images/logo.png"></a>
+            <ul class="nav-menu">
+                <li class="nav-item"></li><a href="/registrazione" class="link-login">Non hai un account? Registrati</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <h1>Crea Account</h1>
+
+<div class="login-container">
+    
+    <div id="error-msg" class="error">Errore durante la registrazione</div>
+    <div id="success-msg" class="success">Registrazione completata! Reindirizzamento al login...</div>
+    
+    <form id="registerForm">
+        <div class="form-group">
+            <label>Nome Completo:</label>
+            <input type="text" id="name" required minlength="2" maxlength="25">
+        </div>
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+            <label>Password:</label>
+            <input type="password" id="password" required minlength="3">
+        </div>
+        <div class="form-group">
+            <label>Tipo Account:</label>
+            <select id="ruolo" required>
+                <option value="utente">Paziente</option>
+                <option value="staff">Medico</option>
+                <option value="staff">Admin</option>
+            </select>
+        </div>
+        <button type="submit">Registrati</button>
+    </form>
+    
+    <a href="/" class="link-login">Hai già un account? Accedi qui</a>
+</div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const ruolo = document.getElementById('ruolo').value;
+    
+    const errorMsg = document.getElementById('error-msg');
+    const successMsg = document.getElementById('success-msg');
+    
+    errorMsg.style.display = 'none';
+    successMsg.style.display = 'none';
+
+    try {
+        const response = await fetch('/auth/register', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                name: name,
+                email: email, 
+                password: password,
+                ruolo: ruolo,
+                attivo: false
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            errorMsg.textContent = errorData.detail || "Errore nella compilazione dei dati.";
+            errorMsg.style.display = 'block';
+            return;
+        }
+
+        // Se va tutto bene, mostriamo il successo e rimandiamo al Login dopo 2 secondi
+        successMsg.style.display = 'block';
+        setTimeout(() => {
+            window.location.href = "/";
+        }, 2000);
+
+    } catch (err) {
+        errorMsg.textContent = "Errore di connessione al server";
+        errorMsg.style.display = 'block';
+    }
+});
+</script>
+</body>
+</html>
