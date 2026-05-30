@@ -22,7 +22,17 @@ async def login_page(request: Request):
 
 @ui_router.get("/dashboard/utente", response_class=HTMLResponse)
 async def dashboard_paziente(request: Request):
+    return templates.TemplateResponse(request=request, name="home_paziente.html")
+
+@ui_router.get("/utente/prenota", response_class=HTMLResponse)
+async def prenota_page(request: Request):
+    """Pagina per effettuare una prenotazione"""
     return templates.TemplateResponse(request=request, name="dashboard_paziente.html")
+
+@ui_router.get("/utente/visite", response_class=HTMLResponse)
+async def visualizza_visite_page(request: Request):
+    """Pagina per visualizzare gli appuntamenti"""
+    return templates.TemplateResponse(request=request, name="visite_paziente.html")
 
 @ui_router.get("/dashboard/staff", response_class=HTMLResponse)
 async def dashboard_medico(request: Request):

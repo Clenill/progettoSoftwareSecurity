@@ -1,0 +1,278 @@
+/* Reset e Stili Base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f4f7f6;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Barra di Navigazione */
+.navbar {
+    background-color: #2c3e50;
+    padding: 1rem 2rem;
+    position: sticky;
+    top: 0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.nav-menu {
+    display: flex;
+    list-style: none;
+    gap: 2rem;
+}
+
+.nav-item a {
+    color: #cbd5e1;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.nav-item a:hover, .nav-item a.active {
+    color: #3498db;
+}
+
+/* Contenuto Principale */
+.main-container {
+    max-width: 800px;
+    margin: 5rem auto;
+    padding: 2rem;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+/* Messaggio di Benvenuto */
+.welcome-section h1 {
+    color: #2c3e50;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.welcome-section p {
+    color: #666;
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+/* Pulsanti di Azione Rapida */
+.cta-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+}
+
+.btn-secondary {
+    background-color: #ecf0f1;
+    color: #2c3e50;
+}
+
+.btn-secondary:hover {
+    background-color: #bdc3c7;
+}
+
+/* Contenitore principale */
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Titoli */
+h3, h4, h5 { color: #2c3e50; margin-bottom: 15px; }
+
+h1, h2 {
+    text-align: center;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    color: #2c3e50;
+}
+
+/* Tabelle */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+th { background-color: #f8f9fa; color: #495057; }
+th, td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+tr:hover { background-color: #f1f1f1; }
+
+/* Bottoni */
+button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+button:hover { background-color: #0056b3; }
+
+/* Bottoni specifici per slot */
+.slot-btn {
+    margin: 5px;
+    background-color: #28a745;
+}
+.slot-btn:hover { background-color: #218838; }
+
+/* Form e Select */
+select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin-bottom: 20px;
+}
+
+/* Badge Stato */
+.status-confirmed { color: #28a745; font-weight: bold; }
+.status-pending { color: #ffc107; font-weight: bold; }
+
+/* Contenitore della tabella (Rende la tabella Responsive) */
+#listaVisite {
+    width: 100%;
+    overflow-x: auto; /* Abilita lo scroll orizzontale su schermi piccoli */
+    margin: 20px auto; 
+}
+
+.styled-table {
+    width: 100%;
+    max-width: 800px;
+    min-width: 600px;
+    margin: 0 auto;
+    border-collapse: collapse;
+    font-size: 1rem;
+    background-color: #ffffff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Intestazione */
+.styled-table thead tr {
+    background-color: #3498db;
+    color: #ffffff;
+    text-align: left;
+}
+
+/* Celle e righe */
+.styled-table th,
+.styled-table td {
+    padding: 15px 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* Effetto al passaggio del mouse */
+.styled-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.styled-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Contenitore principale delle disponibilità */
+#disponibilitaContainer {
+    max-width: 600px;
+    margin: 30px auto;
+    text-align: center;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+#disponibilitaContainer div {
+    margin-top: 25px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
+#disponibilitaContainer h5 {
+    width: 100%;
+    margin-bottom: 10px;
+    color: #3498db;
+    font-size: 1.1rem;
+}
+
+.slot-btn {
+    padding: 10px 20px;
+    background-color: #ecf0f1;
+    color: #2c3e50;
+    border: 1px solid #bdc3c7;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.slot-btn:hover {
+    background-color: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .nav-container {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .cta-buttons {
+        flex-direction: column;
+    }
+}

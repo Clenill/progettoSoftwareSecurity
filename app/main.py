@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
+from fastapi.staticfiles import StaticFiles
 
 from app.db.database import engine
 from app.db.models import Base
@@ -28,6 +29,9 @@ async def lifespan(app: FastAPI):
     print("Server spento")
 
 app = FastAPI(lifespan=lifespan)
+
+# Configura la cartella dei file statici
+app.mount("/css", StaticFiles(directory="app/css"), name="static")
 
 app.include_router(ui_router)
 

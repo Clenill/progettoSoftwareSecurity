@@ -1,83 +1,32 @@
-<style>
-    /* Reset e font base */
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #f0f2f5;
-        color: #333;
-        margin: 0;
-        padding: 20px;
-    }
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benvenuto nel Nostro Portale</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
 
-    /* Contenitore principale */
-    .container {
-        max-width: 900px;
-        margin: 0 auto;
-        background: white;
-        padding: 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
+<!-- Menu di Navigazione -->
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="#" class="logo">Visite</a>
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="/dashboard/utente">Home</a></li>
+        <li class="nav-item"><a href="/utente/prenota"  class="active">Prenota</a></li>
+        <li class="nav-item"><a href="/utente/visite">Visualizza</a></li>
+        </ul>
+    </div>
+</nav>
 
-    /* Titoli */
-    h3, h4, h5 { color: #2c3e50; margin-bottom: 15px; }
-
-    /* Tabelle */
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-    th { background-color: #f8f9fa; color: #495057; }
-    th, td {
-        padding: 15px;
-        text-align: left;
-        border-bottom: 1px solid #dee2e6;
-    }
-    tr:hover { background-color: #f1f1f1; }
-
-    /* Bottoni */
-    button {
-        padding: 10px 20px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: background 0.3s;
-    }
-    button:hover { background-color: #0056b3; }
-    
-    /* Bottoni specifici per slot */
-    .slot-btn {
-        margin: 5px;
-        background-color: #28a745;
-    }
-    .slot-btn:hover { background-color: #218838; }
-
-    /* Form e Select */
-    select {
-        width: 100%;
-        padding: 10px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        margin-bottom: 20px;
-    }
-
-    /* Badge Stato */
-    .status-confirmed { color: #28a745; font-weight: bold; }
-    .status-pending { color: #ffc107; font-weight: bold; }
-</style>
-
+</center><h1>Seleziona un medico</h1>
 <div id="booking-section">
     <select id="medicoSelect" required>
         <option value="">Seleziona un medico</option>
     </select>
     <div id="disponibilitaContainer"></div>
 </div>
-
-<h3>Le tue visite</h3>
-<ul id="listaVisite"></ul>
 
 <script>
 let mioIdPaziente = null;
@@ -102,24 +51,6 @@ async function caricaMedici() {
         });
     } catch (err) {
         console.error("Errore nel caricamento dei medici:", err);
-    }
-}
-
-async function caricaStorico() {
-    try {
-        const response = await fetch('/visit/allmyvisits', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        const visite = await response.json();
-        const lista = document.getElementById('listaVisite');
-        lista.innerHTML = '';
-        visite.forEach(v => {
-            const li = document.createElement('li');
-            li.textContent = `Visita del ${v.timestamp} - Medico ID: ${v.medico}`;
-            lista.appendChild(li);
-        });
-    } catch (err) {
-        console.error("Errore caricaStorico:", err);
     }
 }
 
@@ -220,8 +151,9 @@ async function recuperaProfilo() {
 
 document.addEventListener('DOMContentLoaded', () => {
     caricaMedici();
-    caricaStorico();
     document.getElementById('medicoSelect').addEventListener('change', caricaDisponibilita);
     recuperaProfilo();
 });
 </script>
+</body>
+</html>

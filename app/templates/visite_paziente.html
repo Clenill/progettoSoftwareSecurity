@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benvenuto nel Nostro Portale</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- Menu di Navigazione -->
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="#" class="logo">Visite</a>
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="/dashboard/utente">Home</a></li>
+        <li class="nav-item"><a href="/utente/prenota">Prenota</a></li>
+        <li class="nav-item"><a href="/utente/visite"  class="active">Visualizza</a></li>
+        </ul>
+    </div>
+</nav>
+
+<h1>Le tue visite</h1>
+<ul id="listaVisite"></ul>
+
+<script>
+
+async function caricaStorico() {
+    try {
+        const response = await fetch('/visit/allmyvisits', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const visite = await response.json();
+        const contenitore = document.getElementById('listaVisite');
+
+        contenitore.innerHTML = '';
+
+        if (visite.length === 0) {
+            contenitore.innerHTML = '<p>Nessuna visita in storico.</p>';
+            return;
+        }
+
+        // Intestazione tabella
+        let tableHTML = `
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th>Giorno</th>
+                        <th>Ora</th>
+                        <th>Medico (ID)</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        // Riempimento tabella
+        visite.forEach(v => {
+            const dataOggetto = new Date(v.timestamp);
+
+            const giorno = dataOggetto.toLocaleDateString('it-IT'); 
+
+            const ora = dataOggetto.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+            tableHTML += `
+                <tr>
+                    <td>${giorno}</td>
+                    <td>${ora}</td>
+                    <td>${v.medico}</td>
+                </tr>
+            `;
+        });
+
+        tableHTML += `
+                </tbody>
+            </table>
+        `;
+
+        contenitore.innerHTML = tableHTML;
+
+    } catch (err) {
+        console.error("Errore caricaStorico:", err);
+        document.getElementById('listaVisite').innerHTML = '<p class="error">Errore nel caricamento dei dati.</p>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    caricaStorico();
+});
+</script>
+</body>
+</html>
