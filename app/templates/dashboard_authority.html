@@ -1,2 +1,126 @@
-<h1>Pannello di Controllo Autorità (Admin)</h1>
-<p>Accesso di livello amministrativo per gli audit di sicurezza.</p>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Authority</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="#" class="logo"><img src="/images/logo.png" style="height: 40px; vertical-align: middle;" alt="Logo"></a>
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="/dashboard/authority" class="active">Home</a></li>
+        </ul>
+    </div>
+</nav>
+
+<main class="main-container" style="max-width: 1200px;">
+    <h1>Pannello di Controllo - Authority <span class="badge-auth">Authority</span></h1>
+
+    <div class="table-container">
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Data/Ora</th>
+                    <th>Medico (ID)</th>
+                    <th>Paziente (ID)</th>
+                    <th>Prove Attuali</th>
+                    <th>Intervento Authority</th>
+                </tr>
+            </thead>
+            <tbody id="authorityBody">
+                </tbody>
+        </table>
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', caricaTutteLeVisite);
+
+async function caricaTutteLeVisite() {
+    try {
+        const response = await fetch('/visit/visits/all-visits', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        if (!response.ok) throw new Error("Errore recupero visite globali");
+        
+        const visite = await response.json();
+        const body = document.getElementById('authorityBody');
+        body.innerHTML = '';
+
+        visite.forEach(v => {
+            const row = document.createElement('tr');
+            const dataFormattata = new Date(v.timestamp).toLocaleString('it-IT');
+            const proveHtml = v.prove && v.prove.length > 0 ? v.prove.map(p => p.tipo).join(', ') : '<i>Nessuna</i>';
+
+            row.innerHTML = `
+                <td>${dataFormattata}</td>
+                <td style="font-size: 0.8rem; color:#555;">${v.medico || 'Non assegnato'}</td>
+                <td style="font-size: 0.8rem; color:#555;">${v.paziente}</td>
+                <td>${proveHtml}</td>
+                <td>
+                    <button class="btn-supervise" onclick="togglePanel('${v.id}')">Invia Prova</button>
+                    
+                    <div id="panel-${v.id}" class="control-panel">
+                        <select id="tipo-${v.id}">
+                            <option value="sintomi">Sintomi</option>
+                            <option value="attrezzatura">Attrezzatura</option>
+                            <option value="prescrizione">Prescrizione</option>
+                            <option value="gps">GPS</option>
+                            <option value="conferma">Conferma (Certificato)</option>
+                        </select>
+                        <input type="text" id="valore-${v.id}" placeholder="Valore/Descrizione prova...">
+                        <button class="btn-supervise" style="width: 100%; background-color:#27ae60;" onclick="forzaProva('${v.id}')">Esegui Iniezione</button>
+                    </div>
+                </td>
+            `;
+            body.appendChild(row);
+        });
+    } catch (err) {
+        document.getElementById('authorityBody').innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Qualcosa è andato storto</td></tr>';
+    }
+}
+
+function togglePanel(id) {
+    const panel = document.getElementById(`panel-${id}`);
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+}
+
+async function forzaProva(id) {
+    const tipo = document.getElementById(`tipo-${id}`).value;
+    const valore = document.getElementById(`valore-${id}`).value;
+
+    if (!valore) {
+        alert("Inserisci un valore per la prova!");
+        return;
+    }
+
+    try {
+        const response = await fetch(`/visit/addevidence/${id}`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}` 
+            },
+            body: JSON.stringify({ tipo: tipo, valore: valore })
+        });
+
+        if (response.ok) {
+            alert("Prova inserita con successo nel sistema!");
+            caricaTutteLeVisite();
+        } else {
+            const errData = await response.json();
+            alert("Errore: " + (errData.detail || "Operazione non consentita"));
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+</script>
+
+</body>
+</html>

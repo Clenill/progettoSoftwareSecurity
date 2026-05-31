@@ -1,5 +1,8 @@
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+from app.db.models import Visit
 
 from app.db.database import get_db
 from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate
@@ -76,7 +79,7 @@ async def edit_visit(
 async def add_evidence(
     evidence: EvidenceCreate, 
     id: UUID, 
-    current_user: User = Depends(has_role_in([ruolo.PAZIENTE, ruolo.MEDICO])), 
+    current_user: User = Depends(has_role_in([ruolo.PAZIENTE, ruolo.MEDICO, ruolo.AUTORITY])), 
     db: AsyncSession = Depends(get_db)
 ):
     if evidence.tipo not in PROVE_RUOLI[current_user.ruolo]:
@@ -121,3 +124,19 @@ async def prenota_visita(
         raise MissingVisitDetailsException(detail="Il medico deve essere specificato")
         
     return await VisitService.create_visit(visit, current_user, db)
+
+@router.get("/visits/all-visits", response_model=list[VisitResponse])
+async def get_all_system_visits(
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
+    db: AsyncSession = Depends(get_db)
+):
+    query = (
+        select(Visit)
+        .options(selectinload(Visit.prove))
+        .order_by(Visit.timestamp.desc())
+    )
+    
+    result = await db.execute(query)
+    visite = result.scalars().all()
+    
+    return visite

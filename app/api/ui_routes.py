@@ -50,6 +50,11 @@ async def dettagli_visita_page(request: Request):
     return templates.TemplateResponse(request=request, name="dettagli_visita.html")
 
 @ui_router.get("/dashboard/admin", response_class=HTMLResponse)
+async def dashboard_admin(request: Request):
+    """Area riservata all'Autorità di Controllo"""
+    return templates.TemplateResponse(request=request, name="dashboard_admin.html")
+
+@ui_router.get("/dashboard/authority", response_class=HTMLResponse)
 async def dashboard_authority(request: Request):
     """Area riservata all'Autorità di Controllo"""
     return templates.TemplateResponse(request=request, name="dashboard_authority.html")
