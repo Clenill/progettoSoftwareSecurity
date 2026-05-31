@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dettagli Visita - Portale Medico</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .details-container { max-width: 800px; margin: 40px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .info-group { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+        .info-group span { font-weight: bold; color: #2c3e50; }
+        .action-panel { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 30px; border: 1px solid #e0e0e0; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group select, .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { padding: 10px 20px; background-color: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        button:hover { background-color: #27ae60; }
+        .btn-back { background-color: #95a5a6; margin-bottom: 20px; display: inline-block; padding: 8px 15px; color: white; text-decoration: none; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="#" class="logo"><img src="/images/logo.png" style="height: 40px; vertical-align: middle;" alt="Logo"></a>
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="/dashboard/staff">Home</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="details-container">
+    <a href="/dashboard/staff" class="btn-back">⬅ Torna Indietro</a>
+    
+    <h2>Dettagli Visita</h2>
+    
+    <div id="visitInfo">
+        <p>Caricamento dati in corso...</p>
+    </div>
+
+    <div class="action-panel" id="actionPanel" style="display: none;">
+        <h3 style="margin-bottom: 15px;">Azioni Medico</h3>
+        
+        <div class="info-group" id="confermaContainer">
+            </div>
+
+        <h4>Carica Nuova Prova</h4>
+        <form id="evidenceForm" style="margin-top: 15px;">
+            <div class="form-group">
+                <label>Tipo di Prova:</label>
+                <select id="tipoProva">
+                    <option value="sintomi">Sintomi</option>
+                    <option value="attrezzatura">Attrezzatura</option>
+                    <option value="prescrizione">Prescrizione</option>
+                    <option value="gps">GPS</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Valore / Descrizione:</label>
+                <input type="text" id="valoreProva" placeholder="Inserisci il referto, le coordinate, ecc..." required>
+            </div>
+            <button type="submit" style="background-color: #3498db;">Salva Prova</button>
+        </form>
+    </div>
+</div>
+
+<script>
+
+const urlParams = new URLSearchParams(window.location.search);
+const visitId = urlParams.get('id');
+
+document.addEventListener('DOMContentLoaded', caricaDettagli);
+
+async function caricaDettagli() {
+    if (!visitId) {
+        document.getElementById('visitInfo').innerHTML = "<p style='color:red;'>Nessun ID visita specificato.</p>";
+        return;
+    }
+
+    try {
+        const response = await fetch(`/visit/dettagliovisita/${visitId}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (!response.ok) throw new Error("Errore nel recupero dei dettagli");
+
+        const v = await response.json();
+        
+        const dataFormattata = new Date(v.timestamp).toLocaleString('it-IT');
+        const proveHtml = v.prove && v.prove.length > 0 
+            ? v.prove.map(p => p.tipo).join(', ') 
+            : 'Nessuna prova caricata';
+
+        document.getElementById('visitInfo').innerHTML = `
+            <div class="info-group"><span>ID Paziente:</span> ${v.paziente}</div>
+            <div class="info-group"><span>Data e Ora:</span> ${dataFormattata}</div>
+            <div class="info-group"><span>Stato:</span> ${v.confermata ? '✅ Confermata' : '⏳ In attesa di conferma'}</div>
+            <div class="info-group"><span>Prove Attuali:</span> ${proveHtml}</div>
+        `;
+
+        document.getElementById('actionPanel').style.display = 'block';
+
+        const confermaContainer = document.getElementById('confermaContainer');
+        if (!v.confermata) {
+            confermaContainer.innerHTML = `<button onclick="confermaVisita('${v.id}')">Conferma Questa Visita</button>`;
+        } else {
+            confermaContainer.innerHTML = `<p style="color: #27ae60; font-weight: bold;">✔ Visita Confermata</p>`;
+        }
+
+    } catch (err) {
+        document.getElementById('visitInfo').innerHTML = "<p style='color:red;'>Impossibile caricare i dettagli della visita.</p>";
+    }
+}
+
+async function confermaVisita(id) {
+    const response = await fetch(`/visit/visits/${id}/confirm`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    });
+    if (response.ok) {
+        alert("Visita confermata!");
+        caricaDettagli(); // Ricarica la pagina per aggiornare lo stato
+    }
+}
+
+document.getElementById('evidenceForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const tipo = document.getElementById('tipoProva').value;
+    const valore = document.getElementById('valoreProva').value;
+
+    const bodyData = { 
+        tipo: tipo,
+        valore: valore
+    };
+
+    try {
+        const response = await fetch(`/visit/addevidence/${visitId}`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}` 
+            },
+            body: JSON.stringify(bodyData)
+        });
+        
+        if (response.ok) {
+            alert("Prova salvata con successo!");
+            document.getElementById('valoreProva').value = '';
+            caricaDettagli();
+        } else {
+            const errData = await response.json();
+            alert("Errore: " + (errData.detail || "Salvataggio fallito."));
+        }
+    } catch (err) {
+        console.error(err);
+    }
+});
+</script>
+</body>
+</html>
