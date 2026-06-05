@@ -25,9 +25,7 @@ class VisitService:
         if visit_data.timestamp is None:
             raise MissingVisitDetailsException(detail="Timestamp visita obbligatorio.")
         
-        durata_minuti = os.getenv('DURATA_VISITA')
-        if durata_minuti is None:
-            raise MissingVisitDetailsException(detail="Durata visita non fornita, assicurarsi dell'esistenza dato.")
+        durata_minuti = int(os.getenv('DURATA_VISITA', '10'))
         
         duration = timedelta(minutes=int(durata_minuti))
         visit_time = visit_data.timestamp
