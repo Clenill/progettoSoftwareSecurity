@@ -50,13 +50,6 @@ class VisitService:
         except IntegrityError as err:
             raise MissingVisitDetailsException(detail="Dati visita errati.")
         return visit
-
-    @staticmethod
-    async def delete_visit(id: UUID, db: AsyncSession):
-        try:
-            await VisitRepository.delete_visit(db, id)
-        except NoResultFound as err:
-            raise MissingVisitDetailsException(detail="Visita non trovata.")
     
     @staticmethod
     async def add_evidence(
@@ -107,3 +100,24 @@ class VisitService:
             visit,
             current_user
         )
+    
+    @staticmethod
+    async def delete_visit(visit_id: UUID, current_user: User, db: AsyncSession):
+
+        visit = await VisitRepository.get_by_id(db, visit_id, current_user)
+
+        if not visit:
+            raise VisitNotFoundException()
+        
+        # Solo il medico assegnato può rimuovere la visita
+        # L'admin può rimuovere qualsiasi visita non confermata
+        if (visit.medico != current_user.id and current_user.ruolo != ruolo.AUTORITY):
+            raise UserNotAuthorizedException()
+        
+        # Non cancellabile se confermata
+        if visit.confermata:
+            raise VisitAlreadyConfirmedException()
+        
+        await VisitRepository.delete_visit(db, visit)
+        
+

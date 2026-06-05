@@ -140,3 +140,15 @@ async def get_all_system_visits(
     visite = result.scalars().all()
     
     return visite
+
+@router.delete("/denied-visit/{id}")
+async def delete_visit(id: UUID, current_user: User = Depends(
+    has_role_in([ruolo.MEDICO])
+), db: AsyncSession = Depends(get_db)
+):
+    await VisitService.delete_visit(
+        id,
+        current_user,
+        db
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

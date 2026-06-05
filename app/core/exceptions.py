@@ -113,3 +113,21 @@ class InvalidVisitDateException(AppException):
             detail="Data visita non valida, controllare il formato o che non sia passata",
             error_code=ErrorCode.INVALID_DATE
         )
+
+class VisitAlreadyConfirmedException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="La visita è già stata confermata",
+            error_code=ErrorCode.VISIT_ALREADY_CONFIRMED
+        )
+
+class VisitNotFoundException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=404,
+            detail="Visita non trovata",
+            error_code=ErrorCode.VISIT_NOT_FOUND
+        )

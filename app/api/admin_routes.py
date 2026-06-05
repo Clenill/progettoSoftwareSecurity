@@ -53,7 +53,7 @@ async def delete_visit(
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
     db: AsyncSession = Depends(get_db)
 ):
-    await VisitService.delete_visit(id, db)
+    await VisitService.delete_visit(id, current_user, db)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
     
 @router.post("/addevidence/{id}")

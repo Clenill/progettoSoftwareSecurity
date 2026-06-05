@@ -67,15 +67,6 @@ class VisitRepository:
         await db.commit()
         await db.refresh(visit)
         return visit
-    
-    @staticmethod
-    async def delete_visit(db: AsyncSession, id: UUID):
-        visit = await VisitRepository.get_by_id(db, id)
-        if not visit:
-            raise exc.NoResultFound("Visita non trovata")
-        else:
-            await db.delete(visit)
-            await db.commit()
 
     @staticmethod
     async def add_evidence(
@@ -122,3 +113,8 @@ class VisitRepository:
         await db.refresh(visit)
         return visit
 
+    @staticmethod
+    async def delete_visit(db: AsyncSession, visit: Visit):
+        await db.delete(visit)
+
+        await db.commit()
