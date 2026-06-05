@@ -36,3 +36,12 @@ Backend
 - Medico può rifiutare la visita e questa verrà cancellata a DB
 - La cancellazione visita può essere fatta se la visita non è avvenuta
 - query sulle visite ed evitare che queste si sovrappongono 
+
+# ULTERIORI VARIABILI DA AGGIUNGERE AL .env:
+RPC_PROVIDER_URL=indirizzo blockchain (locale: http://127.0.0.1:8545)
+CONTRACT_ADDRESS=indirizzo contratto dopo il deployment
+CONTRACT_ABI=path al file contenente l'output di compilazione del contratto
+PRIVATE_KEY=chiave privata indirizzo account blockchain
+W3_ACCOUNT=indirizzo account blockchain
+SCALE=100000000 # potenza di 10 che stabilisce la scala (precisione) dei float nel contratto
+
