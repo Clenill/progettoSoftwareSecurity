@@ -45,3 +45,8 @@ PRIVATE_KEY=chiave privata indirizzo account blockchain
 W3_ACCOUNT=indirizzo account blockchain
 SCALE=100000000 # potenza di 10 che stabilisce la scala (precisione) dei float nel contratto
 
+# nota: procedura per testare la app, ora che dipende anche dal contratto:
+1. Eseguire la rete hardhat con `npx hardhat node --hostname 0.0.0.0` da dentro la directory `blockchain`.
+2. In un'altro terminale, compilare il contratto con `npx hardhat compile` e poi effettuare il deployment con `npx hardhat ignition deploy ignition/modules/Oracle.ts`.
+3. Lanciare il server.
+
