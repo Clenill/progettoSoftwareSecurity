@@ -30,3 +30,6 @@ CONTRACT = w3.eth.contract(address=CONTRACT_ADDRESS, abi=CONTRACT_ABI)
 PRIVATE_KEY = getenv("PRIVATE_KEY", "")
 W3_ACCOUNT = w3.eth.account.from_key(PRIVATE_KEY)
 
+#SCALE = 10**8;
+SCALE = int(getenv("SCALE", str(10**8)))
+

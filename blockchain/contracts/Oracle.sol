@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
+import "hardhat/console.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
@@ -30,7 +31,7 @@ contract Oracle is AccessControl {
     }
 
     // attributes
-    bytes32 public constant VALIDATOR_ROLE = keccak256("VALIDATOR_ROLE");
+    bytes32 public constant PERMISSIONED_ROLE = keccak256("PERMISSIONED_ROLE");
 
     uint256 public scale;
     uint256 private _prior;
@@ -40,15 +41,15 @@ contract Oracle is AccessControl {
     mapping(bytes16 => uint256) private _visitIds;
 
     // events
-    event ValidatorAdded(address indexed validator);
-    event ValidatorRemoved(address indexed validator);
-    event VisitAdded(address indexed validator, bytes16 author, bytes16 visit);
-    event VisitEdited(address indexed validator, bytes16 author, bytes16 visit);
-    event VisitCancelled(address indexed validator, bytes16 author, bytes16 visit);
-    event EvidenceAdded(address indexed validator, bytes16 author, bytes16 visit, EvidenceType evidence);
-    event PriorSet(address indexed validator);
-    event LikelihoodSet(address indexed validator, EvidenceType evidence);
-    event LikelihoodRemoved(address indexed validator, EvidenceType evidence);
+    event PermissionedAccountAdded(address indexed account);
+    event PermissionedAccountRemoved(address indexed account);
+    event VisitAdded(address indexed account, bytes16 author, bytes16 visit);
+    event VisitEdited(address indexed account, bytes16 author, bytes16 visit);
+    event VisitCancelled(address indexed account, bytes16 author, bytes16 visit);
+    event EvidenceAdded(address indexed account, bytes16 author, bytes16 visit, EvidenceType evidence);
+    event PriorSet(address indexed account);
+    event LikelihoodSet(address indexed account, EvidenceType evidence);
+    event LikelihoodRemoved(address indexed account, EvidenceType evidence);
 
     // errors
     error VisitNotFound(bytes16 visit);
@@ -60,17 +61,18 @@ contract Oracle is AccessControl {
     error ZeroDivision(uint256 numerator, uint256 denominator);
 
     // constructor
-    constructor(address admin) {
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(VALIDATOR_ROLE, admin);
+    constructor(address admin_account, uint256 scale_value) {
+        _grantRole(DEFAULT_ADMIN_ROLE, admin_account);
+        _grantRole(PERMISSIONED_ROLE, admin_account);
         // lists should have an empty first element; nonexistent keys always get mapped to index 0
         _visits.push();
         _likelihoods.push();
+        scale = scale_value;
     }
 
     // modifiers
-    modifier isValidator() {
-        if(!hasRole(VALIDATOR_ROLE, msg.sender)) {
+    modifier isPermissioned() {
+        if(!hasRole(PERMISSIONED_ROLE, msg.sender)) {
             revert Unauthorized();
         }
         _;
@@ -124,7 +126,7 @@ contract Oracle is AccessControl {
             }
 
             ptrue = Math.mulDiv(ptrue, _likelihoods[index].ptrue, scale);
-            pfalse = Math.mulDiv(pfalse, _likelihoods[index].pfalse, scale);
+            pfalse = Math.mulDiv(pfalse, scale - _likelihoods[index].ptrue, scale);
         }
 
         (bool success, uint256 posterior) = Math.tryDiv(ptrue * scale, ptrue + pfalse);
@@ -135,23 +137,23 @@ contract Oracle is AccessControl {
         return posterior;
     }
 
-    function addValidator(address validator) public {
-        _grantRole(DEFAULT_ADMIN_ROLE, validator);
-        grantRole(VALIDATOR_ROLE, validator);
-        emit ValidatorAdded(validator);
+    function addPermissionedAccount(address account) public {
+        _grantRole(DEFAULT_ADMIN_ROLE, account);
+        grantRole(PERMISSIONED_ROLE, account);
+        emit PermissionedAccountAdded(account);
     }
 
-    function removeValidator(address validator) public {
-        if(validator == msg.sender) {
+    function removePermissionedAccount(address account) public {
+        if(account == msg.sender) {
             revert Unauthorized();
         }
 
-        _revokeRole(DEFAULT_ADMIN_ROLE, validator);
-        revokeRole(VALIDATOR_ROLE, validator);
-        emit ValidatorRemoved(validator);
+        _revokeRole(DEFAULT_ADMIN_ROLE, account);
+        revokeRole(PERMISSIONED_ROLE, account);
+        emit PermissionedAccountRemoved(account);
     }
 
-    function getFactPrior() public view isValidator returns (uint256) {
+    function getFactPrior() public view isPermissioned returns (uint256) {
         return _prior;
     }
 
@@ -160,11 +162,11 @@ contract Oracle is AccessControl {
         emit PriorSet(msg.sender);
     }
 
-    function getLikelihood(EvidenceType evidence) public view isValidator likelihoodExists(evidence) returns (EvidenceInfo memory) {
+    function getLikelihood(EvidenceType evidence) public view isPermissioned likelihoodExists(evidence) returns (EvidenceInfo memory) {
         return _likelihoods[_typeIds[evidence]];
     }
 
-    function setLikelihood(EvidenceInfo memory info) public isAdmin {
+    function setLikelihood(EvidenceInfo memory info) public isPermissioned {
         uint256 index = _typeIds[info.evidence];
         info.active = true;
         if(index == 0) {
@@ -179,42 +181,54 @@ contract Oracle is AccessControl {
         emit LikelihoodSet(msg.sender, info.evidence);
     }
 
-    function removeLikelihood(EvidenceType evidence) public isAdmin likelihoodExists(evidence) {
+    function removeLikelihood(EvidenceType evidence) public isPermissioned likelihoodExists(evidence) {
         _likelihoods[_typeIds[evidence]].active = false;
         emit LikelihoodRemoved(msg.sender, evidence);
     }
 
-    function getLikelihoods() public view isValidator returns (EvidenceInfo[] memory) {
+    function getLikelihoods() public view isPermissioned returns (EvidenceInfo[] memory) {
         return _likelihoods;
     }
 
-    function getVisit(bytes16 id) public view isValidator visitExists(id) returns (Visit memory, uint256) {
+    function getVisit(bytes16 id) public view isPermissioned visitExists(id) returns (Visit memory, uint256) {
         Visit storage visit = _visits[_visitIds[id]];
         return (visit, _getPosterior(visit));
     }
 
-    function addVisit(bytes16 author, bytes16 id, bytes16 physician, bytes16 patient) public isValidator newVisit(id) {
+    function getVisits() public view isPermissioned returns (Visit[] memory, uint256[] memory) {
+        uint256[] memory posteriors = new uint256[](_visits.length - 1);
+        Visit[] memory visits = new Visit[](_visits.length - 1);
+        for(uint256 i = 0; i < _visits.length - 1; ++i) {
+            visits[i] = _visits[i+1];
+            posteriors[i] = _getPosterior(_visits[i+1]);
+        }
+
+        return (visits, posteriors);
+    }
+
+    function addVisit(bytes16 author, bytes16 id, bytes16 physician, bytes16 patient) public isPermissioned newVisit(id) {
         Visit memory visit;
         visit.physician = physician;
         visit.patient = patient;
+        visit.active = true;
         _visits.push(visit);
         _visitIds[id] = _visits.length - 1;
         emit VisitAdded(msg.sender, author, id);
     }
 
-    function cancelVisit(bytes16 author, bytes16 id) public isValidator visitExists(id) {
+    function cancelVisit(bytes16 author, bytes16 id) public isPermissioned visitExists(id) {
         _visits[_visitIds[id]].active = false;
         emit VisitCancelled(msg.sender, author, id);
     }
 
-    function editVisit(bytes16 author, bytes16 id, bytes16 physician, bytes16 patient) public isValidator visitExists(id) {
+    function editVisit(bytes16 author, bytes16 id, bytes16 physician, bytes16 patient) public isPermissioned visitExists(id) {
         Visit storage visit = _visits[_visitIds[id]];
         visit.physician = physician;
         visit.patient = patient;
         emit VisitEdited(msg.sender, author, id);
     }
 
-    function addEvidence(bytes16 author, bytes16 id, EvidenceType evidence) public isValidator visitExists(id) {
+    function addEvidence(bytes16 author, bytes16 id, EvidenceType evidence) public isPermissioned visitExists(id) {
         Visit storage visit = _visits[_visitIds[id]];
         for(uint256 i = 0; i < visit.evidences.length; ++i) {
             if(evidence == visit.evidences[i]) {

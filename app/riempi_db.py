@@ -7,6 +7,8 @@ from app.core.security import hash_password
 from app.enum.ruolo import ruolo
 from app.db.models import Disponibilita
 
+from app.service.contract_service import ContractService
+
 
 async def aggiungi_disponibilita_fittizia(db, medico_id):
     # Generazione disponibilità per i prossimi 7 giorni
@@ -41,6 +43,17 @@ async def seed():
         
         await db.commit()
     async with SessionLocal() as db:
+        # Creazione autorità
+        autorita_id = uuid.uuid4()
+        autorita = User(
+            id=autorita_id,
+            name="Direzione Ospedale",
+            email="admin@ospedale.it",
+            hashed_password=hash_password("password123"),
+            attivo=True,
+            ruolo=ruolo.AUTORITY
+        )
+ 
         # Creazione medico
         medico_id = uuid.uuid4()
         medico = User(
@@ -50,8 +63,8 @@ async def seed():
             hashed_password=hash_password("password123"),
             attivo=True,
             ruolo=ruolo.MEDICO
-        )
-        
+        ) 
+       
         # Creazione paziente
         paziente_id = uuid.uuid4()
         paziente = User(
@@ -63,7 +76,7 @@ async def seed():
             ruolo=ruolo.PAZIENTE
         )
         
-        db.add_all([medico, paziente])
+        db.add_all([autorita, medico, paziente])
         await db.commit()
 
         # Creazione visita fittizia
@@ -74,12 +87,15 @@ async def seed():
             timestamp=datetime.now(timezone.utc), # Data corrente
             ruolo_paziente=ruolo.PAZIENTE,
             ruolo_medico=ruolo.MEDICO,
-            confermata = true
+            confermata=True
         )
         
         db.add(visita)
         await db.commit()
         print("Dati di prova inseriti con successo!")
+        # La visita è confermata => va inserita nel contratto
+        await db.refresh(visita)
+        await ContractService.add_visit(medico, visita)
         await aggiungi_disponibilita_fittizia(db, medico_id)
 
 if __name__ == "__main__":

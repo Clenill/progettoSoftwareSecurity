@@ -5,11 +5,14 @@ from app.db.database import get_db
 from app.db.models import User, Visit, Disponibilita
 from app.core.security import get_current_user, has_role_in
 from app.core.exceptions import UserNotAuthorizedException, InvalidCredentials
-from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate
+from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate, PriorUpdate, LikelihoodUpdate, ContractAccountInfoRequest
 from app.enum.ruolo import ruolo
-from app.enum.prova import PROVE_RUOLI
+from app.enum.prova import TipoProva, PROVE_RUOLI, ID_PROVE
 from app.service.visit_service import VisitService
 from app.service.user_service import UserService
+from app.service.contract_service import ContractService
+
+from app.core.config import CONTRACT, SCALE
 
 from uuid import UUID
 
@@ -25,18 +28,39 @@ async def admin_create_visit(
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])),
     db: AsyncSession = Depends(get_db)
 ):
-    return await VisitService.admin_create_visit(
+    visit = await VisitService.admin_create_visit(
         visit,
         db,
-        current_user
+        current_user, 
+        commit=False
     )
+    await ContractService.add_visit(current_user, visit)
+    await db.commit()
+    await db.refresh(visit)
+    return visit
 
 @router.get("/allvisits", response_model=list[VisitResponse])
 async def admin_get_all_visits(
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
     db: AsyncSession = Depends(get_db)
 ):
-    return await VisitService.get_visits(None, db)
+    visits = await VisitService.get_visits(None, db)
+    (bc_visits, probabilita_visite) = await ContractService.get_visits()
+    for (visit, bc_visit, probabilita) in zip(visits, bc_visits, probabilita_visite):
+        visit.probabilita = probabilita
+    return visits
+
+@router.get("/dettagliovisita/{id}", response_model=VisitResponse)
+async def admin_get_visit(
+    id: UUID, 
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
+    db: AsyncSession = Depends(get_db)
+):
+    visit = await VisitService.get_visit_by_id(id, None, db)
+    (bc_visit, probabilita) = await ContractService.get_visit(id)
+    # TODO: controlla coerenza tra gli UUID dello smart contract e quelli del DB
+    visit.probabilita = probabilita
+    return visit
 
 @router.put("/updatevisits/{id}", response_model=VisitResponse)
 async def edit_visit(
@@ -45,7 +69,11 @@ async def edit_visit(
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
     db: AsyncSession = Depends(get_db)
 ):
-    return await VisitService.edit_visit(id, visit, None, db)
+    visit = await VisitService.edit_visit(id, visit, None, db, commit=False)
+    await ContractService.edit_visit(current_user, visit)
+    await db.commit()
+    await db.refresh(visit)
+    return visit
 
 @router.delete("/deletevisit/{id}")
 async def delete_visit(
@@ -53,7 +81,13 @@ async def delete_visit(
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
     db: AsyncSession = Depends(get_db)
 ):
-    await VisitService.delete_visit(id, db)
+    visit = await VisitService.get_visit_by_id(id, None, db)
+    if visit.confermata:
+        await VisitService.cancel_visit(id, db, commit=False)
+        await ContractService.cancel_visit(current_user, id)
+        await db.commit()
+    else:
+        await VisitService.delete_visit(id, db, commit=True)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
     
 @router.post("/addevidence/{id}")
@@ -63,8 +97,9 @@ async def add_evidence(
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
     db: AsyncSession = Depends(get_db)
 ):
-    
-    await VisitService.add_evidence(id, evidence.tipo, current_user, db)
+    await VisitService.add_evidence(id, evidence.tipo, None, db, commit=False)
+    await ContractService.add_evidence(current_user, id, evidence.tipo)
+    await db.commit()
     return { 
         "message": "Prova aggiunta con successo",
         "visit_id": id,
@@ -77,4 +112,71 @@ async def active_new_user(
     current_user:User = Depends(has_role_in([ruolo.AUTORITY])),
     db: AsyncSession = Depends(get_db)
 ):
-    return UserService.active_user(id, db)
+    result = await UserService.active_user(id, db)
+
+@router.get("/probabilita/priori")
+async def get_prior(current_user: User = Depends(has_role_in([ruolo.AUTORITY]))):
+    prior = await ContractService.get_prior()
+    return {
+        "value": prior
+    }
+
+@router.post("/probabilita/priori")
+async def update_prior(
+    req: PriorUpdate, 
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY]))
+):
+    await ContractService.set_prior(req.value)
+    return { "message": "probabilità aggiornata" }
+
+@router.get("/probabilita/prove")
+async def get_likelihoods(
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY]))
+):
+    info_prove = await ContractService.get_likelihoods()
+    return info_prove
+
+@router.get("/probabilita/{tipo}")
+async def get_likelihood(
+    tipo: TipoProva, 
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY]))
+):
+    info = await ContractService.get_likelihood(tipo)
+    return info
+
+@router.post("/probabilita/prova")
+async def update_likelihood(
+    req: LikelihoodUpdate, 
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY]))
+):
+    await ContractService.set_likelihood(
+        req.tipo, 
+        req.ptrue, 
+        req.pfalse
+    )
+    return { "message": "probabilità aggiornata" }
+
+@router.delete("/probabilita/{tipo}")
+async def remove_likelihood(
+    tipo: TipoProva, 
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY]))
+):
+    await ContractService.remove_likelihood(tipo)
+    return { "message": "probabilità rimossa" }
+
+@router.post("/contract/grantpermissions")
+async def grant_contract_permissions(
+    account: ContractAccountInfoRequest, 
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY]))
+):
+    await ContractService.add_permissioned_account(account.address)
+    return { "message": "permessi aggiunti" }
+
+@router.delete("/contract/revokepermissions")
+async def revoke_contract_permissions(
+    account: ContractAccountInfoRequest, 
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY]))
+):
+    await ContractService.remove_permissioned_account(account.address)
+    return { "message": "permessi rimossi" }
+

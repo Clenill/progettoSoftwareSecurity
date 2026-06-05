@@ -28,6 +28,7 @@ class VisitCreate(BaseModel):
     paziente: UUID4
     medico: Optional[UUID4] = None
     timestamp: Optional[datetime] = None
+    confermata: Optional[bool] = None
 
 class VisitUpdate(BaseModel):
     paziente: Optional[UUID4] = None
@@ -44,6 +45,7 @@ class VisitResponse(BaseModel):
     timestamp: Optional[datetime]
 
     prove: List['EvidenceCreate'] = []
+    probabilita: Optional[float] | None = None
 
     class Config:
         from_attributes = True
@@ -55,4 +57,15 @@ class LoginRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class PriorUpdate(BaseModel):
+    value: float
+
+class LikelihoodUpdate(BaseModel):
+    tipo: TipoProva
+    ptrue: float
+    pfalse: float
+
+class ContractAccountInfoRequest(BaseModel):
+    address: str
 

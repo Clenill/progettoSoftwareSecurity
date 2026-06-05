@@ -14,19 +14,29 @@ from datetime import datetime, timezone
 class VisitRepository:
 
     @staticmethod
-    async def create(db: AsyncSession, visit_data: VisitCreate, user: User):
-        if visit_data.timestamp is not None and visit_data.timestamp <= datetime.now():
+    async def create(
+        db: AsyncSession, 
+        visit_data: VisitCreate, 
+        user: User, 
+        commit: bool = True):
+        if visit_data.timestamp is not None and visit_data.timestamp <= datetime.now(timezone.utc):
             raise InvalidVisitDateException()
+        confermata = visit_data.confermata
+        if confermata == None:
+            confermata = False
         visit = Visit(
             id = uuid4(), 
             paziente = visit_data.paziente, 
             medico = visit_data.medico, 
-            timestamp = visit_data.timestamp
+            timestamp = visit_data.timestamp, 
+            confermata = confermata
         )
 
         db.add(visit)
-        await db.commit()
-        await db.refresh(visit)
+        await db.flush()
+        if commit:
+            await db.commit()
+            await db.refresh(visit)
         return visit
     
     @staticmethod
@@ -56,7 +66,8 @@ class VisitRepository:
         db: AsyncSession, 
         id: UUID, 
         user: User | None, 
-        visit_data: VisitUpdate
+        visit_data: VisitUpdate, 
+        commit: bool = True
     ):
         visit = await VisitRepository.get_by_id(db, id, user)
         if not visit:
@@ -64,25 +75,28 @@ class VisitRepository:
         data = visit_data.model_dump(exclude_unset=True)
         for k,v in data.items():
             setattr(visit, k, v)
-        await db.commit()
-        await db.refresh(visit)
+        if commit:
+            await db.commit()
+            await db.refresh(visit)
         return visit
     
     @staticmethod
-    async def delete_visit(db: AsyncSession, id: UUID):
+    async def delete_visit(db: AsyncSession, id: UUID, commit: bool = True):
         visit = await VisitRepository.get_by_id(db, id)
         if not visit:
             raise exc.NoResultFound("Visita non trovata")
         else:
             await db.delete(visit)
-            await db.commit()
+            if commit:
+                await db.commit()
 
     @staticmethod
     async def add_evidence(
         db: AsyncSession, 
         id: UUID, 
         tipo: TipoProva, 
-        user: User
+        user: User | None, 
+        commit: bool = True
     ):
         visit = await VisitRepository.get_by_id(db, id, user)
         if not visit:
@@ -100,8 +114,9 @@ class VisitRepository:
         )
 
         db.add(evidence)
-        await db.commit()
-        await db.refresh(evidence)
+        if commit:
+            await db.commit()
+            await db.refresh(evidence)
         return evidence
     
     @staticmethod
@@ -113,12 +128,13 @@ class VisitRepository:
         return result.scalars().all()
 
     @staticmethod
-    async def confirm_visit(db: AsyncSession, visit_id: UUID):
+    async def confirm_visit(db: AsyncSession, visit_id: UUID, commit: bool = True):
         visit = await db.get(Visit, visit_id)
         if not visit:
             raise Exception("Visita non trovata")
         visit.confermata = True
-        await db.commit()
-        await db.refresh(visit)
+        if commit:
+            await db.commit()
+            await db.refresh(visit)
         return visit
 

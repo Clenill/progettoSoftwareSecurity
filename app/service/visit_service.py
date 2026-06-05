@@ -18,10 +18,11 @@ class VisitService:
     async def create_visit(
         visit_data: VisitCreate, 
         user: User, 
-        db: AsyncSession
+        db: AsyncSession, 
+        commit: bool = True
     ):
         try:
-            return await VisitRepository.create(db, visit_data, user)
+            return await VisitRepository.create(db, visit_data, user, commit)
         except IntegrityError:
             raise MissingVisitDetailsException(detail="Dati visita errati.")
 
@@ -41,10 +42,11 @@ class VisitService:
         id: UUID, 
         visit_data: VisitUpdate, 
         user: User | None, 
-        db: AsyncSession
+        db: AsyncSession, 
+        commit: bool = True
     ):
         try:
-            visit = (await VisitRepository.edit_visit(db, id, user, visit_data))
+            visit = (await VisitRepository.edit_visit(db, id, user, visit_data, commit))
         except NoResultFound as err:
             raise MissingVisitDetailsException(detail="Visita non trovata.")
         except IntegrityError as err:
@@ -52,9 +54,9 @@ class VisitService:
         return visit
 
     @staticmethod
-    async def delete_visit(id: UUID, db: AsyncSession):
+    async def delete_visit(id: UUID, db: AsyncSession, commit: bool = True):
         try:
-            await VisitRepository.delete_visit(db, id)
+            await VisitRepository.delete_visit(db, id, commit)
         except NoResultFound as err:
             raise MissingVisitDetailsException(detail="Visita non trovata.")
     
@@ -62,11 +64,12 @@ class VisitService:
     async def add_evidence(
         id: UUID, 
         tipo: TipoProva, 
-        user: User, 
-        db: AsyncSession
+        user: User | None, 
+        db: AsyncSession, 
+        commit: bool = True
     ):
         try:
-            await VisitRepository.add_evidence(db, id, tipo, user)
+            await VisitRepository.add_evidence(db, id, tipo, user, commit)
         except NoResultFound as e:
             raise MissingVisitDetailsException(detail="Visita non trovata.")
         except ValueError as e:
@@ -79,7 +82,8 @@ class VisitService:
     async def admin_create_visit(
         visit: VisitCreate,
         db: AsyncSession,
-        current_user: User
+        current_user: User, 
+        commit: bool = True
     ):
         if (
             visit.timestamp is not None
@@ -105,5 +109,22 @@ class VisitService:
         return await VisitRepository.create(
             db,
             visit,
-            current_user
+            current_user, 
+            commit
         )
+
+    @staticmethod
+    async def confirm_visit(
+        db: AsyncSession, 
+        id: UUID, 
+        commit: bool = True
+    ):
+        return await VisitRepository.confirm_visit(db, id, commit)
+
+    @staticmethod
+    async def get_visits_by_doctor(
+        db: AsyncSession, 
+        id: UUID
+    ):
+        return await VisitRepository.get_visits_by_doctor(db, id)
+

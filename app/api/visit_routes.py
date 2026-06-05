@@ -4,14 +4,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate
 from app.service.visit_service import VisitService
+from app.service.contract_service import ContractService
 from app.core.exceptions import *
 from app.core.security import get_current_user, has_role_in
+from app.core.config import CONTRACT
 from app.db.models import User
 from app.enum.ruolo import ruolo
-from app.enum.prova import PROVE_RUOLI
+from app.enum.prova import PROVE_RUOLI, ID_PROVE
 from uuid import UUID
 from datetime import datetime, timezone
-from app.repositories.visit_repository import VisitRepository
 
 router = APIRouter(
     prefix="/visit",
@@ -70,7 +71,11 @@ async def edit_visit(
     if visit.timestamp < datetime.now(timezone.utc):
         raise InvalidVisitDateException()
     
-    return await VisitService.edit_visit(id, visit, current_user, db)
+    visit = await VisitService.edit_visit(id, visit, current_user, db, commit=False)
+    await ContractService.edit_visit(current_user, visit)
+    await db.commit()
+    await db.refresh(visit)
+    return visit
 
 @router.post("/addevidence/{id}")
 async def add_evidence(
@@ -82,12 +87,14 @@ async def add_evidence(
     if evidence.tipo not in PROVE_RUOLI[current_user.ruolo]:
         raise InvalidCredentials()
     
-    await VisitService.add_evidence(id, evidence.tipo, current_user, db)
-    return { 
+    await VisitService.add_evidence(id, evidence.tipo, current_user, db, commit=False)
+    await ContractService.add_evidence(current_user, id, evidence.tipo)
+    await db.commit()
+    return {
         "message": "Prova aggiunta con successo",
         "visit_id": id,
         "evidence_type": evidence.tipo
-        }
+    }
 
 
 @router.get("/visits/my-agenda")
@@ -96,7 +103,7 @@ async def get_my_agenda(
     db: AsyncSession = Depends(get_db)
 ):
     # Ritorna tutte le visite assegnate a questo medico
-    return await VisitRepository.get_visits_by_doctor(db, current_user.id)
+    return await VisitService.get_visits_by_doctor(db, current_user.id)
 
 @router.put("/visits/{id}/confirm")
 async def confirm_visit(
@@ -104,7 +111,11 @@ async def confirm_visit(
     current_user: User = Depends(has_role_in([ruolo.MEDICO])),
     db: AsyncSession = Depends(get_db)
 ):
-    return await VisitRepository.confirm_visit(db, id)
+    visit = await VisitService.confirm_visit(db, id, commit=False)
+    await ContractService.add_visit(current_user, visit)
+    await db.commit()
+    await db.refresh(visit)
+    return visit
 
 @router.post("/visits/prenota", response_model=VisitResponse)
 async def prenota_visita(
@@ -121,3 +132,4 @@ async def prenota_visita(
         raise MissingVisitDetailsException(detail="Il medico deve essere specificato")
         
     return await VisitService.create_visit(visit, current_user, db)
+
