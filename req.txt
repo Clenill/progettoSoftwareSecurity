@@ -33,6 +33,6 @@ Frontend
 
 Backend
 - Check orario visita prima di crearla (5 minuti variabile .env)
-- Medico può rifiutare la visita e questa verrà cancellata a DB
-- La cancellazione visita può essere fatta se la visita non è avvenuta
+- Medico può rifiutare la visita e questa verrà cancellata a DB --------------- FATTO
+- La cancellazione visita può essere fatta se la visita non è avvenuta ---------- FATTO
 - query sulle visite ed evitare che queste si sovrappongono 

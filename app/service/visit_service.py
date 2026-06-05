@@ -11,6 +11,8 @@ from uuid import UUID
 from datetime import datetime, timezone
 from app.core.exceptions import *
 from app.service.user_service import UserService
+from datetime import timedelta, timezone
+import os
 
 class VisitService:
 
@@ -20,6 +22,32 @@ class VisitService:
         user: User, 
         db: AsyncSession
     ):
+        if visit_data.timestamp is None:
+            raise MissingVisitDetailsException(detail="Timestamp visita obbligatorio.")
+        
+        durata_minuti = os.getenv('DURATA_VISITA')
+        if durata_minuti is None:
+            raise MissingVisitDetailsException(detail="Durata visita non fornita, assicurarsi dell'esistenza dato.")
+        
+        duration = timedelta(minutes=int(durata_minuti))
+        visit_time = visit_data.timestamp
+
+        # Timezone-aware
+        if visit_time.tzinfo is None:
+            visit_time = visit_time.replace(tzinfo=timezone.utc) # o ZoneInfo("Europe/Rome"
+        start_window = visit_time
+        end_window = visit_time + duration
+
+        existing_visit = (
+            await VisitRepository.get_doctor_visits_between(
+                db=db, doctor_id=visit_data.medico, 
+                start_time=start_window, end_time=end_window
+            )
+        )
+
+        if existing_visit:
+            raise VisitTimeConflictException()
+
         try:
             return await VisitRepository.create(db, visit_data, user)
         except IntegrityError:
@@ -117,6 +145,13 @@ class VisitService:
         # Non cancellabile se confermata
         if visit.confermata:
             raise VisitAlreadyConfirmedException()
+        
+        # Visita già avvenuta
+        if (
+            visit.timestamp is not None and
+            visit.timestamp <= datetime.now(timezone.utc)
+        ):
+            raise VisitAlreadyOccurredException()
         
         await VisitRepository.delete_visit(db, visit)
         

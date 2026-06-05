@@ -30,6 +30,23 @@ class VisitRepository:
         return visit
     
     @staticmethod
+    async def get_doctor_visits_between(
+        db: AsyncSession,
+        doctor_id: UUID,
+        start_time: datetime,
+        end_time: datetime
+    ):
+        result = await db.execute(
+            select(Visit).where(
+                Visit.medico == doctor_id,
+                Visit.timestamp >= start_time,
+                Visit.timestamp < end_time
+            )
+        )
+
+        return result.scalars().all()
+    
+    @staticmethod
     async def get_all(db: AsyncSession, user: User | None = None):
         statement = select(Visit).options(joinedload(Visit.prove))
         if user:

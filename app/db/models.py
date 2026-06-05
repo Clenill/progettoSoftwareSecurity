@@ -70,7 +70,7 @@ class Visit(Base):
         UUID,
         nullable=False
     )
-    medico: Mapped[uuid.UUID | None] = mapped_column(
+    medico: Mapped[uuid.UUID] = mapped_column(
         UUID,
         nullable=True,
         default=None

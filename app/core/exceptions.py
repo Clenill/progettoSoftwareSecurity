@@ -131,3 +131,21 @@ class VisitNotFoundException(AppException):
             detail="Visita non trovata",
             error_code=ErrorCode.VISIT_NOT_FOUND
         )
+
+class VisitAlreadyOccurredException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="La visita è già avvenuta e non può essere cancellata",
+            error_code=ErrorCode.VISIT_ALREADY_OCCURRED
+        )
+
+class VisitTimeConflictException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=409,
+            detail="Esiste già una visita nell'intervallo richiesto",
+            error_code=ErrorCode.VISIT_TIME_CONFLICT
+        )

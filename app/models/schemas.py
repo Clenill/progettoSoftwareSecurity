@@ -26,7 +26,7 @@ class UserResponse(BaseModel):
 
 class VisitCreate(BaseModel):
     paziente: UUID4
-    medico: Optional[UUID4] = None
+    medico: UUID4
     timestamp: Optional[datetime] = None
 
 class VisitUpdate(BaseModel):
