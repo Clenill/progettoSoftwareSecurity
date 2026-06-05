@@ -74,10 +74,35 @@ async def get_current_user(
         
     return user
 
+async def get_current_user_due(
+    token: str = Depends(oauth2_scheme), 
+    db: AsyncSession = Depends(get_db)
+):
+    
+    try:
+        print(token)
+        # AGGIUNGI QUESTE RIGHE: Rimuove "Bearer " se presente
+        if token.startswith("Bearer "):
+            token = token.replace("Bearer ", "")
+            
+        # Decodifica JWT
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("sub")
+
+        if email is None or not isinstance(email, str):
+            return None
+    except:
+        return None
+    
+    # Ricerca utente nel DB - Usa il metodo statico della classe
+    from app.service.user_service import UserService
+    user = await UserService.get_user_by_email(email, db)
+        
+    return user
+
 def has_role_in(roles: list[ruolo]):
     def _has_role_in(user: User = Depends(get_current_user)):
         if user.ruolo not in roles:
             raise HTTPException(status_code=403)
         return user
     return _has_role_in
-

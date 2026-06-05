@@ -4,7 +4,6 @@ class ruolo(str, Enum):
     PAZIENTE ='utente'
     MEDICO='staff'
     AUTORITY='admin'
-    ADMIN='amministratore'
 
 
 

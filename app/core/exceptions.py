@@ -14,6 +14,20 @@ class AppException(Exception):
 
         super().__init__(detail)
 
+class VisitException(Exception):
+
+    def __init__(
+        self,
+        status_code: int,
+        detail: str,
+        error_code: ErrorCode
+    ):
+        self.status_code = status_code
+        self.detail = detail
+        self.error_code = error_code
+
+        super().__init__(detail)
+
 class UserNotFoundException(AppException):
 
     def __init__(self):
@@ -141,7 +155,7 @@ class VisitAlreadyOccurredException(AppException):
             error_code=ErrorCode.VISIT_ALREADY_OCCURRED
         )
 
-class VisitTimeConflictException(AppException):
+class VisitTimeConflictException(VisitException):
 
     def __init__(self):
         super().__init__(

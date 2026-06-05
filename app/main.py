@@ -1,11 +1,13 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 from app.db.database import engine
 from app.db.models import Base
-from app.api.routes import router            
+from app.api.routes import router   
+from pathlib import Path
 from app.api.ui_routes import ui_router
 from app.core.exceptions import AppException
 from app.api.auth_routes import router as auth_router
@@ -27,6 +29,10 @@ async def lifespan(app: FastAPI):
 
     # Shutdon
     print("Server spento")
+
+# Configurazione Jinja2
+BASE_PATH = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
 app = FastAPI(lifespan=lifespan)
 
@@ -51,10 +57,12 @@ async def app_exception_handler(
     exc: AppException
 ):
 
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "error_code": exc.error_code,
-            "detail": exc.detail
-        }
-    )
+    return templates.TemplateResponse(request=request, name="pagina_errore.html",
+           context= {
+            "status_code" : exc.status_code,
+            "content" : {
+                "status_code": exc.status_code,
+                "error_code": exc.error_code,
+                "detail": exc.detail
+                }   
+            })

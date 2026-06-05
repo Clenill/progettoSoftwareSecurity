@@ -67,9 +67,6 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
             window.location.href = '/dashboard/staff';
         } else if (role === 'admin') {
             window.location.href = '/dashboard/authority';
-        } 
-        else if (role === 'amministratore') {
-            window.location.href = '/dashboard/admin';
         } else {
             alert('Ruolo non riconosciuto.');
         }
