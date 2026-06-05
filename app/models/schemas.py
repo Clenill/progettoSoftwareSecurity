@@ -42,6 +42,7 @@ class VisitResponse(BaseModel):
     id: UUID4
     paziente: UUID4
     medico: Optional[UUID4]
+    confermata: bool
     timestamp: Optional[datetime]
 
     prove: List['EvidenceCreate'] = []

@@ -282,6 +282,12 @@ button:hover { background-color: #2980b9; }
 .link-login { display: block; text-align: center; margin-top: 15px; font-size: 14px; text-decoration: none; color: #3498db; }
 .link-login:hover { text-decoration: underline; }
 
+.badge-auth { background-color: #8e44ad; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }
+.control-panel { display: none; margin-top: 10px; background: #fdfefe; padding: 15px; border: 1px solid #d0d3d4; border-radius: 6px; }
+.control-panel select, .control-panel input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px; width: 100%; box-sizing: border-box;}
+.btn-supervise { background-color: #8e44ad; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+.btn-supervise:hover { background-color: #732d91; }
+
 /* Responsive Design */
 @media (max-width: 600px) {
     .nav-container {

@@ -41,7 +41,8 @@
             <select id="ruolo" required>
                 <option value="utente">Paziente</option>
                 <option value="staff">Medico</option>
-                <option value="staff">Admin</option>
+                <option value="amministratore">Admin</option>
+                <option value="admin">Authority</option>
             </select>
         </div>
         <button type="submit">Registrati</button>
@@ -74,7 +75,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
                 email: email, 
                 password: password,
                 ruolo: ruolo,
-                attivo: false
+                attivo: true
             })
         });
 
