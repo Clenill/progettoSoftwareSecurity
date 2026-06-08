@@ -55,11 +55,31 @@ class User(Base):
 
 class Visit(Base):
     __tablename__ = "visits"
-    confermata: Mapped[bool] = mapped_column(Boolean, default=False)
-    id = Column(UUID(), primary_key=True, index=True)
-    paziente = Column(UUID(), nullable=False)
-    medico = Column(UUID(), nullable=True, default=None)
-    timestamp = Column(DateTime(timezone=True), nullable=True, default=None)
+
+    confermata: Mapped[bool] = mapped_column(
+        Boolean, 
+        default=False
+        )
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID,
+        primary_key=True,
+        index=True
+    )
+
+    paziente: Mapped[uuid.UUID] = mapped_column(
+        UUID,
+        nullable=False
+    )
+    medico: Mapped[uuid.UUID] = mapped_column(
+        UUID,
+        nullable=True,
+        default=None
+    )
+    timestamp: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None
+    )
 
     # per vincolare il ruolo degli utenti coinvolti nella visita
     ruolo_paziente = Column(

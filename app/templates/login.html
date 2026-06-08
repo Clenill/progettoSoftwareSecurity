@@ -52,13 +52,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         }
 
         const data = await response.json();
-        
-        // Salviamo il token JWT nel localStorage per le chiamate future
-        localStorage.setItem('token', data.access_token);
-
-        // Decodifica JWT lato client per capire il ruolo
-        const payload = JSON.parse(atob(data.access_token.split('.')[1]));
-        const role = payload.role;
+        const role = data.role;
 
         // Reindirizzamento in base al ruolo dell'enum
         if (role === 'utente') {
@@ -67,13 +61,9 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
             window.location.href = '/dashboard/staff';
         } else if (role === 'admin') {
             window.location.href = '/dashboard/authority';
-        } 
-        else if (role === 'amministratore') {
-            window.location.href = '/dashboard/admin';
         } else {
             alert('Ruolo non riconosciuto.');
         }
-
     } catch (err) {
         errorMsg.textContent = "Errore di connessione al server";
         errorMsg.style.display = 'block';

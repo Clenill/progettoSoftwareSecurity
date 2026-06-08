@@ -18,7 +18,8 @@ class VisitRepository:
         db: AsyncSession, 
         visit_data: VisitCreate, 
         user: User, 
-        commit: bool = True):
+        commit: bool = True
+    ):
         if visit_data.timestamp is not None and visit_data.timestamp <= datetime.now(timezone.utc):
             raise InvalidVisitDateException()
         confermata = visit_data.confermata
@@ -38,6 +39,23 @@ class VisitRepository:
             await db.commit()
             await db.refresh(visit)
         return visit
+    
+    @staticmethod
+    async def get_doctor_visits_between(
+        db: AsyncSession,
+        doctor_id: UUID,
+        start_time: datetime,
+        end_time: datetime
+    ):
+        result = await db.execute(
+            select(Visit).where(
+                Visit.medico == doctor_id,
+                Visit.timestamp >= start_time,
+                Visit.timestamp < end_time
+            )
+        )
+
+        return result.scalars().all()
     
     @staticmethod
     async def get_all(db: AsyncSession, user: User | None = None):
@@ -89,6 +107,18 @@ class VisitRepository:
             await db.delete(visit)
             if commit:
                 await db.commit()
+
+    @staticmethod
+    async def cancel_visit(db: AsyncSession, id: UUID, commit: bool = True):
+        visit = await VisitRepository.get_by_id(db, id)
+        if not visit:
+            raise exc.NoResultFound("Visita non trovata")
+        else:
+            # visit.annullata = True
+            if commit:
+                await db.commit()
+                await db.refresh(visit)
+        return visit
 
     @staticmethod
     async def add_evidence(

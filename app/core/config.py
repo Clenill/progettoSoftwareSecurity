@@ -2,19 +2,25 @@
 from os import getenv
 from json import load
 from web3 import Web3
+from dotenv import load_dotenv
+from string import ascii_letters, digits
+from secrets import choice
 
-# database
-DB_USERNAME = getenv("DB_USERNAME", "")
-DB_PASSWORD = getenv("DB_PASSWORD", "")
-DB_NAME = getenv("DB_NAME", "")
-DB_HOST = getenv("DB_HOST", "")
+load_dotenv()
+
+# Variabili d'ambiente
+DB_USERNAME = getenv("DB_USERNAME", "username")
+DB_PASSWORD = getenv("DB_PASSWORD", "password")
+DB_NAME = getenv("DB_NAME", "database")
 DB_PORT = getenv("DB_PORT", "5432")
-
-# api
+DB_HOST = getenv("DB_HOST", "localhost")
 APP_PORT = getenv("APP_PORT", "8000")
-ALGORITHM = getenv("ALGORITHM", "")
-SECRET_KEY = getenv("SECRET_KEY", "")
-ACCESS_TOKEN_EXPIRE_MINUTES = getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
+SECRET_KEY = getenv("SECRET_KEY", ''.join(
+    # Se non presente, genera una chiave casuale
+    [choice(ascii_letters + digits) for x in range(20)]
+))
+ALGORITHM = getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "5"))
 
 # web3
 RPC_PROVIDER_URL = getenv("RPC_PROVIDER_URL", "")
@@ -30,6 +36,5 @@ CONTRACT = w3.eth.contract(address=CONTRACT_ADDRESS, abi=CONTRACT_ABI)
 PRIVATE_KEY = getenv("PRIVATE_KEY", "")
 W3_ACCOUNT = w3.eth.account.from_key(PRIVATE_KEY)
 
-#SCALE = 10**8;
 SCALE = int(getenv("SCALE", str(10**8)))
 

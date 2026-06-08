@@ -4,7 +4,7 @@ from passlib.context import CryptContext
 import os
 from dotenv import load_dotenv
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Cookie
 from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import InvalidCredentials
@@ -46,33 +46,44 @@ def create_access_token(data: dict):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-async def get_current_user(
-    token: str = Depends(oauth2_scheme), 
-    db: AsyncSession = Depends(get_db)
-):
-    
-    try:
-        # AGGIUNGI QUESTE RIGHE: Rimuove "Bearer " se presente
-        if token.startswith("Bearer "):
-            token = token.replace("Bearer ", "")
-            
-        # Decodifica JWT
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email = payload.get("sub")
-
-        if email is None or not isinstance(email, str):
+def get_current_user_parent(fail_without_exception: bool = False):
+    async def _get_current_user(
+        access_token: str | None = Cookie(None), 
+        db: AsyncSession = Depends(get_db)
+    ):
+        if not access_token:
+            if fail_without_exception:
+                return None
             raise InvalidCredentials()
-    except:
-        raise InvalidCredentials
-    
-    # Ricerca utente nel DB - Usa il metodo statico della classe
-    from app.service.user_service import UserService
-    user = await UserService.get_user_by_email(email, db)
-    
-    if user is None:
-        raise InvalidCredentials
-        
-    return user
+
+        try:
+            if access_token.startswith("Bearer "):
+                access_token = access_token.replace("Bearer ", "")
+
+            payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+            email = payload.get("sub")
+
+            if email is None or not isinstance(email, str):
+                if fail_without_exception:
+                    return None
+                raise InvalidCredentials()
+        except:
+            if fail_without_exception:
+                return None
+            raise InvalidCredentials()
+
+        from app.service.user_service import UserService
+        user = await UserService.get_user_by_email(email, db)
+
+        if not fail_without_exception and user is None:
+            raise InvalidCredentials()
+
+        return user
+
+    return _get_current_user
+
+get_current_user = get_current_user_parent(False)
+get_current_user_or_none = get_current_user_parent(True)
 
 def has_role_in(roles: list[ruolo]):
     def _has_role_in(user: User = Depends(get_current_user)):
@@ -80,4 +91,3 @@ def has_role_in(roles: list[ruolo]):
             raise HTTPException(status_code=403)
         return user
     return _has_role_in
-

@@ -15,6 +15,20 @@ class AppException(Exception):
 
         super().__init__(detail, *args)
 
+class VisitException(Exception):
+
+    def __init__(
+        self,
+        status_code: int,
+        detail: str,
+        error_code: ErrorCode
+    ):
+        self.status_code = status_code
+        self.detail = detail
+        self.error_code = error_code
+
+        super().__init__(detail)
+
 class UserNotFoundException(AppException):
 
     def __init__(self):
@@ -150,7 +164,16 @@ class FunctionNotFoundException(AppException):
             name, 
             status_code=503, 
             detail="Funzione non disponibile", 
-            error_code=ErrorCode.FUNCTION_NOT_FOUND, 
+            error_code=ErrorCode.FUNCTION_NOT_FOUND
+        )
+
+class VisitAlreadyConfirmedException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="La visita è già stata confermata",
+            error_code=ErrorCode.VISIT_ALREADY_CONFIRMED
         )
 
 class VisitNotFoundException(AppException):
@@ -162,16 +185,7 @@ class VisitNotFoundException(AppException):
             error_code=ErrorCode.VISIT_NOT_FOUND
         )
 
-class DuplicateVisitException(AppException):
-
-    def __init__(self):
-        super().__init__(
-            status_code=400, 
-            detail="Visita già inserita", 
-            error_code=ErrorCode.DuplicateVisit
-        )
-
-class DuplicateEvidenceException(AppException):
+class EvidenceAlreadyAddedException(AppException):
 
     def __init__(self):
         super().__init__(
@@ -180,3 +194,20 @@ class DuplicateEvidenceException(AppException):
             error_code=ErrorCode.DuplicateEvidence
         )
 
+class VisitAlreadyOccurredException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="La visita è già avvenuta e non può essere cancellata",
+            error_code=ErrorCode.VISIT_ALREADY_OCCURRED
+        )
+
+class VisitTimeConflictException(VisitException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=409,
+            detail="Esiste già una visita nell'intervallo richiesto",
+            error_code=ErrorCode.VISIT_TIME_CONFLICT
+        )

@@ -151,7 +151,7 @@ class ContractService:
         except ContractLogicError as e:
             error = ContractRepository._get_error_name(CONTRACT, e)
             if error == "DuplicateVisit":
-                raise DuplicateVisitException()
+                raise VisitAlreadyAddedException()
 
     @staticmethod
     async def cancel_visit(current_user: User, id: UUID):
@@ -202,5 +202,5 @@ class ContractService:
             if error == "VisitNotFound":
                 raise VisitNotFoundException()
             elif error == "DuplicateEvidence":
-                raise DuplicateEvidenceException()
+                raise EvidenceAlreadyAddedException()
 

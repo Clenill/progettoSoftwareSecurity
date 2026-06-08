@@ -1,13 +1,10 @@
 from fastapi import APIRouter, Request, Depends
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.database import get_db 
-from app.core.security import get_current_user
+from app.core.security import has_role_in, get_current_user_or_none
 from app.db.models import User
-
-from app.db.database import get_db
+from app.enum.ruolo import ruolo
 
 ui_router = APIRouter()
 
@@ -16,9 +13,18 @@ BASE_PATH = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
 @ui_router.get("/", response_class=HTMLResponse)
-async def login_page(request: Request):
+async def login_page(request: Request, current_user: User | None = Depends(get_current_user_or_none)):
     """Pagina di login"""
-    return templates.TemplateResponse(request=request, name="login.html")
+    if current_user == None:
+        return templates.TemplateResponse(request=request, name="login.html")
+    
+    if current_user.ruolo == ruolo.PAZIENTE:
+        return RedirectResponse("/dashboard/utente")
+    elif current_user.ruolo == ruolo.AUTORITY:
+        return RedirectResponse("/dashboard/authority")
+    elif current_user.ruolo == ruolo.MEDICO:
+        return RedirectResponse("/dashboard/staff")
+
 
 @ui_router.get("/registrazione", response_class=HTMLResponse)
 async def register_page(request: Request):
@@ -50,11 +56,16 @@ async def dettagli_visita_page(request: Request):
     return templates.TemplateResponse(request=request, name="dettagli_visita.html")
 
 @ui_router.get("/dashboard/admin", response_class=HTMLResponse)
-async def dashboard_admin(request: Request):
+async def dashboard_admin(request: Request, current_user: User = Depends(has_role_in([ruolo.AUTORITY]))):
     """Area riservata all'Autorità di Controllo"""
     return templates.TemplateResponse(request=request, name="dashboard_admin.html")
 
 @ui_router.get("/dashboard/authority", response_class=HTMLResponse)
-async def dashboard_authority(request: Request):
+async def dashboard_authority(request: Request, current_user: User = Depends(has_role_in([ruolo.AUTORITY]))):
     """Area riservata all'Autorità di Controllo"""
     return templates.TemplateResponse(request=request, name="dashboard_authority.html")
+
+@ui_router.get("/errore", response_class=HTMLResponse)
+async def errore(request: Request):
+    """Qualcosa è andato storto"""
+    return templates.TemplateResponse(request=request, name="pagina_errore.html")

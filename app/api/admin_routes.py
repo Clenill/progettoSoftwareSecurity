@@ -83,11 +83,11 @@ async def delete_visit(
 ):
     visit = await VisitService.get_visit_by_id(id, None, db)
     if visit.confermata:
-        await VisitService.cancel_visit(id, db, commit=False)
+        #await VisitService.cancel_visit(id, current_user, db, commit=False)
         await ContractService.cancel_visit(current_user, id)
-        await db.commit()
+        #await db.commit()
     else:
-        await VisitService.delete_visit(id, db, commit=True)
+        await VisitService.delete_visit(id, current_user, db, commit=True)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
     
 @router.post("/addevidence/{id}")
