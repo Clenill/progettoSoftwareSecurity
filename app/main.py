@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.db.database import engine
 from app.db.models import Base
@@ -36,6 +37,13 @@ templates = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware, 
+    allow_credentials=True, 
+    allow_methods=["*"], 
+    allow_headers=["*"]
+)
+
 # Configura la cartella dei file statici
 app.mount("/css", StaticFiles(directory="app/css"), name="static")
 
@@ -57,12 +65,15 @@ async def app_exception_handler(
     exc: AppException
 ):
 
-    return templates.TemplateResponse(request=request, name="pagina_errore.html",
-           context= {
+    return templates.TemplateResponse(
+        request=request, 
+        name="pagina_errore.html",
+        context= {
             "status_code" : exc.status_code,
             "content" : {
                 "status_code": exc.status_code,
                 "error_code": exc.error_code,
                 "detail": exc.detail
-                }   
-            })
+            }
+        }
+    )

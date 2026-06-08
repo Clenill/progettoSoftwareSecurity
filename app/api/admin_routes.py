@@ -2,12 +2,10 @@ from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
-from app.db.models import User, Visit, Disponibilita
-from app.core.security import get_current_user, has_role_in
-from app.core.exceptions import UserNotAuthorizedException, InvalidCredentials
+from app.db.models import User
+from app.core.security import has_role_in
 from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate
 from app.enum.ruolo import ruolo
-from app.enum.prova import PROVE_RUOLI
 from app.service.visit_service import VisitService
 from app.service.user_service import UserService
 

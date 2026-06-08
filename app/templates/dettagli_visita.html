@@ -79,7 +79,7 @@ async function caricaDettagli() {
 
     try {
         const response = await fetch(`/visit/dettagliovisita/${visitId}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            credentials: 'same-origin'
         });
 
         if (!response.ok) throw new Error("Errore nel recupero dei dettagli");
@@ -115,7 +115,7 @@ async function caricaDettagli() {
 async function confermaVisita(id) {
     const response = await fetch(`/visit/visits/${id}/confirm`, {
         method: 'PUT',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'same-origin'
     });
     if (response.ok) {
         alert("Visita confermata!");
@@ -136,9 +136,9 @@ document.getElementById('evidenceForm').addEventListener('submit', async (e) => 
     try {
         const response = await fetch(`/visit/addevidence/${visitId}`, {
             method: 'POST',
+            credentials: 'same-origin', 
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}` 
             },
             body: JSON.stringify(bodyData)
         });

@@ -76,7 +76,7 @@ class UserService:
         token_data = {"sub": user.email, "role": user.ruolo}
         token = create_access_token(token_data)
         
-        return {"access_token": token, "token_type": "bearer"}
+        return {"access_token": token, "token_type": "bearer"}, user
     
     @staticmethod
     async def get_users_by_role(
@@ -118,4 +118,3 @@ class UserService:
             raise UserNotFoundException()
         
         return user_attivo
-        

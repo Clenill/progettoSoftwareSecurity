@@ -34,7 +34,7 @@ let mioIdPaziente = null;
 async function caricaMedici() {
     try {
         const response = await fetch('/api/getusers', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            credentials: 'same-origin'
         });
         const users = await response.json();
         const select = document.getElementById('medicoSelect');
@@ -69,9 +69,9 @@ async function prenotaVisita(medicoId, timestamp) {
     try {
         const response = await fetch('/visit/visits/prenota', {
             method: 'POST',
+            credentials: 'same-origin', 
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}` 
             },
             body: JSON.stringify(payload)
         });
@@ -99,7 +99,7 @@ async function caricaDisponibilita() {
 
     try {
         const response = await fetch(`/api/disponibilita/${medicoId}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            credentials: 'same-origin'
         });
 
         if (!response.ok) {
@@ -138,7 +138,7 @@ async function caricaDisponibilita() {
 async function recuperaProfilo() {
     try {
         const response = await fetch('/api/getusers/me', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            credentials: 'same-origin'
         });
         if (response.ok) {
             const utente = await response.json();

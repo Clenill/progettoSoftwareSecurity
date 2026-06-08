@@ -2,12 +2,9 @@ from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.database import get_db 
-from app.core.security import get_current_user, has_role_in, get_current_user_due
+from app.core.security import has_role_in, get_current_user_or_none
 from app.db.models import User
 from app.enum.ruolo import ruolo
-from app.db.database import get_db
 
 ui_router = APIRouter()
 
@@ -16,10 +13,9 @@ BASE_PATH = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
 @ui_router.get("/", response_class=HTMLResponse)
-async def login_page(request: Request, current_user: User | None = Depends(get_current_user_due)):
+async def login_page(request: Request, current_user: User | None = Depends(get_current_user_or_none)):
     """Pagina di login"""
     if current_user == None:
-        print("Ciao dio cane")
         return templates.TemplateResponse(request=request, name="login.html")
     
     if current_user.ruolo == ruolo.PAZIENTE:

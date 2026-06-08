@@ -28,7 +28,7 @@
 async function caricaStorico() {
     try {
         const response = await fetch('/visit/allmyvisits', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            credentials: 'same-origin'
         });
         const visite = await response.json();
         const contenitore = document.getElementById('listaVisite');

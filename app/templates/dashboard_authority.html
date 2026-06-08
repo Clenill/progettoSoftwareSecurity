@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', caricaTutteLeVisite);
 async function caricaTutteLeVisite() {
     try {
         const response = await fetch('/visit/visits/all-visits', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            credentials: 'same-origin'
         });
         
         if (!response.ok) throw new Error("Errore recupero visite globali");
@@ -113,9 +113,9 @@ async function forzaProva(id) {
     try {
         const response = await fetch(`/visit/addevidence/${id}`, {
             method: 'POST',
+            credentials: 'same-origin', 
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}` 
             },
             body: JSON.stringify({ tipo: tipo, valore: valore })
         });

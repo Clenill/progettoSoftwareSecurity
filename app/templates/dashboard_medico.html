@@ -32,7 +32,7 @@
 <script>
 async function caricaAgenda() {
     const response = await fetch('/visit/visits/my-agenda', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'same-origin'
     });
     const visite = await response.json();
     const body = document.getElementById('agendaBody');
@@ -85,9 +85,9 @@ async function inviaProva(visitId) {
     try {
         const response = await fetch(`/visit/addevidence/${visitId}`, {
             method: 'POST',
+            credentials: 'same-origin', 
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}` 
             },
             body: JSON.stringify({ tipo: tipoProva })
         });

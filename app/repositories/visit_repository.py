@@ -15,7 +15,7 @@ class VisitRepository:
 
     @staticmethod
     async def create(db: AsyncSession, visit_data: VisitCreate, user: User):
-        if visit_data.timestamp is not None and visit_data.timestamp <= datetime.now():
+        if visit_data.timestamp is not None and visit_data.timestamp <= datetime.now(timezone.utc):
             raise InvalidVisitDateException()
         visit = Visit(
             id = uuid4(), 
