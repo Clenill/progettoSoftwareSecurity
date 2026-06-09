@@ -187,7 +187,12 @@ contract Oracle is AccessControl {
     }
 
     function getLikelihoods() public view isPermissioned returns (EvidenceInfo[] memory) {
-        return _likelihoods;
+        EvidenceInfo[] memory likelihoods = new EvidenceInfo[](_likelihoods.length - 1);
+        for(uint256 i = 0; i < likelihoods.length; ++i) {
+            likelihoods[i] = _likelihoods[i+1];
+        }
+
+        return likelihoods;
     }
 
     function getVisit(bytes16 id) public view isPermissioned visitExists(id) returns (Visit memory, uint256) {

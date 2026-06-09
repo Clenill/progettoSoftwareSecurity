@@ -163,3 +163,8 @@ async def delete_visit(id: UUID, current_user: User = Depends(
         db
     )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.get("/evidencetypes")
+async def get_evidence_types(current_user: User = Depends(get_current_user)):
+    return list(map(lambda e: e.name, TipoProva))
+

@@ -46,7 +46,7 @@ async def admin_get_all_visits(
 ):
     visits = await VisitService.get_visits(None, db)
     (bc_visits, probabilita_visite) = await ContractService.get_visits()
-    for (visit, bc_visit, probabilita) in zip(visits, bc_visits, probabilita_visite):
+    for (visit, bc_visit, probabilita) in zip(visits, reversed(bc_visits), reversed(probabilita_visite)):
         visit.probabilita = probabilita
     return visits
 

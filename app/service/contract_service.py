@@ -59,7 +59,7 @@ class ContractService:
                 evidence_id
             )
             return {
-                "tipo": info[0], 
+                "tipo": ID_PROVE[info[0]], 
                 "ptrue": info[1] / SCALE, 
                 "pfalse": info[2] / SCALE
             }
@@ -102,7 +102,7 @@ class ContractService:
         )
         return list(
             map(
-                lambda info: { "tipo": info[0], "ptrue": info[1] / SCALE, "pfalse": info[2] / SCALE }, 
+                lambda info: { "tipo": ID_PROVE[info[0]], "ptrue": info[1] / SCALE, "pfalse": info[2] / SCALE }, 
                 info_prove
             )
         )
