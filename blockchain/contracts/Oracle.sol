@@ -126,7 +126,7 @@ contract Oracle is AccessControl {
             }
 
             ptrue = Math.mulDiv(ptrue, _likelihoods[index].ptrue, scale);
-            pfalse = Math.mulDiv(pfalse, scale - _likelihoods[index].ptrue, scale);
+            pfalse = Math.mulDiv(pfalse, _likelihoods[index].pfalse, scale);
         }
 
         (bool success, uint256 posterior) = Math.tryDiv(ptrue * scale, ptrue + pfalse);
