@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Benvenuto nel Nostro Portale</title>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/functions.js"></script>
 </head>
 <body>
 
@@ -14,9 +15,12 @@
         <a href="#" class="logo"><img src="images/logo.png"></a>
         <ul class="nav-menu">
             <li class="nav-item"><a href="/dashboard/utente">Home</a></li>
-        <li class="nav-item"><a href="/utente/prenota">Prenota</a></li>
-        <li class="nav-item"><a href="/utente/visite"  class="active">Visualizza</a></li>
+            <li class="nav-item"><a href="/utente/prenota">Prenota</a></li>
+            <li class="nav-item"><a href="/utente/visite"  class="active">Visualizza</a></li>
         </ul>
+        <div class="col-md-2">
+            <button onclick="logout()">Logout</button>
+        </div>
     </div>
 </nav>
 
