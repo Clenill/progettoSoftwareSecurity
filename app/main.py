@@ -49,6 +49,8 @@ app.mount("/css", StaticFiles(directory="app/css"), name="static")
 
 app.mount("/images", StaticFiles(directory="app/images"), name="images")
 
+app.mount("/js", StaticFiles(directory="app/js"), name="static")
+
 app.include_router(ui_router)
 
 app.include_router(router, prefix="/api")
