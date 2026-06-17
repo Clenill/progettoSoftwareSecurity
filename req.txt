@@ -36,3 +36,9 @@ Backend
 - Medico può rifiutare la visita e questa verrà cancellata a DB --------------- FATTO
 - La cancellazione visita può essere fatta se la visita non è avvenuta ---------- FATTO
 - query sulle visite ed evitare che queste si sovrappongono 
+
+Manca:
+Invio prova Paziente
+Conferma Admin, visite ed utente.
+Sistemare orario visite, frontend e Backend
+
