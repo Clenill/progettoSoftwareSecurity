@@ -7,7 +7,9 @@
                     'Content-Type': 'application/json'
                 }
             });
+            location.replace('/');
         } catch (err) {
             console.error("Errore nel caricamento dei medici:", err);
         }
     }
+
