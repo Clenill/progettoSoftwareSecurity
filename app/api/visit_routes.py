@@ -91,12 +91,13 @@ async def add_evidence(
         raise InvalidCredentials()
     
     await VisitService.add_evidence(id, evidence.tipo, current_user, db, commit=False)
-    await ContractService.add_evidence(current_user, id, evidence.tipo)
+    await ContractService.add_evidence(current_user, id, evidence.tipo, evidence.valore)
     await db.commit()
     return {
         "message": "Prova aggiunta con successo",
         "visit_id": id,
-        "evidence_type": evidence.tipo
+        "evidence_type": evidence.tipo, 
+        "valore": evidence.valore
     }
 
 

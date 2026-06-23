@@ -46,7 +46,7 @@ async def admin_get_all_visits(
 ):
     visits = await VisitService.get_visits(None, db)
     (bc_visits, probabilita_visite) = await ContractService.get_visits()
-    for (visit, bc_visit, probabilita) in zip(visits, reversed(bc_visits), reversed(probabilita_visite)):
+    for (visit, bc_visit, probabilita) in zip(visits, bc_visits, probabilita_visite):
         visit.probabilita = probabilita
     return visits
 
@@ -98,12 +98,13 @@ async def add_evidence(
     db: AsyncSession = Depends(get_db)
 ):
     await VisitService.add_evidence(id, evidence.tipo, None, db, commit=False)
-    await ContractService.add_evidence(current_user, id, evidence.tipo)
+    await ContractService.add_evidence(current_user, id, evidence.tipo, evidence.valore)
     await db.commit()
     return { 
         "message": "Prova aggiunta con successo",
         "visit_id": id,
-        "evidence_type": evidence.tipo
+        "evidence_type": evidence.tipo, 
+        "valore": evidence.valore
         }
 
 @router.post("/activeuser/{id}")

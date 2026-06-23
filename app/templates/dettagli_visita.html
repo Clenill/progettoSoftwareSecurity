@@ -60,8 +60,9 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>Valore / Descrizione:</label>
-                <input type="text" id="valoreProva" placeholder="Inserisci il referto, le coordinate, ecc..." required>
+                <label>Valore:</label>
+                <!--<input type="text" id="valoreProva" placeholder="Inserisci il referto, le coordinate, ecc..." required>-->
+                <input type="checkbox" id="valoreProva" checked="checked">
             </div>
             <button type="submit" style="background-color: #3498db;">Salva Prova</button>
         </form>
@@ -130,12 +131,14 @@ async function confermaVisita(id) {
 document.getElementById('evidenceForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const tipo = document.getElementById('tipoProva').value;
-    const valore = document.getElementById('valoreProva').value;
+    const valore = document.getElementById('valoreProva').checked;
 
     const bodyData = { 
         tipo: tipo,
         valore: valore
     };
+
+    console.log('valore: ', valore);
 
     try {
         const response = await fetch(`/visit/addevidence/${visitId}`, {
@@ -149,7 +152,6 @@ document.getElementById('evidenceForm').addEventListener('submit', async (e) => 
         
         if (response.ok) {
             alert("Prova salvata con successo!");
-            document.getElementById('valoreProva').value = '';
             caricaDettagli();
         } else {
             const errData = await response.json();

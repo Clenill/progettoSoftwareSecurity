@@ -186,7 +186,7 @@ class ContractService:
                 raise VisitNotFoundException()
 
     @staticmethod
-    async def add_evidence(current_user: User, id: UUID, tipo: TipoProva):
+    async def add_evidence(current_user: User, id: UUID, tipo: TipoProva, valore: bool):
         evidence_id = ID_PROVE[tipo]
         try:
             await ContractRepository.call_function(
@@ -195,6 +195,7 @@ class ContractService:
                 current_user.id.bytes, 
                 id.bytes, 
                 evidence_id, 
+                valore, 
                 use_transaction=True
             )
         except ContractLogicError as e:

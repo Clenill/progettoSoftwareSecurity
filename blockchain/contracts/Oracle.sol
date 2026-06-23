@@ -1,7 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import "hardhat/console.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
@@ -23,10 +22,15 @@ contract Oracle is AccessControl {
         bool active;
     }
 
+    struct EvidenceStatus {
+        EvidenceType evidence;
+        bool active;
+    }
+
     struct Visit {
         bytes16 physician;
         bytes16 patient;
-        EvidenceType[] evidences;
+        EvidenceStatus[] evidences;
         bool active;
     }
 
@@ -115,18 +119,23 @@ contract Oracle is AccessControl {
         uint256 pfalse = scale - _prior;
 
         // formula:
-        // P(V|E1,...) = (P(V)*P(E1|V)*...)/[(P(V)*P(E1|V)*...) + (P(~V)*P(~E1|V)*...)]
+        // P(V|E1,...) = (P(V)*P(E1|V)*...)/[(P(V)*P(E1|V)*...) + (P(~V)*P(E1|~V)*...)]
+        for(uint256 i = 1; i < _likelihoods.length; ++i) {
+            if(_likelihoods[i].active) {
+                for(uint256 j = 0; j < visit.evidences.length; ++j) {
+                    if(visit.evidences[j].evidence == _likelihoods[i].evidence) {
+                        if(visit.evidences[j].active) {
+                            ptrue = Math.mulDiv(ptrue, _likelihoods[i].ptrue, scale);
+                            pfalse = Math.mulDiv(pfalse, _likelihoods[i].pfalse, scale);
+                        }
 
-        // for each evidence, update ptrue and pfalse with the likelihoods
-        for(uint256 i = 0; i < visit.evidences.length; ++i) {
-            EvidenceType _type = visit.evidences[i];
-            uint256 index = _typeIds[_type];
-            if(index == 0 || !_likelihoods[index].active) {
-                revert LikelihoodNotFound(_type);
+                        else {
+                            ptrue = Math.mulDiv(ptrue, scale - _likelihoods[i].ptrue, scale);
+                            pfalse = Math.mulDiv(pfalse, scale - _likelihoods[i].pfalse, scale);
+                        }
+                    }
+                }
             }
-
-            ptrue = Math.mulDiv(ptrue, _likelihoods[index].ptrue, scale);
-            pfalse = Math.mulDiv(pfalse, _likelihoods[index].pfalse, scale);
         }
 
         (bool success, uint256 posterior) = Math.tryDiv(ptrue * scale, ptrue + pfalse);
@@ -212,11 +221,11 @@ contract Oracle is AccessControl {
     }
 
     function addVisit(bytes16 author, bytes16 id, bytes16 physician, bytes16 patient) public isPermissioned newVisit(id) {
-        Visit memory visit;
+        _visits.push();
+        Visit storage visit = _visits[_visits.length - 1];
         visit.physician = physician;
         visit.patient = patient;
         visit.active = true;
-        _visits.push(visit);
         _visitIds[id] = _visits.length - 1;
         emit VisitAdded(msg.sender, author, id);
     }
@@ -233,15 +242,15 @@ contract Oracle is AccessControl {
         emit VisitEdited(msg.sender, author, id);
     }
 
-    function addEvidence(bytes16 author, bytes16 id, EvidenceType evidence) public isPermissioned visitExists(id) {
+    function addEvidence(bytes16 author, bytes16 id, EvidenceType evidence, bool active) public isPermissioned visitExists(id) {
         Visit storage visit = _visits[_visitIds[id]];
         for(uint256 i = 0; i < visit.evidences.length; ++i) {
-            if(evidence == visit.evidences[i]) {
+            if(evidence == visit.evidences[i].evidence) {
                 revert DuplicateEvidence(evidence);
             }
         }
 
-        visit.evidences.push(evidence);
+        visit.evidences.push(EvidenceStatus(evidence, active));
         emit EvidenceAdded(msg.sender, author, id, evidence);
     }
 }

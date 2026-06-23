@@ -170,7 +170,7 @@ async function caricaTutteLeVisite() {
                             <option value="gps">GPS</option>
                             <option value="conferma">Conferma (Certificato)</option>
                         </select>
-                        <input type="text" id="valore-${v.id}" placeholder="Valore/Descrizione prova...">
+                        <input type="checkbox" id="valore-${v.id}" checked="checked">
                         <button class="btn-supervise" style="width: 100%; background-color:#27ae60;" onclick="forzaProva('${v.id}')">Esegui Iniezione</button>
                     </div>
                 </td>
@@ -299,12 +299,9 @@ function togglePanel(id) {
 
 async function forzaProva(id) {
     const tipo = document.getElementById(`tipo-${id}`).value;
-    const valore = document.getElementById(`valore-${id}`).value;
+    const valore = document.getElementById(`valore-${id}`).checked;
 
-    if (!valore) {
-        alert("Inserisci un valore per la prova!");
-        return;
-    }
+    console.log('valore: ', valore);
 
     try {
         const response = await fetch(`/admin/addevidence/${id}`, {

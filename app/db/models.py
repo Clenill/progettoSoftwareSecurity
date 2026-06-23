@@ -136,6 +136,7 @@ class Evidence(Base):
         primary_key=True,
         nullable=False
     )
+    valore: Mapped[bool] = mapped_column(Boolean, default=False)
 
     __table_args__ = (
         UniqueConstraint("visita", "tipo", name="unique_visita_tipo"), 

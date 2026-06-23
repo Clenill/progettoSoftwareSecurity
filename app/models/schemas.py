@@ -37,6 +37,7 @@ class VisitUpdate(BaseModel):
 
 class EvidenceCreate(BaseModel):
     tipo: TipoProva
+    valore: bool
 
 class VisitResponse(BaseModel):
     id: UUID4
