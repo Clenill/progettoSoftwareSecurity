@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benvenuto nel Nostro Portale</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/functions.js"></script>
+</head>
+<body>
+
+<!-- Menu di Navigazione -->
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="#" class="logo"><img src="images/logo.png"></a>
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="/dashboard/authority">Home</a></li>
+        </ul>
+        <div class="col-md-2">
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+</nav>
+
+</center><h1>Seleziona un medico</h1>
+<div id="booking-section">
+    <select id="pazienteSelect" required>
+        <option value="">Seleziona un paziente</option>
+    </select>
+    <select id="medicoSelect" required>
+        <option value="">Seleziona un medico</option>
+    </select>
+    <div id="disponibilitaContainer"></div>
+</div>
+
+<script>
+let mioIdPaziente = null;
+
+async function caricaUtenti() {
+    try {
+        const response = await fetch('/api/getusers', {
+            credentials: 'same-origin'
+        });
+        const users = await response.json();
+        const pazienteSelect = document.getElementById('pazienteSelect');
+        const medicoSelect = document.getElementById('medicoSelect');
+        
+        pazienteSelect.innerHTML = '<option value="">Seleziona un paziente</option>';
+        medicoSelect.innerHTML = '<option value="">Seleziona un medico</option>';
+        
+        users.forEach(user => {
+            if (user.ruolo !== 'admin') {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.name;
+                if (user.ruolo === 'utente') {
+                    pazienteSelect.appendChild(option);
+                }
+
+                else if (user.ruolo === 'staff') {
+                    medicoSelect.appendChild(option);
+                }
+            }
+        });
+    } catch (err) {
+        console.error("Errore nel caricamento degli utenti:", err);
+    }
+}
+
+async function prenotaVisita(pazienteId, medicoId, timestamp) {
+    const payload = {
+        paziente: pazienteId,
+        medico: medicoId,
+        timestamp: timestamp
+    };
+
+    try {
+        const response = await fetch('/admin/newvisit', {
+            method: 'POST',
+            credentials: 'same-origin', 
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            alert("Prenotazione effettuata!");
+            caricaStorico();
+            caricaDisponibilita();
+        } else {
+            alert("Errore nella prenotazione.");
+        }
+    } catch (err) {
+        console.error("Errore:", err);
+    }
+}
+
+async function caricaDisponibilita() {
+    const medicoId = document.getElementById('medicoSelect').value;
+    const pazienteId = document.getElementById('pazienteSelect').value;
+    const container = document.getElementById('disponibilitaContainer');
+    
+    if (!medicoId || !pazienteId) {
+        container.innerHTML = '';
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/disponibilita/${medicoId}`, {
+            credentials: 'same-origin'
+        });
+
+        if (!response.ok) {
+            container.innerHTML = '<p>Nessuna disponibilità trovata.</p>';
+            return;
+        }
+
+        const data = await response.json();
+        container.innerHTML = '<h4>Disponibilità:</h4>';
+        
+        const raggruppati = data.reduce((acc, slot) => {
+            const dataGiorno = slot.valore.split('T')[0];
+            if (!acc[dataGiorno]) acc[dataGiorno] = [];
+            acc[dataGiorno].push(slot);
+            return acc;
+        }, {});
+
+        for (const [dataGiorno, orari] of Object.entries(raggruppati)) {
+            const gruppo = document.createElement('div');
+            gruppo.innerHTML = `<h5>${dataGiorno}</h5>`;
+            
+            orari.forEach(s => {
+                const btn = document.createElement('button');
+                btn.textContent = s.orario;
+                btn.className = 'slot-btn';
+                btn.onclick = () => prenotaVisita(pazienteId, medicoId, s.valore);
+                gruppo.appendChild(btn);
+            });
+            container.appendChild(gruppo);
+        }
+    } catch (err) {
+        console.error("Errore caricamento:", err);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    caricaUtenti();
+    document.getElementById('medicoSelect').addEventListener('change', caricaDisponibilita);
+    document.getElementById('pazienteSelect').addEventListener('change', caricaDisponibilita);
+});
+</script>
+</body>
+</html>

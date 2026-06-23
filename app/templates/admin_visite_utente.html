@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benvenuto nel Nostro Portale</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/functions.js"></script>
+</head>
+<body>
+
+<!-- Menu di Navigazione -->
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="#" class="logo"><img src="images/logo.png"></a>
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="/dashboard/authority">Home</a></li>
+        </ul>
+        <div class="col-md-2">
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<h1>Visite utente</h1>
+<ul id="listaVisite"></ul>
+
+<script>
+
+async function caricaStorico() {
+    const id = '{{ id }}';
+    try {
+        const response = await fetch(`/admin/visiteutente/${id}`, {
+            credentials: 'same-origin'
+        });
+        const visite = await response.json();
+        const contenitore = document.getElementById('listaVisite');
+
+        contenitore.innerHTML = '';
+
+        if (visite.length === 0) {
+            contenitore.innerHTML = '<p>Nessuna visita in storico.</p>';
+            return;
+        }
+
+        // Intestazione tabella
+        let tableHTML = `
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th>Giorno</th>
+                        <th>Ora</th>
+                        <th>Medico (ID)</th>
+                        <th>Confermata</th>
+                        <th>Prove</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        // Riempimento tabella
+        visite.forEach(v => {
+            const dataOggetto = new Date(v.timestamp);
+
+            const giorno = dataOggetto.toLocaleDateString('it-IT'); 
+
+            const ora = dataOggetto.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+            tableHTML += `
+                <tr>
+                    <td>${giorno}</td>
+                    <td>${ora}</td>
+                    <td>${v.medico}</td>
+                    <td>${v.confermata}</td>
+                    <td>${v.prove && v.prove.length > 0 ? v.prove.map(p => p.tipo).join(', ') : 'Nessuna'}</td>
+                    <td>
+                        <label>Il medico è presente: </label><input id="${v.id}-checkbox" type="checkbox" checked="true">
+                        <button type="submit" onclick="confermaPresenza('${v.id}')" style="background-color: #3498db;">Invia prova</button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tableHTML += `
+                </tbody>
+            </table>
+        `;
+
+        contenitore.innerHTML = tableHTML;
+
+    } catch (err) {
+        console.error("Errore caricaStorico:", err);
+        document.getElementById('listaVisite').innerHTML = '<p class="error">Errore nel caricamento dei dati.</p>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    caricaStorico();
+});
+
+async function confermaPresenza(id) {
+    //const id = element.id;
+    const checkbox = document.getElementById(`${id}-checkbox`);
+    //const checkbox = element.querySelector('input[type="checkbox"]');
+    if(checkbox) {
+        const bodyData = {
+            tipo: 'conferma', 
+            valore: checkbox.checked
+        };
+
+        try {
+            const response = await fetch(`/admin/addevidence/${id}`, {
+                method: 'POST', 
+                credentials: 'same-origin', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(bodyData)
+            });
+            if(!response.ok) {
+                alert("Errore: " + ((await response.json()).detail || 'Salvataggio fallito'));
+            }
+
+            else {
+                alert("Prova inviata!");
+                window.location.reload();
+            }
+        }
+
+        catch(err) {
+            alert('Errore: ', err);
+        }
+    }
+
+    else {
+        alert('Errore: elemento non trovato');
+    }
+}
+
+</script>
+</body>
+</html>

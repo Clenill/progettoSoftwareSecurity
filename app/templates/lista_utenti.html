@@ -64,7 +64,7 @@ async function caricaUtenti() {
         utenti.forEach(u => {
             tableHTML += `
                 <tr>
-                    <td>${u.id}</td>
+                    <td><a href="/dettagliutente/${u.id}">${u.id}</a></td>
                     <td>${u.name}</td>
                     <td>${u.email}</td>
                     <td>${u.ruolo}</td>

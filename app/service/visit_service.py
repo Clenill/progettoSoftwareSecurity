@@ -153,4 +153,6 @@ class VisitService:
         
         await VisitRepository.delete_visit(db, visit)
         
+    async def confirm_visit(id: UUID, db: AsyncSession):
+        return await VisitRepository.confirm_visit(db, id)
 

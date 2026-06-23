@@ -29,6 +29,23 @@ async def admin_create_visit(
         current_user
     )
 
+@router.get("/visiteutente/{id}", response_model=list[VisitResponse])
+async def get_user_visits(
+    id: UUID, 
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
+    db: AsyncSession = Depends(get_db)
+):
+    user = await UserService.get_user_by_id(id, db)
+    return await VisitService.get_visits(user, db)
+
+@router.put("/visits/{id}/confirm")
+async def confirm_visit(
+    id: UUID, 
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
+    db: AsyncSession = Depends(get_db)
+):
+    return await VisitService.confirm_visit(id, db)
+
 @router.get("/allvisits", response_model=list[VisitResponse])
 async def admin_get_all_visits(
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
