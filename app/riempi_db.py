@@ -41,6 +41,17 @@ async def seed():
         
         await db.commit()
     async with SessionLocal() as db:
+        # Creazione authority
+        authority_id = uuid.uuid4()
+        authority = User(
+            id=authority_id, 
+            name="admin", 
+            email="admin@ospedale.it", 
+            hashed_password=hash_password("password123"), 
+            attivo=True, 
+            ruolo=ruolo.AUTORITY
+        )
+
         # Creazione medico
         medico_id = uuid.uuid4()
         medico = User(
@@ -63,7 +74,7 @@ async def seed():
             ruolo=ruolo.PAZIENTE
         )
         
-        db.add_all([medico, paziente])
+        db.add_all([authority, medico, paziente])
         await db.commit()
 
         # Creazione visita fittizia
@@ -74,7 +85,7 @@ async def seed():
             timestamp=datetime.now(timezone.utc), # Data corrente
             ruolo_paziente=ruolo.PAZIENTE,
             ruolo_medico=ruolo.MEDICO,
-            confermata = true
+            confermata = True
         )
         
         db.add(visita)

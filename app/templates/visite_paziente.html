@@ -52,6 +52,9 @@ async function caricaStorico() {
                         <th>Giorno</th>
                         <th>Ora</th>
                         <th>Medico (ID)</th>
+                        <th>Confermata</th>
+                        <th>Prove</th>
+                        <th>Azioni</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -70,6 +73,12 @@ async function caricaStorico() {
                     <td>${giorno}</td>
                     <td>${ora}</td>
                     <td>${v.medico}</td>
+                    <td>${v.confermata}</td>
+                    <td>${v.prove && v.prove.length > 0 ? v.prove.map(p => p.tipo).join(', ') : 'Nessuna'}</td>
+                    <td>
+                        <label>Il medico è presente: </label><input id="${v.id}-checkbox" type="checkbox" checked="true">
+                        <button type="submit" onclick="confermaPresenza('${v.id}')" style="background-color: #3498db;">Invia prova</button>
+                    </td>
                 </tr>
             `;
         });
@@ -90,6 +99,45 @@ async function caricaStorico() {
 document.addEventListener('DOMContentLoaded', () => {
     caricaStorico();
 });
+
+async function confermaPresenza(id) {
+    //const id = element.id;
+    const checkbox = document.getElementById(`${id}-checkbox`);
+    //const checkbox = element.querySelector('input[type="checkbox"]');
+    if(checkbox) {
+        const bodyData = {
+            tipo: 'conferma', 
+            valore: checkbox.checked
+        };
+
+        try {
+            const response = await fetch(`/visit/addevidence/${id}`, {
+                method: 'POST', 
+                credentials: 'same-origin', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(bodyData)
+            });
+
+            if(!response.ok) {
+                alert("Errore: " + ((await response.json()).detail || 'Salvataggio fallito'));
+            }
+
+            else {
+                alert("Prova inviata!");
+                window.location.reload();
+            }
+        }
+
+        catch(err) {
+            alert('Errore: ', err);
+        }
+    }
+
+    else {
+        alert('Errore: elemento non trovato');
+    }
+}
+
 </script>
 </body>
 </html>

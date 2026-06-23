@@ -46,8 +46,8 @@
             
             <!-- Azioni rapide collegate al menu -->
             <div class="cta-buttons">
-                <a href="/utente/prenota" class="btn btn-primary">Prenota</a>
-                <a href="/dashboard/staff" class="btn btn-primary">Carica prove</a>
+                <a href="/admin/prenota" class="btn btn-primary">Prenota</a>
+                <a href="/lista-utenti" class="btn btn-primary">Lista utenti</a>
             </div>
         </section>
 </main>
@@ -57,7 +57,8 @@ document.addEventListener('DOMContentLoaded', caricaTutteLeVisite);
 
 async function caricaTutteLeVisite() {
     try {
-        const response = await fetch('/visit/visits/all-visits', {
+        const response = await fetch('/admin/allvisits', {
+        //const response = await fetch('/visit/visits/all-visits', {
             credentials: 'same-origin'
         });
         
@@ -115,7 +116,7 @@ async function forzaProva(id) {
     }
 
     try {
-        const response = await fetch(`/visit/addevidence/${id}`, {
+        const response = await fetch(`/admin/addevidence/${id}`, {
             method: 'POST',
             credentials: 'same-origin', 
             headers: { 

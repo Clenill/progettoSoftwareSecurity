@@ -39,7 +39,7 @@ class UserService:
             name=user_data.name,
             email=user_data.email,
             hashed_password=hashed_pw,
-            attivo=user_data.attivo,
+            attivo=False, #user_data.attivo,
             ruolo=user_data.ruolo
         )
         try:
@@ -106,15 +106,14 @@ class UserService:
         user_id,
         db: AsyncSession
     ):
-        user = await UserService.get_user_by_id(
-            user_id,
-            db
-        )
-        if user.attivo:
+        try:
+            user = await UserRepository.active_new_user_by_id(db, user_id)
+        except ValueError:
             raise UserAlreadyActive()
-        user_attivo = UserRepository.active_new_user_by_id(db, user_id)
-        
-        if user_attivo is None:
+        if user is None:
             raise UserNotFoundException()
-        
-        return user_attivo
+        return user
+
+    async def get_all(db: AsyncSession):
+        return await UserRepository.get_all(db)
+

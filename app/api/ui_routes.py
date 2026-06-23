@@ -65,6 +65,11 @@ async def dashboard_authority(request: Request, current_user: User = Depends(has
     """Area riservata all'Autorità di Controllo"""
     return templates.TemplateResponse(request=request, name="dashboard_authority.html")
 
+@ui_router.get("/lista-utenti", response_class=HTMLResponse)
+async def lista_utenti(request: Request, current_user: User = Depends(has_role_in([ruolo.AUTORITY]))):
+    """Lista degli utenti registrati"""
+    return templates.TemplateResponse(request=request, name="lista_utenti.html")
+
 @ui_router.get("/errore", response_class=HTMLResponse)
 async def errore(request: Request):
     """Qualcosa è andato storto"""

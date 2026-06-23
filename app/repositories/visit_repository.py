@@ -95,6 +95,10 @@ class VisitRepository:
         visit = await VisitRepository.get_by_id(db, id, user)
         if not visit:
             raise exc.NoResultFound("Visita non trovata")
+
+        if not visit.confermata:
+            raise ValueError("Visita non confermata")
+
         evidences = set((await db.execute(
             select(Evidence.tipo).where(Evidence.visita == id)
         )).scalars().all())

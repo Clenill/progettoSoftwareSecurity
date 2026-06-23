@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.db.models import User
 from app.core.security import has_role_in
-from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate
+from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate, UserResponse
 from app.enum.ruolo import ruolo
 from app.service.visit_service import VisitService
 from app.service.user_service import UserService
@@ -62,7 +62,7 @@ async def add_evidence(
     db: AsyncSession = Depends(get_db)
 ):
     
-    await VisitService.add_evidence(id, evidence.tipo, current_user, db)
+    await VisitService.add_evidence(id, evidence.tipo, None, db)
     return { 
         "message": "Prova aggiunta con successo",
         "visit_id": id,
@@ -75,4 +75,13 @@ async def active_new_user(
     current_user:User = Depends(has_role_in([ruolo.AUTORITY])),
     db: AsyncSession = Depends(get_db)
 ):
-    return UserService.active_user(id, db)
+    await UserService.active_user(id, db)
+    return { "message": "Utente attivato!" }
+
+@router.get("/allusers", response_model=list[UserResponse])
+async def get_users(
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
+    db: AsyncSession = Depends(get_db)
+):
+    return await UserService.get_all(db)
+

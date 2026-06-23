@@ -10,6 +10,7 @@
         .details-container { max-width: 800px; margin: 40px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .info-group { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
         .info-group span { font-weight: bold; color: #2c3e50; }
+        .info-group button { margin: 10px; }
         .action-panel { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 30px; border: 1px solid #e0e0e0; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
@@ -106,7 +107,10 @@ async function caricaDettagli() {
 
         const confermaContainer = document.getElementById('confermaContainer');
         if (!v.confermata) {
-            confermaContainer.innerHTML = `<button onclick="confermaVisita('${v.id}')">Conferma Questa Visita</button>`;
+            confermaContainer.innerHTML = `
+                <button onclick="confermaVisita('${v.id}')">Conferma Questa Visita</button>
+                <button onclick="rifiutaVisita('${v.id}')">Rifiuta Questa Visita</button>
+            `;
         } else {
             confermaContainer.innerHTML = `<p style="color: #27ae60; font-weight: bold;">✔ Visita Confermata</p>`;
         }
@@ -124,6 +128,17 @@ async function confermaVisita(id) {
     if (response.ok) {
         alert("Visita confermata!");
         caricaDettagli(); // Ricarica la pagina per aggiornare lo stato
+    }
+}
+
+async function rifiutaVisita(id) {
+    const response = await fetch(`/visit/denied-visit/${id}`, {
+        method: 'DELETE', 
+        credentials: 'same-origin'
+    });
+    if (response.ok) {
+        alert("Visita rifiutata!");
+        window.location.replace('/dashboard/staff');
     }
 }
 
