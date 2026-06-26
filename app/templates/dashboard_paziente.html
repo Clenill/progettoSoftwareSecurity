@@ -118,13 +118,9 @@ async function caricaDisponibilita() {
     const medicoId = document.getElementById('medicoSelect').value;
     const giorno = document.getElementById("giornoSelect").value;
     const container = document.getElementById('disponibilitaContainer');
-    
+    container.innerHTML = '';
     if (!medicoId) {
         container.innerHTML = '';
-        return;
-    }
-    if(!medicoId || !giorno){
-        alert("Selezionare medico e giorno");
         return;
     }
 
@@ -160,7 +156,7 @@ async function caricaDisponibilita() {
         button.textContent=slot.orario;
         button.onclick=()=>prenotaVisita(
             medicoId,
-            slot.valore
+            slot.timestamp
         );
         container.appendChild(button);
     });
@@ -189,7 +185,7 @@ async function recuperaProfilo() {
 
 document.addEventListener('DOMContentLoaded', () => {
     caricaMedici();
-    document.getElementById('medicoSelect').addEventListener('change', caricaDisponibilita);
+    //document.getElementById('medicoSelect').addEventListener('change', caricaDisponibilita);
     recuperaProfilo();
 });
 </script>
