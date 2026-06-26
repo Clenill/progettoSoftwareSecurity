@@ -1,0 +1,9 @@
+// 1. SAFETY PROPERTY
+// Verifica che la probabilità che una visita fallisca (stato 5) sia inferiore al 20%.
+// Se PRISM restituisce TRUE, il sistema rispetta il vincolo di sicurezza.
+P < 0.20 [ F "fallita" ]
+
+// 2. GUARANTEE / RESPONSE PROPERTY
+// Garantisce che SE una visita viene confermata (Stato 1), 
+// allora in futuro arriverà SICURAMENTE a completamento (Stato 3) con una probabilità >= 85%.
+"confermata" => P >= 0.85 [ F "completata" ]
