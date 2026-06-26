@@ -69,6 +69,23 @@ class VisitRepository:
         return (await db.execute(statement)).unique().scalar_one_or_none()
     
     @staticmethod
+    async def get_doctor_visits_by_day(
+        db: AsyncSession,
+        doctor_id: UUID,
+        start_day: datetime,
+        end_day: datetime
+        ):
+        result = await db.execute(
+            select(Visit).where(
+                Visit.medico == doctor_id,
+                Visit.timestamp >= start_day,
+                Visit.timestamp < end_day
+            )
+        )
+
+        return result.scalars().all()
+
+    @staticmethod
     async def edit_visit(
         db: AsyncSession, 
         id: UUID, 

@@ -23,13 +23,34 @@
         </div>
     </div>
 </nav>
+<h1>Prenota visita</h1>
 
-</center><h1>Seleziona un medico</h1>
 <div id="booking-section">
-    <select id="medicoSelect" required>
-        <option value="">Seleziona un medico</option>
+
+    <label>Medico</label>
+
+    <select id="medicoSelect">
+        <option value="">Seleziona medico</option>
     </select>
+
+    <br><br>
+
+    <label>Giorno</label>
+
+    <input
+        type="date"
+        id="giornoSelect">
+
+    <br><br>
+
+    <button onclick="caricaDisponibilita()">
+        Mostra orari disponibili
+    </button>
+
+    <hr>
+
     <div id="disponibilitaContainer"></div>
+
 </div>
 
 <script>
@@ -40,11 +61,15 @@ async function caricaMedici() {
         const response = await fetch('/api/getusers', {
             credentials: 'same-origin'
         });
+        // Controlla che la risposta è JSON
+        const contentType = response.headers.get("content-type");
+        if (!response.ok || !contentType?.includes("application/json")) {
+            console.error("Risposta non valida:", response.status, contentType);
+            return;
+        }
         const users = await response.json();
         const select = document.getElementById('medicoSelect');
-        
         select.innerHTML = '<option value="">Seleziona un medico</option>';
-        
         users.forEach(user => {
             if (user.ruolo === 'staff') { 
                 const option = document.createElement('option');
@@ -70,70 +95,75 @@ async function prenotaVisita(medicoId, timestamp) {
         timestamp: timestamp
     };
 
-    try {
-        const response = await fetch('/visit/visits/prenota', {
-            method: 'POST',
-            credentials: 'same-origin', 
-            headers: { 
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload)
-        });
+    
+    const response = await fetch('/visit/visits/prenota', {
+        method: 'POST',
+        credentials: 'same-origin', 
+        headers: { 
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+    });
 
-        if (response.ok) {
-            alert("Prenotazione effettuata!");
-            caricaStorico();
-            caricaDisponibilita();
-        } else {
-            alert("Errore nella prenotazione.");
-        }
-    } catch (err) {
-        console.error("Errore:", err);
+    if (response.ok) {
+        alert("Richiesta visita effettuata correttamente!");
+        caricaDisponibilita();
+    } else {
+        alert("Errore nella prenotazione.");
     }
+    
 }
 
 async function caricaDisponibilita() {
     const medicoId = document.getElementById('medicoSelect').value;
+    const giorno = document.getElementById("giornoSelect").value;
     const container = document.getElementById('disponibilitaContainer');
     
     if (!medicoId) {
         container.innerHTML = '';
         return;
     }
+    if(!medicoId || !giorno){
+        alert("Selezionare medico e giorno");
+        return;
+    }
 
     try {
-        const response = await fetch(`/api/disponibilita/${medicoId}`, {
+        const response = await fetch(
+            `/visit/disponibilita/${medicoId}?giorno=${giorno}`,
+            {
             credentials: 'same-origin'
-        });
+            }
+        );
 
         if (!response.ok) {
             container.innerHTML = '<p>Nessuna disponibilità trovata.</p>';
             return;
         }
 
-        const data = await response.json();
-        container.innerHTML = '<h4>Disponibilità:</h4>';
-        
-        const raggruppati = data.reduce((acc, slot) => {
-            const dataGiorno = slot.valore.split('T')[0];
-            if (!acc[dataGiorno]) acc[dataGiorno] = [];
-            acc[dataGiorno].push(slot);
-            return acc;
-        }, {});
+        const slots = await response.json();
 
-        for (const [dataGiorno, orari] of Object.entries(raggruppati)) {
-            const gruppo = document.createElement('div');
-            gruppo.innerHTML = `<h5>${dataGiorno}</h5>`;
-            
-            orari.forEach(s => {
-                const btn = document.createElement('button');
-                btn.textContent = s.orario;
-                btn.className = 'slot-btn';
-                btn.onclick = () => prenotaVisita(medicoId, s.valore);
-                gruppo.appendChild(btn);
-            });
-            container.appendChild(gruppo);
-        }
+    if(slots.length===0){
+
+        container.innerHTML="<p>Nessun orario disponibile.</p>";
+
+        return;
+    }
+
+    const titolo=document.createElement("h3");
+    titolo.textContent="Orari disponibili";
+    container.appendChild(titolo);
+
+    slots.forEach(slot=>{
+        const button=document.createElement("button");
+        button.className="slot-btn";
+        button.textContent=slot.orario;
+        button.onclick=()=>prenotaVisita(
+            medicoId,
+            slot.valore
+        );
+        container.appendChild(button);
+    });
     } catch (err) {
         console.error("Errore caricamento:", err);
     }
@@ -144,10 +174,14 @@ async function recuperaProfilo() {
         const response = await fetch('/api/getusers/me', {
             credentials: 'same-origin'
         });
-        if (response.ok) {
-            const utente = await response.json();
-            mioIdPaziente = utente.id; // Salviamo l'UUID corretto
+        const contentType = response.headers.get("content-type");
+        if (!response.ok || !contentType?.includes("application/json")) {
+            console.error("Sessione non valida o risposta HTML:", response.status);
+            return;
         }
+        const utente = await response.json(); // ← una sola lettura
+        mioIdPaziente = utente.id;
+        
     } catch (err) {
         console.error("Errore recupero profilo:", err);
     }
