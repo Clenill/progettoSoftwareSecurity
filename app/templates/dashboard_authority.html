@@ -31,6 +31,7 @@
                     <th>Data/Ora</th>
                     <th>Medico (ID)</th>
                     <th>Paziente (ID)</th>
+                    <th>Conferma Visita</th>
                     <th>Prove Attuali</th>
                     <th>Intervento Authority</th>
                 </tr>
@@ -72,7 +73,7 @@ async function caricaTutteLeVisite() {
             const row = document.createElement('tr');
             const dataFormattata = new Date(v.timestamp).toLocaleString('it-IT');
             const proveHtml = v.prove && v.prove.length > 0 ? v.prove.map(p => p.tipo).join(', ') : '<i>Nessuna</i>';
-            const conferma = v.confermata ? 'Visita confermata' : `<button class="btn-supervise" onclick="confermaVisita('${v.id}')">Conferma Visita</button><button class="btn-supervise" onclick="rifiutaVisita('${v.id}')">Rifiuta Visita</button>`;
+            const conferma = v.confermata ? 'Visita confermata' : `<button class="btn-supervise" style="margin:0.5rem;" onclick="confermaVisita('${v.id}')">Conferma Visita</button><button class="btn-supervise" style="margin:0.5rem;" onclick="rifiutaVisita('${v.id}')">Rifiuta Visita</button>`;
 
             row.innerHTML = `
                 <td>${dataFormattata}</td>

@@ -137,5 +137,5 @@ class VisitRepository:
     @staticmethod
     async def delete_visit(db: AsyncSession, visit: Visit):
         await db.delete(visit)
-
         await db.commit()
+
