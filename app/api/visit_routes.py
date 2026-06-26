@@ -158,11 +158,11 @@ async def delete_visit(id: UUID, current_user: User = Depends(
     has_role_in([ruolo.MEDICO])
 ), db: AsyncSession = Depends(get_db)
 ):
-    await VisitService.delete_visit(
-        id,
-        current_user,
-        db
-    )
+    visit = await VisitService.get_visit_by_id(id, current_user, db)
+    if visit.confermata:
+        await ContractService.cancel_visit(current_user, id)
+    else:
+        await VisitService.delete_visit(id, current_user, db, commit=True)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @router.get("/evidencetypes")

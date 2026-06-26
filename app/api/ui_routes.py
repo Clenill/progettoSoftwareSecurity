@@ -5,6 +5,7 @@ from pathlib import Path
 from app.core.security import has_role_in, get_current_user_or_none
 from app.db.models import User
 from app.enum.ruolo import ruolo
+from uuid import UUID
 
 ui_router = APIRouter()
 
@@ -64,6 +65,23 @@ async def dashboard_admin(request: Request, current_user: User = Depends(has_rol
 async def dashboard_authority(request: Request, current_user: User = Depends(has_role_in([ruolo.AUTORITY]))):
     """Area riservata all'Autorità di Controllo"""
     return templates.TemplateResponse(request=request, name="dashboard_authority.html")
+
+@ui_router.get("/lista-utenti", response_class=HTMLResponse)
+async def lista_utenti(request: Request, current_user: User = Depends(has_role_in([ruolo.AUTORITY]))):
+    """Lista degli utenti registrati"""
+    return templates.TemplateResponse(request=request, name="lista_utenti.html")
+
+@ui_router.get("/admin/prenota", response_class=HTMLResponse)
+async def admin_prenota(request: Request, current_user: User = Depends(has_role_in([ruolo.AUTORITY]))):
+    """Prenotazione lato admin"""
+    return templates.TemplateResponse(request=request, name="prenotazione_admin.html")
+
+@ui_router.get("/dettagliutente/{id}", response_class=HTMLResponse)
+async def dettagli_utente(id: UUID, request: Request, current_user: User = Depends(has_role_in([ruolo.AUTORITY]))):
+    """Dettagli visite utente"""
+    return templates.TemplateResponse(request=request, name="admin_visite_utente.html", context={
+        "id": id
+    })
 
 @ui_router.get("/errore", response_class=HTMLResponse)
 async def errore(request: Request):

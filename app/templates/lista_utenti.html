@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benvenuto nel Nostro Portale</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/functions.js"></script>
+</head>
+<body>
+
+<!-- Menu di Navigazione -->
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="#" class="logo"><img src="images/logo.png"></a>
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="/dashboard/authority">Home</a></li>
+        </ul>
+        <div class="col-md-2">
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<h1>Lista utenti registrati</h1>
+<ul id="listaUtenti"></ul>
+
+<script>
+
+async function caricaUtenti() {
+    try {
+        const response = await fetch('/admin/allusers', {
+            credentials: 'same-origin'
+        });
+        const utenti = await response.json();
+        const contenitore = document.getElementById('listaUtenti');
+
+        console.log('utenti:', utenti);
+
+        contenitore.innerHTML = '';
+
+        if (utenti.length === 0) {
+            contenitore.innerHTML = '<p>Nessun utente registrato.</p>';
+            return;
+        }
+
+        // Intestazione tabella
+        let tableHTML = `
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Ruolo</th>
+                        <th>Attivo</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        // Riempimento tabella
+        utenti.forEach(u => {
+            tableHTML += `
+                <tr>
+                    <td><a href="/dettagliutente/${u.id}">${u.id}</a></td>
+                    <td>${u.name}</td>
+                    <td>${u.email}</td>
+                    <td>${u.ruolo}</td>
+                    <td>${u.attivo}</td>
+                    <td>
+                        <button type="submit" onclick="attivaUtente('${u.id}')" style="background-color: #3498db;">Attiva utente</button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tableHTML += `
+                </tbody>
+            </table>
+        `;
+
+        contenitore.innerHTML = tableHTML;
+
+    } catch (err) {
+        console.error("Errore caricamento utenti", err);
+        document.getElementById('listaUtenti').innerHTML = '<p class="error">Errore nel caricamento dei dati.</p>';
+    }
+}
+
+async function attivaUtente(id) {
+    try {
+        const response = await fetch(`/admin/activeuser/${id}`, {
+            method: 'POST', 
+            credentials: 'same-origin'
+        });
+
+        const content = await response.json();
+        if (content && content.message) {
+            alert("Utente attivato!");
+            window.location.reload();
+        }
+
+        else {
+            throw new Error("Errore nell'attivazione dell'utente");
+        }
+    }
+
+    catch(err) {
+        alert(err);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    caricaUtenti();
+});
+
+</script>
+</body>
+</html>

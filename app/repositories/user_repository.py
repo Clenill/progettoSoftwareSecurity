@@ -53,14 +53,12 @@ class UserRepository:
         db: AsyncSession,
         user_id
     ):
-        result = await db.execute(
-            select(User).where(User.id == user_id)
-        )
-        user = result.scalar_one_or_none()
-        if not user:
-            return None
-        user.attivo = True
-        await db.commit()
-        await db.refresh(user)
-
+        user = await UserRepository.get_by_id(db, user_id)
+        if user != None:
+            if user.attivo:
+                raise ValueError('utente già attivo')
+            user.attivo = True
+            await db.commit()
+            await db.refresh(user)
         return user
+

@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
-from app.db.models import User, Visit, Disponibilita
-from app.core.security import get_current_user, has_role_in
+from app.db.models import User
+from app.core.security import has_role_in
 from app.core.exceptions import UserNotAuthorizedException, InvalidCredentials
-from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate, PriorUpdate, LikelihoodUpdate, ContractAccountInfoRequest
+from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate, PriorUpdate, LikelihoodUpdate, ContractAccountInfoRequest, UserResponse
 from app.enum.ruolo import ruolo
 from app.enum.prova import TipoProva, PROVE_RUOLI, ID_PROVE
 from app.service.visit_service import VisitService
@@ -34,6 +34,27 @@ async def admin_create_visit(
         current_user, 
         commit=False
     )
+    #await ContractService.add_visit(current_user, visit)
+    await db.commit()
+    await db.refresh(visit)
+    return visit
+
+@router.get("/visiteutente/{id}", response_model=list[VisitResponse])
+async def get_user_visits(
+    id: UUID, 
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
+    db: AsyncSession = Depends(get_db)
+):
+    user = await UserService.get_user_by_id(id, db)
+    return await VisitService.get_visits(user, db)
+
+@router.put("/visits/{id}/confirm")
+async def confirm_visit(
+    id: UUID, 
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
+    db: AsyncSession = Depends(get_db)
+):
+    visit = await VisitService.confirm_visit(db, id, commit=False)
     await ContractService.add_visit(current_user, visit)
     await db.commit()
     await db.refresh(visit)
@@ -83,9 +104,7 @@ async def delete_visit(
 ):
     visit = await VisitService.get_visit_by_id(id, None, db)
     if visit.confermata:
-        #await VisitService.cancel_visit(id, current_user, db, commit=False)
         await ContractService.cancel_visit(current_user, id)
-        #await db.commit()
     else:
         await VisitService.delete_visit(id, current_user, db, commit=True)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -113,7 +132,8 @@ async def active_new_user(
     current_user:User = Depends(has_role_in([ruolo.AUTORITY])),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await UserService.active_user(id, db)
+    await UserService.active_user(id, db)
+    return { "message": "Utente attivato!" }
 
 @router.get("/probabilita/priori")
 async def get_prior(current_user: User = Depends(has_role_in([ruolo.AUTORITY]))):
@@ -180,4 +200,11 @@ async def revoke_contract_permissions(
 ):
     await ContractService.remove_permissioned_account(account.address)
     return { "message": "permessi rimossi" }
+
+@router.get("/allusers", response_model=list[UserResponse])
+async def get_users(
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
+    db: AsyncSession = Depends(get_db)
+):
+    return await UserService.get_all(db)
 

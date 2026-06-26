@@ -14,9 +14,7 @@
     <div class="nav-container">
         <a href="#" class="logo"><img src="images/logo.png"></a>
         <ul class="nav-menu">
-            <li class="nav-item"><a href="/dashboard/utente">Home</a></li>
-            <li class="nav-item"><a href="/utente/prenota">Prenota</a></li>
-            <li class="nav-item"><a href="/utente/visite"  class="active">Visualizza</a></li>
+            <li class="nav-item"><a href="/dashboard/authority">Home</a></li>
         </ul>
         <div class="col-md-2">
             <button onclick="logout()">Logout</button>
@@ -24,14 +22,15 @@
     </div>
 </nav>
 
-<h1>Le tue visite</h1>
+<h1>Visite utente</h1>
 <ul id="listaVisite"></ul>
 
 <script>
 
 async function caricaStorico() {
+    const id = '{{ id }}';
     try {
-        const response = await fetch('/visit/allmyvisits', {
+        const response = await fetch(`/admin/visiteutente/${id}`, {
             credentials: 'same-origin'
         });
         const visite = await response.json();
@@ -111,13 +110,12 @@ async function confermaPresenza(id) {
         };
 
         try {
-            const response = await fetch(`/visit/addevidence/${id}`, {
+            const response = await fetch(`/admin/addevidence/${id}`, {
                 method: 'POST', 
                 credentials: 'same-origin', 
                 headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify(bodyData)
             });
-
             if(!response.ok) {
                 alert("Errore: " + ((await response.json()).detail || 'Salvataggio fallito'));
             }

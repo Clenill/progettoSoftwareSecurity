@@ -150,7 +150,11 @@ class VisitService:
     @staticmethod
     async def delete_visit(visit_id: UUID, current_user: User, db: AsyncSession, commit: bool = True):
 
-        visit = await VisitRepository.get_by_id(db, visit_id, current_user)
+        user = None
+        if current_user.ruolo != ruolo.AUTORITY:
+            user = current_user
+
+        visit = await VisitRepository.get_by_id(db, visit_id, user)
 
         if not visit:
             raise VisitNotFoundException()
@@ -171,7 +175,7 @@ class VisitService:
         ):
             raise VisitAlreadyOccurredException()
         
-        await VisitRepository.delete_visit(db, visit, commit)
+        await VisitRepository.delete_visit(db, visit.id, commit)
 
     @staticmethod
     async def cancel_visit(visit_id: UUID, current_user: User, db: AsyncSession, commit: bool = True):

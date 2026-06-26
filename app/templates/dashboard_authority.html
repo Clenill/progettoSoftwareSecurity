@@ -79,8 +79,8 @@
             
             <!-- Azioni rapide collegate al menu -->
             <div class="cta-buttons">
-                <a href="/utente/prenota" class="btn btn-primary">Prenota</a>
-                <a href="/dashboard/staff" class="btn btn-primary">Carica prove</a>
+                <a href="/admin/prenota" class="btn btn-primary">Prenota</a>
+                <a href="/lista-utenti" class="btn btn-primary">Lista utenti</a>
             </div>
         </section>
 </main>
@@ -88,8 +88,9 @@
 <script>
 const initialLikelihoodTableBody = `
                     <tr>
-                        <td>
-                            <div id="add-likelihood-container">
+                        <td></td>
+                        <td colspan="2">
+                            <div style="text-align: center;" id="add-likelihood-container">
                                 <select id="likelihood-type">
                                     <option value="sintomi">Sintomi</option>
                                     <option value="attrezzatura">Attrezzatura</option>
@@ -97,11 +98,12 @@ const initialLikelihoodTableBody = `
                                     <option value="gps">GPS</option>
                                     <option value="conferma">Conferma (Certificato)</option>
                                 </select>
-                                <input type="text" id="likelihood-ptrue" placeholder="Valore per visita avvenuta">
-                                <input type="text" id="likelihood-pfalse" placeholder="Valore per visita non avvenuta">
+                                <input type="text" style="margin: 0.5rem;" id="likelihood-ptrue" placeholder="Valore per visita avvenuta">
+                                <input type="text" style="margin: 0.5rem;" id="likelihood-pfalse" placeholder="Valore per visita non avvenuta">
                                 <button class="btn-supervise" style="width: 100%; background-color:#27ae60;" onclick="addLikelihood()">Aggiungi verosimiglianza</button>
                             </div>
                         </td>
+                        <td></td>
                     </tr>
 `;
 
@@ -152,12 +154,13 @@ async function caricaTutteLeVisite() {
             const row = document.createElement('tr');
             const dataFormattata = new Date(v.timestamp).toLocaleString('it-IT');
             const proveHtml = v.prove && v.prove.length > 0 ? v.prove.map(p => p.tipo).join(', ') : '<i>Nessuna</i>';
+            const conferma = v.confermata ? 'Visita confermata' : `<button class="btn-supervise" style="margin:0.5rem;" onclick="confermaVisita('${v.id}')">Conferma Visita</button><button class="btn-supervise" style="margin:0.5rem;" onclick="rifiutaVisita('${v.id}')">Rifiuta Visita</button>`;
 
             row.innerHTML = `
                 <td>${dataFormattata}</td>
                 <td style="font-size: 0.8rem; color:#555;">${v.medico || 'Non assegnato'}</td>
                 <td style="font-size: 0.8rem; color:#555;">${v.paziente}</td>
-                <td style="font-size: 0.8rem; color:#555;">${v.confermata}</td>
+                <td style="font-size: 0.8rem; color:#555;">${conferma}</td>
                 <td style="font-size: 0.8rem; color:#555;">${v.probabilita}</td>
                 <td>${proveHtml}</td>
                 <td>
@@ -236,16 +239,6 @@ async function setPrior() {
         });
 
         if(!response.ok) throw new Error("Errore nell'invio del nuovo valore");
-/*
-        response = await fetch('/admin/probabilita/priori', {
-            credentials: 'same-origin'
-        });
-
-        if(!response.ok) throw new Error("Errore nel recupero della probabilità");
-
-        let content = await response.json();
-        document.getElementById('prior-value').innerHTML = `${content.value}`;
-*/
         location.reload();
     }
     catch(err) {
@@ -273,22 +266,34 @@ async function setLikelihood(tipo) {
         });
 
         if(!response.ok) throw new Error("Errore nell'invio dei valori");
-/*
-        response = await fetch(`/admin/probabilita/${tipo}`, {
-            credentials: 'same-origin'
-        });
-
-        if(!response.ok) throw new Error("Errore nel recupero dei valori");
-
-        let content = await response.json();
-        document.getElementById(`${tipo}-true`).innerHTML = `${content.ptrue}`;
-        document.getElementById(`${tipo}-false`).innerHTML = `${content.pfalse}`;
-*/
         location.reload();
     }
     catch(err) {
         console.error(err);
         alert('Errore: ' + err);
+    }
+}
+
+async function confermaVisita(id) {
+    const response = await fetch(`/admin/visits/${id}/confirm`, {
+        method: 'PUT', 
+        credentials: 'same-origin', 
+    });
+
+    if (response.ok) {
+        alert("Visita confermata!");
+        window.location.reload();
+    }
+}
+
+async function rifiutaVisita(id) {
+    const response = await fetch(`/admin/deletevisit/${id}`, {
+        method: 'DELETE', 
+        credentials: 'same-origin'
+    });
+    if (response.ok) {
+        alert("Visita rifiutata!");
+        window.location.reload();
     }
 }
 
