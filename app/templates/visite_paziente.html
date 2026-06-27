@@ -67,17 +67,24 @@ async function caricaStorico() {
             const giorno = dataOggetto.toLocaleDateString('it-IT'); 
 
             const ora = dataOggetto.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            // Testo leggibile per la colonna confermata
+            const confermataText = v.confermata ? 'Confermata' : 'Non confermata';
 
+            // Checkbox e pulsante disabilitati se non confermata
+            const disabilitato = !v.confermata ? 'disabled' : '';
+            // Colore bottone
+            const coloreBottone = v.confermata ? '#3498db' : '#aaaaaa';
             tableHTML += `
                 <tr>
                     <td>${giorno}</td>
                     <td>${ora}</td>
                     <td>${v.medico}</td>
-                    <td>${v.confermata}</td>
+                    <td>${confermataText}</td>
                     <td>${v.prove && v.prove.length > 0 ? v.prove.map(p => p.tipo).join(', ') : 'Nessuna'}</td>
                     <td>
-                        <label>Il medico è presente: </label><input id="${v.id}-checkbox" type="checkbox" checked="true">
-                        <button type="submit" onclick="confermaPresenza('${v.id}')" style="background-color: #3498db;">Invia prova</button>
+                        <label>Il medico è presente: </label>
+                        <input id="${v.id}-checkbox" type="checkbox" ${v.confermata ? 'checked' : ''} ${disabilitato}>
+                        <button type="submit" onclick="confermaPresenza('${v.id}')" style="background-color: ${coloreBottone};" ${disabilitato}>Invia prova</button>
                     </td>
                 </tr>
             `;
