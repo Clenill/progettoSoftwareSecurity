@@ -4,7 +4,7 @@ from passlib.context import CryptContext
 import os
 from dotenv import load_dotenv
 
-from fastapi import Depends, HTTPException, Cookie
+from fastapi import Depends, HTTPException, Cookie, Request
 from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import InvalidCredentials
@@ -91,3 +91,31 @@ def has_role_in(roles: list[ruolo]):
             raise HTTPException(status_code=403)
         return user
     return _has_role_in
+
+def sanitize_str(text: str):
+    if not text: return ""
+    return (text.replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .strip()
+    )
+
+def get_client_metadata(request: Request):
+    ip = None
+    for k,v in request.headers.items():
+        if k == "x-forwarded-for":
+            ip = sanitize_str(v.split(",")[0])
+            break
+    if ip is None:
+        ip = sanitize_str(request.client.host if request.client else "127.0.0.1")
+    email, role = None, ruolo.PAZIENTE
+    auth_header = request.cookies.get("access_token")
+    if auth_header:
+        try:
+            token = auth_header.split(" ")[1]
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            email = sanitize_str(str(payload.get("sub", None)))
+            role = payload.get("role", "user")
+        except:
+            email = "invalid token"
+    return ip, email, role
+
