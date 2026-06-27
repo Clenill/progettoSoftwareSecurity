@@ -105,27 +105,28 @@ async function caricaAgenda() {
         const nomePaziente = nomeUtente[v.paziente] || v.paziente;
 
         // Bottone conferma: blu se non confermata, verde se confermata
-        const coloreConferma = v.confermata ? '#27ae60' : '#3498db';
+        const coloreConferma = v.confermata ? '#27ae60' : '#e67e22';
         const testoConferma = v.confermata ? '✓ Confermata' : 'Conferma Visita';
         const disabilitaConferma = v.confermata ? 'disabled' : '';
-
-        //const confirmBtn = !v.confermata 
-        //    ? `<button onclick="confermaVisita('${v.id}')" style="margin-bottom: 5px;">Conferma Visita</button><br>` 
-        //    : '';
+        // Dopo le variabili per il bottone conferma, aggiungi:
+        const coloreProva = v.confermata ? '#27ae60' : '#aaaaaa';
+        const disabilitaProva = !v.confermata ? 'disabled' : '';
 
         const formProve = `
             <div style="margin-top: 5px;">
-                <select id="select-evidence-${v.id}">
+                <select id="select-evidence-${v.id}" ${disabilitaProva}>
                     <option value="sintomi">Sintomi</option>
                     <option value="attrezzatura">Attrezzatura</option>
                     <option value="prescrizione">Prescrizione</option>
                     <option value="gps">GPS</option>
                 </select>
-                <button onclick="inviaProva('${v.id}')">Carica Prova</button>
+                <button onclick="inviaProva('${v.id}')" 
+                style="background-color: ${coloreProva};"
+                ${disabilitaProva}>
+                Carica Prova
+                </button>
             </div>
         `;
-
-        //const btnDettagli = `<a href="/dettagli-visita?id=${v.id}" class="btn btn-primary" style="padding: 6px 12px; background-color: #3498db; color: white; text-decoration: none; border-radius: 4px;">Gestisci Visita</a>`;
 
         row.innerHTML = `
             <td>${nomePaziente}</td>
