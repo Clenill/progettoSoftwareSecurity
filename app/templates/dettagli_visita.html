@@ -16,8 +16,37 @@
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .form-group select, .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         button { padding: 10px 20px; background-color: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem; }
-        button:hover { background-color: #27ae60; }
+        button:hover:not(:disabled) { background-color: #27ae60; }
+        button:disabled { background-color: #aaaaaa; cursor: not-allowed; }
         .btn-back { background-color: #95a5a6; margin-bottom: 20px; display: inline-block; padding: 8px 15px; color: white; text-decoration: none; border-radius: 4px; }
+        #btnSalvaProva { background-color: #3498db; }
+        #btnSalvaProva:hover:not(:disabled) { background-color: #2980b9; }
+        #btnSalvaProva:disabled { background-color: #aaaaaa; cursor: not-allowed; }
+    /* Toast */
+        #toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: white;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            font-size: 0.95rem;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 9999;
+            min-width: 280px;
+            text-align: center;
+            pointer-events: none;
+        }
+        #toast.show { opacity: 1 !important; transform: translateX(-50%) translateY(0) !important; }
+        #toast .toast-title { font-weight: bold; margin-bottom: 0.3rem; }
+        #toast .toast-body { color: #555; }
+        #toast.toast-success { border-left: 4px solid #27ae60; }
+        #toast.toast-success .toast-title { color: #27ae60; }
+        #toast.toast-error { border-left: 4px solid #e74c3c; }
+        #toast.toast-error .toast-title { color: #e74c3c; }
     </style>
 </head>
 <body>
@@ -60,19 +89,30 @@
                     <option value="gps">GPS</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>Valore / Descrizione:</label>
-                <input type="text" id="valoreProva" placeholder="Inserisci il referto, le coordinate, ecc..." required>
-            </div>
-            <button type="submit" style="background-color: #3498db;">Salva Prova</button>
+            
+            <button type="submit" id="btnSalvaProva">Salva Prova</button>
         </form>
     </div>
 </div>
+
+<div id="toast"></div>
 
 <script>
 
 const urlParams = new URLSearchParams(window.location.search);
 const visitId = urlParams.get('id');
+
+function showToast(titolo, messaggio, tipo = 'toast-success', durata = 3000) {
+    const toast = document.getElementById('toast');
+    toast.innerHTML = `
+        <div class="toast-title">${titolo}</div>
+        <div class="toast-body">${messaggio}</div>
+    `;
+    toast.className = tipo;
+    void toast.offsetHeight;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), durata);
+}
 
 document.addEventListener('DOMContentLoaded', caricaDettagli);
 
@@ -83,13 +123,21 @@ async function caricaDettagli() {
     }
 
     try {
-        const response = await fetch(`/visit/dettagliovisita/${visitId}`, {
-            credentials: 'same-origin'
-        });
+        const [responseVisita, responseUtenti] = await Promise.all([
+            fetch(`/visit/dettagliovisita/${visitId}`, { credentials: 'same-origin' }),
+            fetch('/api/getusers', { credentials: 'same-origin' })
+        ]);
 
-        if (!response.ok) throw new Error("Errore nel recupero dei dettagli");
+        if (!responseVisita.ok) throw new Error("Errore nel recupero dei dettagli");
 
-        const v = await response.json();
+        const v = await responseVisita.json();
+        const utenti = await responseUtenti.json();
+
+        // Mappa id → nome
+        const nomeUtente = {};
+        utenti.forEach(u => { nomeUtente[u.id] = u.name; });
+
+        const nomePaziente = nomeUtente[v.paziente] || v.paziente;
         
         const dataFormattata = new Date(v.timestamp).toLocaleString('it-IT');
         const proveHtml = v.prove && v.prove.length > 0 
@@ -97,7 +145,7 @@ async function caricaDettagli() {
             : 'Nessuna prova caricata';
 
         document.getElementById('visitInfo').innerHTML = `
-            <div class="info-group"><span>ID Paziente:</span> ${v.paziente}</div>
+            <div class="info-group"><span>Nome Paziente:</span> ${nomePaziente}</div>
             <div class="info-group"><span>Data e Ora:</span> ${dataFormattata}</div>
             <div class="info-group"><span>Stato:</span> ${v.confermata ? '✅ Confermata' : '⏳ In attesa di conferma'}</div>
             <div class="info-group"><span>Prove Attuali:</span> ${proveHtml}</div>
@@ -105,11 +153,20 @@ async function caricaDettagli() {
 
         document.getElementById('actionPanel').style.display = 'block';
 
+        // Bottone salva prova: disabilitato se visita non confermata
+        const btnSalva = document.getElementById('btnSalvaProva');
+        if (!v.confermata) {
+            btnSalva.disabled = true;
+            btnSalva.title = 'Disponibile solo dopo la conferma della visita';
+        } else {
+            btnSalva.disabled = false;
+        }
+
         const confermaContainer = document.getElementById('confermaContainer');
         if (!v.confermata) {
             confermaContainer.innerHTML = `
-                <button onclick="confermaVisita('${v.id}')">Conferma Questa Visita</button>
-                <button onclick="rifiutaVisita('${v.id}')">Rifiuta Questa Visita</button>
+                <button onclick="confermaVisita('${v.id}')" style="background-color: #3498db; margin-right: 10px;">Conferma Questa Visita</button>
+                <button onclick="rifiutaVisita('${v.id}')" style="background-color: #e74c3c;">Rifiuta Questa Visita</button>
             `;
         } else {
             confermaContainer.innerHTML = `<p style="color: #27ae60; font-weight: bold;">✔ Visita Confermata</p>`;
@@ -126,8 +183,10 @@ async function confermaVisita(id) {
         credentials: 'same-origin'
     });
     if (response.ok) {
-        alert("Visita confermata!");
-        caricaDettagli(); // Ricarica la pagina per aggiornare lo stato
+       showToast("✓ Visita confermata", "La visita è stata confermata correttamente.", "toast-success");
+        setTimeout(() => caricaDettagli(), 1500);
+    } else {
+        showToast("✗ Errore", "Impossibile confermare la visita.", "toast-error");
     }
 }
 
@@ -137,20 +196,16 @@ async function rifiutaVisita(id) {
         credentials: 'same-origin'
     });
     if (response.ok) {
-        alert("Visita rifiutata!");
-        window.location.replace('/dashboard/staff');
+        showToast("✓ Visita rifiutata", "La visita è stata rimossa.", "toast-success");
+        setTimeout(() => window.location.replace('/dashboard/staff'), 1500);
+    } else {
+        showToast("✗ Errore", "Impossibile rifiutare la visita.", "toast-error");
     }
 }
 
 document.getElementById('evidenceForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const tipo = document.getElementById('tipoProva').value;
-    const valore = document.getElementById('valoreProva').value;
-
-    const bodyData = { 
-        tipo: tipo,
-        valore: valore
-    };
 
     try {
         const response = await fetch(`/visit/addevidence/${visitId}`, {
@@ -159,20 +214,18 @@ document.getElementById('evidenceForm').addEventListener('submit', async (e) => 
             headers: { 
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(bodyData)
+            body: JSON.stringify({ tipo: tipo })
         });
         
         if (response.ok) {
-            alert("Prova salvata con successo!");
-            document.getElementById('valoreProva').value = '';
-            caricaDettagli();
+            showToast("✓ Prova salvata", `La prova "${tipo}" è stata caricata con successo.`, "toast-success");
+            setTimeout(() => caricaDettagli(), 1500);
         } else {
             const errData = await response.json();
-            alert("Errore: " + (errData.detail || "Salvataggio fallito."));
+            showToast("✗ Errore", errData.detail || "Salvataggio fallito.", "toast-error");
         }
     } catch (err) {
-        console.error(err);
-    }
+        showToast("✗ Errore di connessione", err.message, "toast-error");    }
 });
 </script>
 </body>
