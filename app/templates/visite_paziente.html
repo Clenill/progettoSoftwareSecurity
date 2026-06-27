@@ -12,7 +12,7 @@
 <!-- Menu di Navigazione -->
 <nav class="navbar">
     <div class="nav-container">
-        <a href="#" class="logo"><img src="images/logo.png"></a>
+        <a href="#" class="logo"><img src="/images/logo.png"></a>
         <ul class="nav-menu">
             <li class="nav-item"><a href="/dashboard/utente">Home</a></li>
             <li class="nav-item"><a href="/utente/prenota">Prenota</a></li>
@@ -26,6 +26,38 @@
 
 <h1>Le tue visite</h1>
 <ul id="listaVisite"></ul>
+
+<style>
+#toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: white;
+    border-left: 4px solid #3498db;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    font-size: 0.95rem;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 9999;
+    min-width: 280px;
+    text-align: center;
+}
+#toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+#toast .toast-title {
+    font-weight: bold;
+    color: #3498db;
+    margin-bottom: 0.3rem;
+}
+#toast .toast-body {
+    color: #555;
+}
+</style>
 
 <script>
 
@@ -63,17 +95,20 @@ async function caricaStorico() {
         // Riempimento tabella
         visite.forEach(v => {
             const dataOggetto = new Date(v.timestamp);
-
-            const giorno = dataOggetto.toLocaleDateString('it-IT'); 
-
+            const giorno = dataOggetto.toLocaleDateString('it-IT');
             const ora = dataOggetto.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            
             // Testo leggibile per la colonna confermata
             const confermataText = v.confermata ? 'Confermata' : 'Non confermata';
+            // Controlla se il paziente ha già inviato la prova CONFERMA
+            const provaGiaInviata = v.prove && v.prove.some(p => p.tipo === 'conferma');
+            // Disabilitato se visita non confermata dal medico, O se prova già inviata
+            const disabilitato = (!v.confermata || provaGiaInviata) ? 'disabled' : '';
+            // Verde se prova già inviata, blu se confermata e ancora da inviare, grigio se non confermata
+            const coloreBottone = provaGiaInviata ? '#27ae60' : (v.confermata ? '#3498db' : '#aaaaaa');
+            // Testo bottone aggiornato
+            const testoBottone = provaGiaInviata ? '✓ Prova già inviata' : 'Invia prova';
 
-            // Checkbox e pulsante disabilitati se non confermata
-            const disabilitato = !v.confermata ? 'disabled' : '';
-            // Colore bottone
-            const coloreBottone = v.confermata ? '#3498db' : '#aaaaaa';
             tableHTML += `
                 <tr>
                     <td>${giorno}</td>
@@ -84,7 +119,7 @@ async function caricaStorico() {
                     <td>
                         <label>Il medico è presente: </label>
                         <input id="${v.id}-checkbox" type="checkbox" ${v.confermata ? 'checked' : ''} ${disabilitato}>
-                        <button type="submit" onclick="confermaPresenza('${v.id}')" style="background-color: ${coloreBottone};" ${disabilitato}>Invia prova</button>
+                        <button type="submit" onclick="confermaPresenza('${v.id}')" style="background-color: ${coloreBottone};" ${disabilitato}>${testoBottone}</button>
                     </td>
                 </tr>
             `;
@@ -106,6 +141,23 @@ async function caricaStorico() {
 document.addEventListener('DOMContentLoaded', () => {
     caricaStorico();
 });
+
+function showToast(titolo, messaggio, durata = 2000) {
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.innerHTML = `
+        <div class="toast-title">${titolo}</div>
+        <div class="toast-body">${messaggio}</div>
+    `;
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, durata);
+}
 
 async function confermaPresenza(id) {
     //const id = element.id;
@@ -130,8 +182,8 @@ async function confermaPresenza(id) {
             }
 
             else {
-                alert("Prova inviata!");
-                window.location.reload();
+                showToast("✓ Prova inviata", "La tua conferma è stata registrata correttamente.");
+                setTimeout(() => window.location.reload(), 2000);
             }
         }
 
