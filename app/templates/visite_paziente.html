@@ -63,10 +63,18 @@
 
 async function caricaStorico() {
     try {
-        const response = await fetch('/visit/allmyvisits', {
-            credentials: 'same-origin'
-        });
-        const visite = await response.json();
+        // Carica medici e visite in parallelo
+        const [responseMedici, responseVisite] = await Promise.all([
+            fetch('/api/getusers', { credentials: 'same-origin' }),
+            fetch('/visit/allmyvisits', { credentials: 'same-origin' })
+        ]);
+
+        const utenti = await responseMedici.json();
+        const visite = await responseVisite.json();
+        // Mappa id → nome
+        const nomeMedico = {};
+        utenti.forEach(u => { nomeMedico[u.id] = u.name; });
+
         const contenitore = document.getElementById('listaVisite');
 
         contenitore.innerHTML = '';
@@ -83,7 +91,7 @@ async function caricaStorico() {
                     <tr>
                         <th>Giorno</th>
                         <th>Ora</th>
-                        <th>Medico (ID)</th>
+                        <th>Medico</th>
                         <th>Confermata</th>
                         <th>Prove</th>
                         <th>Azioni</th>
@@ -108,12 +116,14 @@ async function caricaStorico() {
             const coloreBottone = provaGiaInviata ? '#27ae60' : (v.confermata ? '#3498db' : '#aaaaaa');
             // Testo bottone aggiornato
             const testoBottone = provaGiaInviata ? '✓ Prova già inviata' : 'Invia prova';
+            // Usa il nome dalla mappa, fallback all'id se non trovato
+            const nomeMed = nomeMedico[v.medico] || v.medico;
 
             tableHTML += `
                 <tr>
                     <td>${giorno}</td>
                     <td>${ora}</td>
-                    <td>${v.medico}</td>
+                    <td>${nomeMed}</td>
                     <td>${confermataText}</td>
                     <td>${v.prove && v.prove.length > 0 ? v.prove.map(p => p.tipo).join(', ') : 'Nessuna'}</td>
                     <td>
