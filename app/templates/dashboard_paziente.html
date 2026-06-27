@@ -25,6 +25,141 @@
 </nav>
 <h1>Prenota visita</h1>
 
+<style>
+    /* ── Booking section ── */
+#booking-section {
+    max-width: 480px;
+    margin: 2rem auto;
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+#booking-section label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: #333;
+}
+
+#booking-section select,
+#booking-section input[type="date"] {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    box-sizing: border-box;
+    background: #fafafa;
+}
+
+#booking-section select:focus,
+#booking-section input[type="date"]:focus {
+    outline: none;
+    border-color: #3498db;
+    background: white;
+}
+
+#booking-section > button {
+    width: 100%;
+    padding: 0.7rem;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: background 0.2s;
+}
+
+#booking-section > button:hover {
+    background-color: #2980b9;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 1.5rem 0;
+}
+
+#disponibilitaContainer h3 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+#disponibilitaContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+#disponibilitaContainer h3 {
+    width: 100%;
+}
+
+.slot-btn {
+    padding: 0.5rem 1.2rem;
+    background: #eaf4fb;
+    color: #2980b9;
+    border: 1px solid #aad4f0;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s, color 0.2s;
+}
+
+.slot-btn:hover {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+/* Rimuovi i <br> visivi con spacing CSS */
+#booking-section > br {
+    display: none;
+}
+
+/* ── Toast ── */
+
+#toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: white;
+    border-left: 4px solid #3498db;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    font-size: 0.95rem;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 9999;
+    min-width: 280px;
+    text-align: center;
+}
+#toast.show {
+    opacity: 1 !important;
+    transform: translateX(-50%) translateY(0) !important;
+}
+#toast .toast-title {
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+}
+#toast .toast-body {
+    color: #555;
+}
+#toast .toast-body { color: #555; }
+#toast.toast-success { border-left: 4px solid #27ae60; }
+#toast.toast-success .toast-title { color: #27ae60; }
+#toast.toast-error { border-left: 4px solid #e74c3c; }
+#toast.toast-error .toast-title { color: #e74c3c; }
+</style>
+
 <div id="booking-section">
 
     <label>Medico</label>
@@ -83,6 +218,24 @@ async function caricaMedici() {
     }
 }
 
+function showToast(titolo, messaggio, tipo = 'toast-success', durata = 2000) {
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.innerHTML = `
+        <div class="toast-title">${titolo}</div>
+        <div class="toast-body">${messaggio}</div>
+    `;
+    // Rimuovi show, forza reflow, poi riaggiungi
+    toast.className = tipo;
+    void toast.offsetHeight;  // ← forza il reflow
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), durata);
+}
+
 async function prenotaVisita(medicoId, timestamp) {
     if (!mioIdPaziente) {
         alert("Errore: Profilo non caricato. Ricarica la pagina.");
@@ -106,10 +259,10 @@ async function prenotaVisita(medicoId, timestamp) {
     });
 
     if (response.ok) {
-        alert("Richiesta visita effettuata correttamente!");
-        caricaDisponibilita();
+        showToast("✓ Prenotazione effettuata", "La tua richiesta è stata inviata.", "toast-success");
+        setTimeout(() => caricaDisponibilita(), 3500);
     } else {
-        alert("Errore nella prenotazione.");
+        showToast("✗ Errore nella prenotazione", "Qualcosa è andato storto. Riprova.", "toast-error");
     }
     
 }
@@ -189,5 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
     recuperaProfilo();
 });
 </script>
+<div id="toast"></div>
 </body>
 </html>
