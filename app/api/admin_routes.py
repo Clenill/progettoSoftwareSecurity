@@ -6,6 +6,7 @@ from app.db.models import User
 from app.core.security import has_role_in
 from app.core.exceptions import UserNotAuthorizedException, InvalidCredentials
 from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate, PriorUpdate, LikelihoodUpdate, ContractAccountInfoRequest, UserResponse
+from app.core.re_monitor import admin_monitor
 from app.enum.ruolo import ruolo
 from app.enum.prova import TipoProva, PROVE_RUOLI, ID_PROVE
 from app.service.visit_service import VisitService
@@ -18,7 +19,8 @@ from uuid import UUID
 
 router = APIRouter(
     prefix="/admin",
-    tags=["Admin"]
+    tags=["Admin"], 
+    dependencies=[Depends(admin_monitor)]
 )
 
 # La chiamata va triggerata e gli si deve passare id medico e paziente

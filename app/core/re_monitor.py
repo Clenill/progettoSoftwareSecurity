@@ -3,7 +3,7 @@ import asyncio
 import time
 from collections import defaultdict
 from fastapi import Request
-from app.core.config import CLEANUP_INTERVAL_SECONDS
+from app.core.config import MAX_REQUESTS, CLEANUP_INTERVAL_SECONDS
 from app.core.logging import logger
 from app.core.security import get_client_metadata, sanitize_str
 from app.core.exceptions import RequestLimitExceededException
@@ -56,7 +56,17 @@ class RuntimeEnforcementMonitor:
             )
             context_logger.warning(f"{ip} EXCEEDED LIMIT ON {method} {path}")
             
-            raise RequestLimitExceededException(CLEANUP_INTERVAL_SECONDS)
+            raise RequestLimitExceededException(self.delta_seconds)
 
         self._history[ip].append(now)
+
+public_monitor = RuntimeEnforcementMonitor(
+    max_requests=MAX_REQUESTS, 
+    delta_seconds=CLEANUP_INTERVAL_SECONDS
+)
+
+admin_monitor = RuntimeEnforcementMonitor(
+    max_requests=2 * MAX_REQUESTS, 
+    delta_seconds=CLEANUP_INTERVAL_SECONDS
+)
 

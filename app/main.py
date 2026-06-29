@@ -13,15 +13,10 @@ from app.api.ui_routes import ui_router
 from app.core.exceptions import AppException
 from app.core.config import MAX_REQUESTS, CLEANUP_INTERVAL_SECONDS
 from app.core.logging import log_request
-from app.core.re_monitor import RuntimeEnforcementMonitor
+from app.core.re_monitor import public_monitor, admin_monitor
 from app.api.auth_routes import router as auth_router
 from app.api.visit_routes import router as visit_router
 from app.api.admin_routes import router as admin_router
-
-monitor = RuntimeEnforcementMonitor(
-    max_requests=MAX_REQUESTS, 
-    delta_seconds=CLEANUP_INTERVAL_SECONDS
-)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,7 +24,8 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    await monitor.bg_cleanup()
+    await public_monitor.bg_cleanup()
+    await admin_monitor.bg_cleanup()
 
     print("\n===== SERVER AVVIATO =====")
     print("Swagger Docs: http://127.0.0.1:8000/docs")
@@ -45,7 +41,7 @@ async def lifespan(app: FastAPI):
 BASE_PATH = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
-app = FastAPI(lifespan=lifespan, dependencies=[Depends(monitor)])
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware, 

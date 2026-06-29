@@ -11,6 +11,7 @@ from app.service.contract_service import ContractService
 from app.core.exceptions import *
 from app.core.security import get_current_user, has_role_in
 from app.core.config import CONTRACT
+from app.core.re_monitor import public_monitor
 from app.db.models import User
 from app.enum.ruolo import ruolo
 from app.enum.prova import PROVE_RUOLI, ID_PROVE
@@ -19,7 +20,8 @@ from datetime import datetime, timezone, date
 
 router = APIRouter(
     prefix="/visit",
-    tags=["Visit"]
+    tags=["Visit"], 
+    dependencies=[Depends(public_monitor)]
 )
 
 @router.post("/newvisit", response_model=VisitResponse)
