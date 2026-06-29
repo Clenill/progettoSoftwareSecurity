@@ -100,5 +100,5 @@ async def get_users(
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
     db: AsyncSession = Depends(get_db)
 ):
-    return await UserService.get_all(db)
+    return await UserService.get_users(db)
 
