@@ -3,11 +3,12 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from app.core.security import has_role_in, get_current_user_or_none
+from app.core.re_monitor import public_monitor
 from app.db.models import User
 from app.enum.ruolo import ruolo
 from uuid import UUID
 
-ui_router = APIRouter()
+ui_router = APIRouter(dependencies=[Depends(public_monitor)])
 
 # Configurazione Jinja2
 BASE_PATH = Path(__file__).resolve().parent.parent

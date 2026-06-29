@@ -8,11 +8,12 @@ from app.service.user_service import UserService
 from app.service.visit_service import VisitService
 
 from app.core.security import get_current_user, has_role_in
+from app.core.re_monitor import public_monitor
 from app.db.models import User, Visit#, Disponibilita
 from app.enum.ruolo import ruolo
 from app.enum.prova import TipoProva, PROVE_RUOLI
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(public_monitor)])
 
 # READ users
 @router.get("/getusers")
