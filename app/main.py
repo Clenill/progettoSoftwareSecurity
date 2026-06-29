@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, Depends
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
 BASE_PATH = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, dependencies=[Depends(monitor)])
 
 app.add_middleware(
     CORSMiddleware, 
