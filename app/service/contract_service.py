@@ -1,6 +1,6 @@
 
 from app.repositories.contract_repository import ContractRepository
-from app.core.config import CONTRACT, SCALE, W3_ACCOUNT, Web3
+from app.core.config import CONTRACT, SCALE, W3_ACCOUNT, Web3, w3
 from app.db.models import User, Visit
 from app.enum.prova import TipoProva, ID_PROVE
 from uuid import UUID
@@ -8,6 +8,19 @@ from app.core.exceptions import *
 from web3.exceptions import ContractLogicError
 
 class ContractService:
+
+    @staticmethod
+    def visit_hash(visit: Visit):
+        types = ['bytes16', 'bytes16', 'bytes16']
+        values = [
+            visit.id.bytes, 
+            visit.medico.bytes, 
+            visit.paziente.bytes
+        ]
+
+        return Web3.keccak(
+            w3.codec.encode(types, values)
+        )
 
     @staticmethod
     async def add_permissioned_account(account_address: str):

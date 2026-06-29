@@ -81,7 +81,8 @@ async def admin_get_visit(
 ):
     visit = await VisitService.get_visit_by_id(id, None, db)
     (bc_visit, probabilita) = await ContractService.get_visit(id)
-    # TODO: controlla coerenza tra gli UUID dello smart contract e quelli del DB
+    visit_hash = ContractService.visit_hash(visit)
+    # if bc_hash[0] != visit_hash: print('visit mismatch')
     visit.probabilita = probabilita
     return visit
 

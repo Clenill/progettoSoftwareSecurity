@@ -28,8 +28,7 @@ contract Oracle is AccessControl {
     }
 
     struct Visit {
-        bytes16 physician;
-        bytes16 patient;
+        bytes32 hash;
         EvidenceStatus[] evidences;
         bool active;
     }
@@ -223,8 +222,7 @@ contract Oracle is AccessControl {
     function addVisit(bytes16 author, bytes16 id, bytes16 physician, bytes16 patient) public isPermissioned newVisit(id) {
         _visits.push();
         Visit storage visit = _visits[_visits.length - 1];
-        visit.physician = physician;
-        visit.patient = patient;
+        visit.hash = keccak256(abi.encode(id, physician, patient));
         visit.active = true;
         _visitIds[id] = _visits.length - 1;
         emit VisitAdded(msg.sender, author, id);
@@ -237,8 +235,7 @@ contract Oracle is AccessControl {
 
     function editVisit(bytes16 author, bytes16 id, bytes16 physician, bytes16 patient) public isPermissioned visitExists(id) {
         Visit storage visit = _visits[_visitIds[id]];
-        visit.physician = physician;
-        visit.patient = patient;
+        visit.hash = keccak256(abi.encode(id, physician, patient));
         emit VisitEdited(msg.sender, author, id);
     }
 
