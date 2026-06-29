@@ -59,9 +59,13 @@ class UserService:
         return user
     
     @staticmethod
-    async def get_user(db: AsyncSession):
+    async def get_users(db: AsyncSession):
         return await UserRepository.get_all(db)
     
+    @staticmethod
+    async def get_users_with_role(role: ruolo, db: AsyncSession):
+        return await UserRepository.get_all_with_role(db, role)
+
     @staticmethod
     async def authenticate_user(login_data: LoginRequest, db: AsyncSession):
         user = await UserRepository.get_by_email(db, login_data.email)

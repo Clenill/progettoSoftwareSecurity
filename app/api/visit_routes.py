@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Response, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -15,7 +15,7 @@ from app.db.models import User
 from app.enum.ruolo import ruolo
 from app.enum.prova import PROVE_RUOLI, ID_PROVE
 from uuid import UUID
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 
 router = APIRouter(
     prefix="/visit",
@@ -100,6 +100,17 @@ async def add_evidence(
         "valore": evidence.valore
     }
 
+@router.get("/disponibilita/{medico_id}")
+async def visite_disponibili_medico(
+    medico_id: UUID,
+    giorno: date = Query(..., alias="giorno"),
+    db: AsyncSession = Depends(get_db)
+):
+    return await VisitService.get_available_slots(
+        medico_id,
+        giorno,
+        db
+    )
 
 @router.get("/visits/my-agenda")
 async def get_my_agenda(

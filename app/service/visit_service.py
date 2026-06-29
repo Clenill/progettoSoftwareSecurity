@@ -8,10 +8,10 @@ from app.db.models import User, Evidence
 from app.enum.ruolo import ruolo
 from app.enum.prova import TipoProva
 from uuid import UUID
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta, date, time
 from app.core.exceptions import *
 from app.service.user_service import UserService
-from datetime import timedelta, timezone
+from zoneinfo import ZoneInfo
 import os
 
 class VisitService:
@@ -30,10 +30,10 @@ class VisitService:
         
         duration = timedelta(minutes=int(durata_minuti))
         visit_time = visit_data.timestamp
-
+        tz = ZoneInfo("Europe/Rome")
         # Timezone-aware
         if visit_time.tzinfo is None:
-            visit_time = visit_time.replace(tzinfo=timezone.utc) # o ZoneInfo("Europe/Rome"
+            visit_time = visit_time.replace(tzinfo=tz) # o ZoneInfo("Europe/Rome"
         start_window = visit_time
         end_window = visit_time + duration
 
@@ -51,6 +51,39 @@ class VisitService:
             return await VisitRepository.create(db, visit_data, user, commit)
         except IntegrityError:
             raise MissingVisitDetailsException(detail="Dati visita errati.")
+
+    @staticmethod
+    async def get_available_slots(doctor_id: UUID, day: date, db: AsyncSession):
+
+        tz = ZoneInfo("Europe/Rome")
+        start_day = datetime.combine(day, time(8,0), tz)
+        end_day = datetime.combine(day, time(18,0), tz)
+        visits = await VisitRepository.get_doctor_visits_by_day(
+            db, doctor_id, start_day, end_day
+            )
+        occupied = {
+            visit.timestamp.astimezone(timezone.utc)
+            for visit in visits
+            if visit.timestamp is not None
+        }
+        duration = timedelta(
+            minutes=int(os.getenv("DURATA_VISITA",60))
+        )
+        slots = []
+        current = start_day
+        print("OCCUPIED:", occupied)
+        print("PRIMO SLOT:", start_day.astimezone(timezone.utc))
+        while current < end_day:
+
+            if current not in occupied and current > datetime.now(tz):
+
+                slots.append({
+                    "timestamp": current.isoformat(),
+                    "orario": current.strftime("%H:%M")
+                })
+            current += duration
+
+        return slots
 
     @staticmethod
     async def get_visits(user: User | None, db: AsyncSession):

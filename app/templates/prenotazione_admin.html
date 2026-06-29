@@ -12,7 +12,7 @@
 <!-- Menu di Navigazione -->
 <nav class="navbar">
     <div class="nav-container">
-        <a href="#" class="logo"><img src="images/logo.png"></a>
+        <a href="#" class="logo"><img src="/images/logo.png"></a>
         <ul class="nav-menu">
             <li class="nav-item"><a href="/dashboard/authority">Home</a></li>
         </ul>
@@ -21,16 +21,177 @@
         </div>
     </div>
 </nav>
+<h1>Prenota visita</h1>
 
-</center><h1>Seleziona un medico</h1>
+<style>
+    /* ── Booking section ── */
+#booking-section {
+    max-width: 480px;
+    margin: 2rem auto;
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+#booking-section label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: #333;
+}
+
+#booking-section select,
+#booking-section input[type="date"] {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    box-sizing: border-box;
+    background: #fafafa;
+}
+
+#booking-section select:focus,
+#booking-section input[type="date"]:focus {
+    outline: none;
+    border-color: #3498db;
+    background: white;
+}
+
+#booking-section > button {
+    width: 100%;
+    padding: 0.7rem;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: background 0.2s;
+}
+
+#booking-section > button:hover {
+    background-color: #2980b9;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 1.5rem 0;
+}
+
+#disponibilitaContainer h3 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+#disponibilitaContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+#disponibilitaContainer h3 {
+    width: 100%;
+}
+
+.slot-btn {
+    padding: 0.5rem 1.2rem;
+    background: #eaf4fb;
+    color: #2980b9;
+    border: 1px solid #aad4f0;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s, color 0.2s;
+}
+
+.slot-btn:hover {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+/* Rimuovi i <br> visivi con spacing CSS */
+#booking-section > br {
+    display: none;
+}
+
+/* ── Toast ── */
+
+#toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: white;
+    border-left: 4px solid #3498db;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    font-size: 0.95rem;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 9999;
+    min-width: 280px;
+    text-align: center;
+}
+#toast.show {
+    opacity: 1 !important;
+    transform: translateX(-50%) translateY(0) !important;
+}
+#toast .toast-title {
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+}
+#toast .toast-body {
+    color: #555;
+}
+#toast .toast-body { color: #555; }
+#toast.toast-success { border-left: 4px solid #27ae60; }
+#toast.toast-success .toast-title { color: #27ae60; }
+#toast.toast-error { border-left: 4px solid #e74c3c; }
+#toast.toast-error .toast-title { color: #e74c3c; }
+</style>
+
 <div id="booking-section">
-    <select id="pazienteSelect" required>
-        <option value="">Seleziona un paziente</option>
+
+    <label>Paziente</label>
+
+    <select id="pazienteSelect">
+        <option value="">Seleziona paziente</option>
     </select>
-    <select id="medicoSelect" required>
-        <option value="">Seleziona un medico</option>
+
+    <br><br>
+
+    <label>Medico</label>
+
+    <select id="medicoSelect">
+        <option value="">Seleziona medico</option>
     </select>
+
+    <br><br>
+
+   <label>Giorno</label>
+
+    <input
+        type="date"
+        id="giornoSelect">
+
+    <br><br>
+
+    <button onclick="caricaDisponibilita()">
+        Mostra orari disponibili
+    </button>
+
+    <hr>
+
     <div id="disponibilitaContainer"></div>
+
 </div>
 
 <script>
@@ -38,33 +199,55 @@ let mioIdPaziente = null;
 
 async function caricaUtenti() {
     try {
-        const response = await fetch('/api/getusers', {
+        const response = await fetch('/admin/allusers', {
             credentials: 'same-origin'
         });
+        // Controlla che la risposta è JSON
+        const contentType = response.headers.get("content-type");
+        if (!response.ok || !contentType?.includes("application/json")) {
+            console.error("Risposta non valida:", response.status, contentType);
+            return;
+        }
         const users = await response.json();
         const pazienteSelect = document.getElementById('pazienteSelect');
         const medicoSelect = document.getElementById('medicoSelect');
-        
-        pazienteSelect.innerHTML = '<option value="">Seleziona un paziente</option>';
         medicoSelect.innerHTML = '<option value="">Seleziona un medico</option>';
-        
+        pazienteSelect.innerHTML = '<option value="">Seleziona un paziente</option>';
         users.forEach(user => {
             if (user.ruolo !== 'admin') {
                 const option = document.createElement('option');
                 option.value = user.id;
                 option.textContent = user.name;
-                if (user.ruolo === 'utente') {
-                    pazienteSelect.appendChild(option);
+                if (user.ruolo === 'staff') {
+                    medicoSelect.appendChild(option);
                 }
 
-                else if (user.ruolo === 'staff') {
-                    medicoSelect.appendChild(option);
+                else if (user.ruolo === 'utente') {
+                    pazienteSelect.appendChild(option);
                 }
             }
         });
     } catch (err) {
-        console.error("Errore nel caricamento degli utenti:", err);
+        console.error("Errore nel caricamento dei medici:", err);
     }
+}
+
+function showToast(titolo, messaggio, tipo = 'toast-success', durata = 2000) {
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.innerHTML = `
+        <div class="toast-title">${titolo}</div>
+        <div class="toast-body">${messaggio}</div>
+    `;
+    // Rimuovi show, forza reflow, poi riaggiungi
+    toast.className = tipo;
+    void toast.offsetHeight;  // ← forza il reflow
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), durata);
 }
 
 async function prenotaVisita(pazienteId, medicoId, timestamp) {
@@ -74,71 +257,73 @@ async function prenotaVisita(pazienteId, medicoId, timestamp) {
         timestamp: timestamp
     };
 
-    try {
-        const response = await fetch('/admin/newvisit', {
-            method: 'POST',
-            credentials: 'same-origin', 
-            headers: { 
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload)
-        });
+    
+    const response = await fetch('/admin/newvisit', {
+        method: 'POST',
+        credentials: 'same-origin', 
+        headers: { 
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+    });
 
-        if (response.ok) {
-            alert("Prenotazione effettuata!");
-            caricaStorico();
-            caricaDisponibilita();
-        } else {
-            alert("Errore nella prenotazione.");
-        }
-    } catch (err) {
-        console.error("Errore:", err);
+    if (response.ok) {
+        showToast("✓ Prenotazione effettuata", "La tua richiesta è stata inviata.", "toast-success");
+        setTimeout(() => caricaDisponibilita(), 3500);
+    } else {
+        showToast("✗ Errore nella prenotazione", "Qualcosa è andato storto. Riprova.", "toast-error");
     }
+    
 }
 
 async function caricaDisponibilita() {
-    const medicoId = document.getElementById('medicoSelect').value;
     const pazienteId = document.getElementById('pazienteSelect').value;
+    const medicoId = document.getElementById('medicoSelect').value;
+    const giorno = document.getElementById("giornoSelect").value;
     const container = document.getElementById('disponibilitaContainer');
-    
-    if (!medicoId || !pazienteId) {
+    container.innerHTML = '';
+    if (!medicoId) {
         container.innerHTML = '';
         return;
     }
 
     try {
-        const response = await fetch(`/api/disponibilita/${medicoId}`, {
+        const response = await fetch(
+            `/visit/disponibilita/${medicoId}?giorno=${giorno}`,
+            {
             credentials: 'same-origin'
-        });
+            }
+        );
 
         if (!response.ok) {
             container.innerHTML = '<p>Nessuna disponibilità trovata.</p>';
             return;
         }
 
-        const data = await response.json();
-        container.innerHTML = '<h4>Disponibilità:</h4>';
-        
-        const raggruppati = data.reduce((acc, slot) => {
-            const dataGiorno = slot.valore.split('T')[0];
-            if (!acc[dataGiorno]) acc[dataGiorno] = [];
-            acc[dataGiorno].push(slot);
-            return acc;
-        }, {});
+        const slots = await response.json();
 
-        for (const [dataGiorno, orari] of Object.entries(raggruppati)) {
-            const gruppo = document.createElement('div');
-            gruppo.innerHTML = `<h5>${dataGiorno}</h5>`;
-            
-            orari.forEach(s => {
-                const btn = document.createElement('button');
-                btn.textContent = s.orario;
-                btn.className = 'slot-btn';
-                btn.onclick = () => prenotaVisita(pazienteId, medicoId, s.valore);
-                gruppo.appendChild(btn);
-            });
-            container.appendChild(gruppo);
-        }
+    if(slots.length===0){
+
+        container.innerHTML="<p>Nessun orario disponibile.</p>";
+
+        return;
+    }
+
+    const titolo=document.createElement("h3");
+    titolo.textContent="Orari disponibili";
+    container.appendChild(titolo);
+
+    slots.forEach(slot=>{
+        const button=document.createElement("button");
+        button.className="slot-btn";
+        button.textContent=slot.orario;
+        button.onclick=()=>prenotaVisita(
+            pazienteId, 
+            medicoId,
+            slot.timestamp
+        );
+        container.appendChild(button);
+    });
     } catch (err) {
         console.error("Errore caricamento:", err);
     }
@@ -146,9 +331,8 @@ async function caricaDisponibilita() {
 
 document.addEventListener('DOMContentLoaded', () => {
     caricaUtenti();
-    document.getElementById('medicoSelect').addEventListener('change', caricaDisponibilita);
-    document.getElementById('pazienteSelect').addEventListener('change', caricaDisponibilita);
 });
 </script>
+<div id="toast"></div>
 </body>
 </html>

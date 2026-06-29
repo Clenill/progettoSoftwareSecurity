@@ -13,6 +13,13 @@ class UserRepository:
         )
 
         return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_all_with_role(db: AsyncSession, role: ruolo):
+        result = await db.execute(
+            select(User).where(User.ruolo == role)
+        )
+        return result.scalars().all()
     
     @staticmethod
     async def create(db: AsyncSession, user: User):

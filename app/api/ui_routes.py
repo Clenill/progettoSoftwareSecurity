@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
@@ -13,46 +13,58 @@ ui_router = APIRouter()
 BASE_PATH = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
-@ui_router.get("/", response_class=HTMLResponse)
-async def login_page(request: Request, current_user: User | None = Depends(get_current_user_or_none)):
-    """Pagina di login"""
-    if current_user == None:
-        return templates.TemplateResponse(request=request, name="login.html")
-    
-    if current_user.ruolo == ruolo.PAZIENTE:
-        return RedirectResponse("/dashboard/utente")
-    elif current_user.ruolo == ruolo.AUTORITY:
-        return RedirectResponse("/dashboard/authority")
-    elif current_user.ruolo == ruolo.MEDICO:
-        return RedirectResponse("/dashboard/staff")
+redirect_targets = {
+    ruolo.PAZIENTE: "/dashboard/utente", 
+    ruolo.MEDICO: "/dashboard/staff", 
+    ruolo.AUTORITY: "/dashboard/authority"
+}
 
+async def redirect_if_not_logged_in(current_user: User | None = Depends(get_current_user_or_none)):
+    if current_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_307_TEMPORARY_REDIRECT, 
+            headers={"Location": "/"}
+        )
+    return current_user
+
+async def redirect_if_logged_in(current_user: User | None = Depends(get_current_user_or_none)):
+    if current_user is not None:
+        raise HTTPException(
+            status_code=status.HTTP_307_TEMPORARY_REDIRECT, 
+            headers={"Location": redirect_targets[current_user.ruolo]}
+        )
+    return current_user
+
+@ui_router.get("/", response_class=HTMLResponse)
+async def login_page(request: Request, current_user: User | None = Depends(redirect_if_logged_in)):
+    return templates.TemplateResponse(request=request, name="login.html")
 
 @ui_router.get("/registrazione", response_class=HTMLResponse)
-async def register_page(request: Request):
+async def register_page(request: Request, current_user: User | None = Depends(redirect_if_logged_in)):
     """Pagina di registrazione"""
     return templates.TemplateResponse(request=request, name="registrazione.html")
 
 @ui_router.get("/dashboard/utente", response_class=HTMLResponse)
-async def dashboard_paziente(request: Request):
+async def dashboard_paziente(request: Request, current_user: User = Depends(has_role_in([ruolo.PAZIENTE]))):
     return templates.TemplateResponse(request=request, name="home_paziente.html")
 
 @ui_router.get("/utente/prenota", response_class=HTMLResponse)
-async def prenota_page(request: Request):
+async def prenota_page(request: Request, current_user: User = Depends(has_role_in([ruolo.PAZIENTE]))):
     """Pagina per effettuare una prenotazione"""
     return templates.TemplateResponse(request=request, name="dashboard_paziente.html")
 
 @ui_router.get("/utente/visite", response_class=HTMLResponse)
-async def visualizza_visite_page(request: Request):
+async def visualizza_visite_page(request: Request, current_user: User = Depends(has_role_in([ruolo.PAZIENTE]))):
     """Pagina per visualizzare gli appuntamenti"""
     return templates.TemplateResponse(request=request, name="visite_paziente.html")
 
 @ui_router.get("/dashboard/staff", response_class=HTMLResponse)
-async def dashboard_medico(request: Request):
+async def dashboard_medico(request: Request, current_user: User = Depends(has_role_in([ruolo.MEDICO]))):
     """Area riservata al Medico"""
     return templates.TemplateResponse(request=request, name="dashboard_medico.html")
 
 @ui_router.get("/dettagli-visita", response_class=HTMLResponse)
-async def dettagli_visita_page(request: Request):
+async def dettagli_visita_page(request: Request, current_user: User = Depends(has_role_in([ruolo.MEDICO]))):
     """Pagina di dettaglio della singola visita per il Medico"""
     return templates.TemplateResponse(request=request, name="dettagli_visita.html")
 
@@ -87,3 +99,4 @@ async def dettagli_utente(id: UUID, request: Request, current_user: User = Depen
 async def errore(request: Request):
     """Qualcosa è andato storto"""
     return templates.TemplateResponse(request=request, name="pagina_errore.html")
+

@@ -142,11 +142,3 @@ class Evidence(Base):
         UniqueConstraint("visita", "tipo", name="unique_visita_tipo"), 
     )
 
-class Disponibilita(Base):
-    __tablename__ = "disponibilita"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    medico = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    timestamp = Column(DateTime(timezone=True), nullable=False)
-    occupato = Column(Boolean, default=False)
-

@@ -12,6 +12,7 @@ Installato hashing password
 pip install bcrypt==4.0.1
 pip install "passlib[bcrypt]"
 python-jose
+loguru
 
 Avvio server
 uvicorn app.main:app --

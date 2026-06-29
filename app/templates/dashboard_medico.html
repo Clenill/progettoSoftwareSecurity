@@ -22,70 +22,176 @@
 </nav>
 
 <h1>La mia Agenda</h1>
+
+<style>
+#toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: white;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    font-size: 0.95rem;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 9999;
+    min-width: 280px;
+    text-align: center;
+    pointer-events: none;
+}
+#toast.show {
+    opacity: 1 !important;
+    transform: translateX(-50%) translateY(0) !important;
+}
+#toast .toast-title { font-weight: bold; margin-bottom: 0.3rem; }
+#toast .toast-body { color: #555; }
+#toast.toast-success { border-left: 4px solid #27ae60; }
+#toast.toast-success .toast-title { color: #27ae60; }
+#toast.toast-error { border-left: 4px solid #e74c3c; }
+#toast.toast-error .toast-title { color: #e74c3c; }
+</style>
+
 <table id="agendaTable">
     <thead>
         <tr>
             <th>Paziente</th>
             <th>Data/Ora</th>
             <th>Stato</th>
-            <th>Prove Caricate</th> <th>Azione</th>
+            <th>Prove Caricate</th> 
+            <th>Azione</th>
         </tr>
     </thead>
     <tbody id="agendaBody"></tbody>
 </table>
 
 <script>
+
+function showToast(titolo, messaggio, tipo = 'toast-success', durata = 3000) {
+    const toast = document.getElementById('toast');
+    toast.innerHTML = `
+        <div class="toast-title">${titolo}</div>
+        <div class="toast-body">${messaggio}</div>
+    `;
+    toast.className = tipo;
+    void toast.offsetHeight;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), durata);
+}
+
 async function caricaAgenda() {
-    const response = await fetch('/visit/visits/my-agenda', {
-        credentials: 'same-origin'
-    });
-    const visite = await response.json();
+    const [responseUtenti, responseVisite] = await Promise.all([
+        fetch('/api/getusers', { credentials: 'same-origin' }),
+        fetch('/visit/visits/my-agenda', { credentials: 'same-origin' })
+    ]);
+    const utenti = await responseUtenti.json();
+    const visite = await responseVisite.json();
+    // Mappa id → nome per i pazienti
+    const nomeUtente = {};
+    utenti.forEach(u => { nomeUtente[u.id] = u.name; });
+
     const body = document.getElementById('agendaBody');
     body.innerHTML = '';
 
     visite.forEach(v => {
         const row = document.createElement('tr');
-        
         const dataFormattata = new Date(v.timestamp).toLocaleString('it-IT');
 
-        let proveHtml = '';
-        if (v.prove && v.prove.length > 0) {
-            proveHtml = v.prove.map(p => p.tipo).join(', ');
-        } else {
-            proveHtml = '<i>Nessuna</i>';
-        }
+        const proveHtml = v.prove && v.prove.length > 0
+            ? v.prove.map(p => p.tipo).join(', ')
+            : '<i>Nessuna</i>';
 
-        const confirmBtn = !v.confermata 
-            ? `<button onclick="confermaVisita('${v.id}')" style="margin-bottom: 5px;">Conferma Visita</button><br>` 
-            : '';
+        const nomePaziente = nomeUtente[v.paziente] || v.paziente;
+
+        // Bottone conferma: blu se non confermata, verde se confermata
+        const coloreConferma = v.confermata ? '#27ae60' : '#e67e22';
+        const testoConferma = v.confermata ? '✓ Confermata' : 'Conferma Visita';
+        const disabilitaConferma = v.confermata ? 'disabled' : '';
+        // Dopo le variabili per il bottone conferma, aggiungi:
+        const coloreProva = v.confermata ? '#27ae60' : '#aaaaaa';
+        const disabilitaProva = !v.confermata ? 'disabled' : '';
 
         const formProve = `
             <div style="margin-top: 5px;">
-                <select id="select-evidence-${v.id}">
+                <select id="select-evidence-${v.id}" ${disabilitaProva}>
                     <option value="sintomi">Sintomi</option>
                     <option value="attrezzatura">Attrezzatura</option>
                     <option value="prescrizione">Prescrizione</option>
                     <option value="gps">GPS</option>
                 </select>
-                <button onclick="inviaProva('${v.id}')">Carica Prova</button>
+                <label>Prova presente </label>
+                <input type="checkbox" id="valoreProva-${v.id}" checked="checked">
+                <button onclick="inviaProva('${v.id}')" 
+                style="background-color: ${coloreProva};"
+                ${disabilitaProva}>
+                Carica Prova
+                </button>
             </div>
         `;
 
-        const btnDettagli = `<a href="/dettagli-visita?id=${v.id}" class="btn btn-primary" style="padding: 6px 12px; background-color: #3498db; color: white; text-decoration: none; border-radius: 4px;">Gestisci Visita</a>`;
+        const rifiutaProva = v.confermata ? '' : `<button onclick="rifiutaVisita('${v.id}')" style="background-color: ${coloreConferma}; margin-bottom: 5px;" ${disabilitaConferma}>Rifiuta Visita</button>`;
 
         row.innerHTML = `
-            <td>${v.paziente}</td>
+            <td>${nomePaziente}</td>
             <td>${dataFormattata}</td>
-            <td>${v.confermata ? '✅ Confermata' : '⏳ In attesa'}</td>
+            <td>
+                 <button onclick="confermaVisita('${v.id}')"
+                    style="background-color: ${coloreConferma}; margin-bottom: 5px;"
+                    ${disabilitaConferma}>
+                    ${testoConferma}
+                </button>` + rifiutaProva + `
+            </td>
             <td>${proveHtml}</td>
-            <td>${btnDettagli}</td>
+            <td>
+                ${formProve}
+                <a href="/dettagli-visita?id=${v.id}" class="btn btn-primary"
+                   style="display:inline-block; margin-top: 5px; padding: 6px 12px;
+                          background-color: #3498db; color: white;
+                          text-decoration: none; border-radius: 4px;">
+                    Gestisci Visita
+                </a>
+            </td>
         `;
         body.appendChild(row);
     });
 }
 
+async function confermaVisita(visitId) {
+    try {
+        const response = await fetch(`/visit/visits/${visitId}/confirm`, {
+            method: 'PUT',
+            credentials: 'same-origin'
+        });
+        if (response.ok) {
+            showToast("✓ Visita confermata", "La visita è stata confermata correttamente.", "toast-success");
+            setTimeout(() => caricaAgenda(), 1500);
+        } else {
+            showToast("✗ Errore", "Impossibile confermare la visita.", "toast-error");
+        }
+    } catch (err) {
+        showToast("✗ Errore di connessione", err.message, "toast-error");
+    }
+}
+
+async function rifiutaVisita(id) {
+    const response = await fetch(`/visit/denied-visit/${id}`, {
+        method: 'DELETE', 
+        credentials: 'same-origin'
+    });
+
+    if (response.ok) {
+        showToast("✓ Visita rifiutata", "La visita è stata rimossa.", "toast-success");
+        setTimeout(() => window.location.replace("/dashboard/staff"), 1500);
+    }
+    else {
+        showToast("✗ Errore", "Impossibile rifiutare la visita.", "toast-error");
+    }
+}
+
 async function inviaProva(visitId) {
     const tipoProva = document.getElementById(`select-evidence-${visitId}`).value;
+    const valoreProva = document.getElementById(`valoreProva-${visitId}`).checked;
 
     try {
         const response = await fetch(`/visit/addevidence/${visitId}`, {
@@ -94,22 +200,23 @@ async function inviaProva(visitId) {
             headers: { 
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ tipo: tipoProva })
+            body: JSON.stringify({ tipo: tipoProva, valore: valoreProva })
         });
         
         if (response.ok) {
-            alert(`Prova "${tipoProva}" caricata con successo!`);
-            caricaAgenda(); // Ricarica la tabella per aggiornare la colonna "Prove Caricate"
+            showToast("✓ Prova caricata", `La prova "${tipoProva}" è stata caricata con successo.`, "toast-success");
+            setTimeout(() => caricaAgenda(), 1500);
         } else {
             const errData = await response.json();
-            alert("Errore: " + (errData.detail || "Impossibile caricare la prova."));
+            showToast("✗ Errore", errData.detail || "Impossibile caricare la prova.", "toast-error");
         }
     } catch (err) {
-        console.error("Errore di connessione", err);
+        showToast("✗ Errore di connessione", err.message, "toast-error");
     }
 }
 
 document.addEventListener('DOMContentLoaded', caricaAgenda);
 </script>
+<div id="toast"></div>
 </body>
 </html>
