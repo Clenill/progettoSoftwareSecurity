@@ -15,6 +15,7 @@
         <ul class="nav-menu">
             <li class="nav-item"><a href="/dashboard/authority" class="active">Home</a></li>
             <li class="nav-item"><a href="/lista-utenti">Gestisci Utenti</a></li>
+            <li class="nav-item"><a href="/admin/prenota">Nuova Visita</a></li>
         </ul>
         <div class="col-md-2">
             <button onclick="logout()">Logout</button>
@@ -23,9 +24,12 @@
 </nav>
 
 <main class="main-container" style="max-width: 1200px;">
-    <h1>Pannello di Controllo - Authority <span class="badge-auth">Authority</span></h1>
+    <section class="welcome-section">
+        <h1>Pannello di Controllo - Authority <span class="badge-auth">Authority</span></h1>
+        <p>Gestisci visite, utenti e prove del sistema.</p>
+    </section>
 
-    <div class="table-container">
+    <div style="overflow-x: auto;">
         <table class="styled-table">
             <thead>
                 <tr>
@@ -41,18 +45,27 @@
                 </tbody>
         </table>
     </div>
-
-    <section class="welcome-section">
-            <h1>Benvenuto admin!</h1>
-            <p>Cosa vuoi fare?</p>
-            
-            <!-- Azioni rapide collegate al menu -->
-            <div class="cta-buttons">
-                <a href="/admin/prenota" class="btn btn-primary">Prenota</a>
-                <a href="/lista-utenti" class="btn btn-primary">Lista utenti</a>
-            </div>
-        </section>
 </main>
+
+<div id="toast"></div>
+
+<style>
+#toast {
+    position: fixed; bottom: 2rem; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: white; border-radius: 8px; padding: 1rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15); font-size: 0.95rem;
+    opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 9999; min-width: 280px; text-align: center; pointer-events: none;
+}
+#toast.show { opacity: 1 !important; transform: translateX(-50%) translateY(0) !important; }
+#toast .toast-title { font-weight: bold; margin-bottom: 0.3rem; }
+#toast .toast-body { color: #555; }
+#toast.toast-success { border-left: 4px solid #27ae60; }
+#toast.toast-success .toast-title { color: #27ae60; }
+#toast.toast-error { border-left: 4px solid #e74c3c; }
+#toast.toast-error .toast-title { color: #e74c3c; }
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', caricaTutteLeVisite);
@@ -61,7 +74,7 @@ async function caricaTutteLeVisite() {
     try {
         const [responseVisite, responseUtenti] = await Promise.all([
             fetch('/admin/allvisits', { credentials: 'same-origin' }),
-            fetch('/api/getusers', { credentials: 'same-origin' })
+            fetch('/admin/allusers', { credentials: 'same-origin' }) 
         ]);
         
         if (!responseVisite.ok) throw new Error("Errore recupero visite globali");
@@ -193,24 +206,5 @@ function togglePanel(id) {
     panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
 }
 </script>
-<div id="toast"></div>
-
-<style>
-#toast {
-    position: fixed; bottom: 2rem; left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: white; border-radius: 8px; padding: 1rem 1.5rem;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15); font-size: 0.95rem;
-    opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
-    z-index: 9999; min-width: 280px; text-align: center; pointer-events: none;
-}
-#toast.show { opacity: 1 !important; transform: translateX(-50%) translateY(0) !important; }
-#toast .toast-title { font-weight: bold; margin-bottom: 0.3rem; }
-#toast .toast-body { color: #555; }
-#toast.toast-success { border-left: 4px solid #27ae60; }
-#toast.toast-success .toast-title { color: #27ae60; }
-#toast.toast-error { border-left: 4px solid #e74c3c; }
-#toast.toast-error .toast-title { color: #e74c3c; }
-</style>
 </body>
 </html>
