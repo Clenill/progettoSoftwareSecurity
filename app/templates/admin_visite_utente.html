@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Benvenuto nel Nostro Portale</title>
+    <title>Visite Utente - Admin</title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/functions.js"></script>
 </head>
@@ -15,6 +15,8 @@
         <a href="#" class="logo"><img src="/images/logo.png"></a>
         <ul class="nav-menu">
             <li class="nav-item"><a href="/dashboard/authority">Home</a></li>
+            <li class="nav-item"><a href="/lista-utenti" class="active">Gestisci Utenti</a></li>
+            <li class="nav-item"><a href="/admin/prenota">Nuova Visita</a></li>
         </ul>
         <div class="col-md-2">
             <button onclick="logout()">Logout</button>
@@ -22,120 +24,157 @@
     </div>
 </nav>
 
-<h1>Visite utente</h1>
-<ul id="listaVisite"></ul>
+<main class="main-container" style="max-width: 1200px;">
+    <section class="welcome-section">
+        <h1>Visite Utente <span class="badge-auth">Authority</span></h1>
+        <p>Storico visite dell'utente selezionato.</p>
+    </section>
+
+    <div style="overflow-x: auto;">
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Giorno</th>
+                    <th>Ora</th>
+                    <th>Medico</th>
+                    <th>Confermata</th>
+                    <th>Prove</th>
+                    <th>Azioni</th>
+                </tr>
+            </thead>
+            <tbody id="listaVisite"></tbody>
+        </table>
+    </div>
+</main>
+
+<div id="toast"></div>
+
+<style>
+#toast {
+    position: fixed; bottom: 2rem; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: white; border-radius: 8px; padding: 1rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15); font-size: 0.95rem;
+    opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 9999; min-width: 280px; text-align: center; pointer-events: none;
+}
+#toast.show { opacity: 1 !important; transform: translateX(-50%) translateY(0) !important; }
+#toast .toast-title { font-weight: bold; margin-bottom: 0.3rem; }
+#toast .toast-body { color: #555; }
+#toast.toast-success { border-left: 4px solid #27ae60; }
+#toast.toast-success .toast-title { color: #27ae60; }
+#toast.toast-error { border-left: 4px solid #e74c3c; }
+#toast.toast-error .toast-title { color: #e74c3c; }
+</style>
 
 <script>
 
-async function caricaStorico() {
-    const id = '{{ id }}';
-    try {
-        const response = await fetch(`/admin/visiteutente/${id}`, {
-            credentials: 'same-origin'
-        });
-        const visite = await response.json();
-        const contenitore = document.getElementById('listaVisite');
+const id = '{{ id }}';
 
-        contenitore.innerHTML = '';
+function showToast(titolo, messaggio, tipo = 'toast-success', durata = 3000) {
+    const toast = document.getElementById('toast');
+    toast.innerHTML = `<div class="toast-title">${titolo}</div><div class="toast-body">${messaggio}</div>`;
+    toast.className = tipo;
+    void toast.offsetHeight;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), durata);
+}
+
+async function caricaStorico() {
+    try {
+        const [responseVisite, responseUtenti] = await Promise.all([
+            fetch(`/admin/visiteutente/${id}`, { credentials: 'same-origin' }),
+            fetch('/admin/allusers', { credentials: 'same-origin' })
+        ]);
+
+        const visite = await responseVisite.json();
+        const utenti = await responseUtenti.json();
+
+        const nomeUtente = {};
+        utenti.forEach(u => { nomeUtente[u.id] = u.name; });
+        const body = document.getElementById('listaVisite');
+        body.innerHTML = '';
 
         if (visite.length === 0) {
-            contenitore.innerHTML = '<p>Nessuna visita in storico.</p>';
+                        body.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nessuna visita in storico.</td></tr>';
             return;
         }
 
-        // Intestazione tabella
-        let tableHTML = `
-            <table class="styled-table">
-                <thead>
-                    <tr>
-                        <th>Giorno</th>
-                        <th>Ora</th>
-                        <th>Medico (ID)</th>
-                        <th>Confermata</th>
-                        <th>Prove</th>
-                        <th>Azioni</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        // Riempimento tabella
         visite.forEach(v => {
             const dataOggetto = new Date(v.timestamp);
-
-            const giorno = dataOggetto.toLocaleDateString('it-IT'); 
-
+            const giorno = dataOggetto.toLocaleDateString('it-IT');
             const ora = dataOggetto.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
 
-            tableHTML += `
-                <tr>
-                    <td>${giorno}</td>
-                    <td>${ora}</td>
-                    <td>${v.medico}</td>
-                    <td>${v.confermata}</td>
-                    <td>${v.prove && v.prove.length > 0 ? v.prove.map(p => p.tipo).join(', ') : 'Nessuna'}</td>
-                    <td>
-                        <label>Il medico è presente: </label><input id="${v.id}-checkbox" type="checkbox" checked="true">
-                        <button type="submit" onclick="confermaPresenza('${v.id}')" style="background-color: #3498db;">Invia prova</button>
-                    </td>
-                </tr>
+            const nomeMedico = nomeUtente[v.medico] || v.medico || 'Non assegnato';
+            const confermataText = v.confermata
+                ? '<span style="color: #27ae60; font-weight: bold;">✔ Confermata</span>'
+                : '<span style="color: #e67e22; font-weight: bold;">⏳ In attesa</span>';
+            const proveHtml = v.prove && v.prove.length > 0
+                ? v.prove.map(p => p.tipo).join(', ')
+                : 'Nessuna';
+
+            const provaGiaInviata = v.prove && v.prove.some(p => p.tipo === 'conferma');
+            const disabilitato = (!v.confermata || provaGiaInviata) ? 'disabled' : '';
+            const coloreBottone = provaGiaInviata ? '#27ae60' : (v.confermata ? '#3498db' : '#aaaaaa');
+            const testoBottone = provaGiaInviata ? '✓ Prova già inviata' : 'Invia prova';
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${giorno}</td>
+                <td>${ora}</td>
+                <td>${nomeMedico}</td>
+                <td>${confermataText}</td>
+                <td>${proveHtml}</td>
+                <td>
+                    <label>Medico presente: </label>
+                    <input id="${v.id}-checkbox" type="checkbox"
+                        ${v.confermata ? 'checked' : ''} ${disabilitato}>
+                    <button onclick="confermaPresenza('${v.id}')"
+                        style="background-color: ${coloreBottone};"
+                        ${disabilitato}>${testoBottone}</button>
+                </td>
             `;
+            body.appendChild(row);
         });
-
-        tableHTML += `
-                </tbody>
-            </table>
-        `;
-
-        contenitore.innerHTML = tableHTML;
-
+        
+        
     } catch (err) {
         console.error("Errore caricaStorico:", err);
-        document.getElementById('listaVisite').innerHTML = '<p class="error">Errore nel caricamento dei dati.</p>';
+        document.getElementById('listaVisite').innerHTML = 
+                    '<tr><td colspan="6" style="text-align:center; color:red;">Errore nel caricamento dei dati.</td></tr>';
+    }
+}
+
+async function confermaPresenza(visitId) {
+    const checkbox = document.getElementById(`${visitId}-checkbox`);
+    if (!checkbox) {
+        showToast("✗ Errore", "Elemento non trovato.", "toast-error");
+        return;
+    }
+
+    try {
+        const response = await fetch(`/admin/addevidence/${visitId}`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tipo: 'conferma', valore: checkbox.checked })
+        });
+
+        if (response.ok) {
+            showToast("✓ Prova inviata", "La conferma è stata registrata correttamente.", "toast-success");
+            setTimeout(() => caricaStorico(), 1500);
+        } else {
+            const err = await response.json();
+            showToast("✗ Errore", err.detail || "Salvataggio fallito.", "toast-error");
+        }
+    } catch (err) {
+        showToast("✗ Errore di connessione", err.message, "toast-error");
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     caricaStorico();
 });
-
-async function confermaPresenza(id) {
-    //const id = element.id;
-    const checkbox = document.getElementById(`${id}-checkbox`);
-    //const checkbox = element.querySelector('input[type="checkbox"]');
-    if(checkbox) {
-        const bodyData = {
-            tipo: 'conferma', 
-            valore: checkbox.checked
-        };
-
-        try {
-            const response = await fetch(`/admin/addevidence/${id}`, {
-                method: 'POST', 
-                credentials: 'same-origin', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(bodyData)
-            });
-            if(!response.ok) {
-                alert("Errore: " + ((await response.json()).detail || 'Salvataggio fallito'));
-            }
-
-            else {
-                alert("Prova inviata!");
-                window.location.reload();
-            }
-        }
-
-        catch(err) {
-            alert('Errore: ', err);
-        }
-    }
-
-    else {
-        alert('Errore: elemento non trovato');
-    }
-}
-
 </script>
 </body>
 </html>
