@@ -15,6 +15,7 @@
         <a href="#" class="logo"><img src="/images/logo.png"></a>
         <ul class="nav-menu">
             <li class="nav-item"><a href="/dashboard/authority">Home</a></li>
+            <li class="nav-item"><a href="/lista-utenti" class="active">Gestisci Utenti</a></li>
         </ul>
         <div class="col-md-2">
             <button onclick="logout()">Logout</button>
@@ -22,10 +23,39 @@
     </div>
 </nav>
 
-<h1>Lista utenti registrati</h1>
+<h1>Lista Utenti Registrati</h1>
 <ul id="listaUtenti"></ul>
 
+<div id="toast"></div>
+
+<style>
+#toast {
+    position: fixed; bottom: 2rem; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: white; border-radius: 8px; padding: 1rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15); font-size: 0.95rem;
+    opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 9999; min-width: 280px; text-align: center; pointer-events: none;
+}
+#toast.show { opacity: 1 !important; transform: translateX(-50%) translateY(0) !important; }
+#toast .toast-title { font-weight: bold; margin-bottom: 0.3rem; }
+#toast .toast-body { color: #555; }
+#toast.toast-success { border-left: 4px solid #27ae60; }
+#toast.toast-success .toast-title { color: #27ae60; }
+#toast.toast-error { border-left: 4px solid #e74c3c; }
+#toast.toast-error .toast-title { color: #e74c3c; }
+</style>
+
 <script>
+
+function showToast(titolo, messaggio, tipo = 'toast-success', durata = 3000) {
+    const toast = document.getElementById('toast');
+    toast.innerHTML = `<div class="toast-title">${titolo}</div><div class="toast-body">${messaggio}</div>`;
+    toast.className = tipo;
+    void toast.offsetHeight;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), durata);
+}
 
 async function caricaUtenti() {
     try {
@@ -49,7 +79,6 @@ async function caricaUtenti() {
             <table class="styled-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Nome</th>
                         <th>Email</th>
                         <th>Ruolo</th>
@@ -62,15 +91,26 @@ async function caricaUtenti() {
 
         // Riempimento tabella
         utenti.forEach(u => {
+            const statoText = u.attivo
+                ? '<span style="color: #27ae60; font-weight: bold;">✔ Attivo</span>'
+                : '<span style="color: #e74c3c; font-weight: bold;">✘ Non attivo</span>';
+
+            const coloreBottone = u.attivo ? '#aaaaaa' : '#27ae60';
+            const testoBottone = u.attivo ? 'Già attivo' : 'Attiva';
+            const disabilitato = u.attivo ? 'disabled' : '';
+
             tableHTML += `
                 <tr>
-                    <td><a href="/dettagliutente/${u.id}">${u.id}</a></td>
-                    <td>${u.name}</td>
+                    <td><a href="/dettagliutente/${u.id}">${u.name}</a></td>
                     <td>${u.email}</td>
                     <td>${u.ruolo}</td>
-                    <td>${u.attivo}</td>
+                    <td>${statoText}</td>
                     <td>
-                        <button type="submit" onclick="attivaUtente('${u.id}')" style="background-color: #3498db;">Attiva utente</button>
+                        <button onclick="attivaUtente('${u.id}')"
+                            style="background-color: ${coloreBottone};"
+                            ${disabilitato}>
+                            ${testoBottone}
+                        </button>
                     </td>
                 </tr>
             `;
@@ -96,19 +136,14 @@ async function attivaUtente(id) {
             credentials: 'same-origin'
         });
 
-        const content = await response.json();
-        if (content && content.message) {
-            alert("Utente attivato!");
-            window.location.reload();
+         if (response.ok) {
+            showToast("✓ Utente attivato", "L'utente è stato attivato correttamente.", "toast-success");
+            setTimeout(() => caricaUtenti(), 1500);
+        } else {
+            showToast("✗ Errore", "Impossibile attivare l'utente.", "toast-error");
         }
-
-        else {
-            throw new Error("Errore nell'attivazione dell'utente");
-        }
-    }
-
-    catch(err) {
-        alert(err);
+    } catch(err) {
+        showToast("✗ Errore di connessione", err.message, "toast-error");
     }
 }
 
