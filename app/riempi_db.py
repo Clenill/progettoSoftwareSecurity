@@ -5,33 +5,6 @@ from app.db.database import SessionLocal
 from app.db.models import User, Visit
 from app.core.security import hash_password
 from app.enum.ruolo import ruolo
-from app.db.models import Disponibilita
-
-
-async def aggiungi_disponibilita_fittizia(db, medico_id):
-    # Generazione disponibilità per i prossimi 7 giorni
-    start_date = datetime.now()
-    
-    for i in range(7):
-        giorno = start_date + timedelta(days=i)
-        orari = ["09:00", "11:00", "15:00"]
-        
-        for orario in orari:
-            # Formattazione timestamp completo
-            timestamp_str = f"{giorno.strftime('%Y-%m-%d')} {orario}:00"
-            timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
-            
-            # Creazione oggetto disponibilità (adatta al tuo modello)
-            nuova_disponibilita = Disponibilita(
-                medico=medico_id,
-                timestamp=timestamp,
-                occupato=False
-            )
-            db.add(nuova_disponibilita)
-    
-    await db.commit()
-    print("Disponibilità fittizie aggiunte con successo!")
-
 
 async def seed():
     from sqlalchemy import delete
@@ -91,7 +64,6 @@ async def seed():
         db.add(visita)
         await db.commit()
         print("Dati di prova inseriti con successo!")
-        await aggiungi_disponibilita_fittizia(db, medico_id)
 
 if __name__ == "__main__":
     asyncio.run(seed())

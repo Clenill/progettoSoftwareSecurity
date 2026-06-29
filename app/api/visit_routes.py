@@ -9,6 +9,7 @@ from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, Evidence
 from app.service.visit_service import VisitService
 from app.core.exceptions import *
 from app.core.security import get_current_user, has_role_in
+from app.core.re_monitor import public_monitor
 from app.db.models import User
 from app.enum.ruolo import ruolo
 from app.enum.prova import PROVE_RUOLI
@@ -18,7 +19,8 @@ from app.repositories.visit_repository import VisitRepository
 
 router = APIRouter(
     prefix="/visit",
-    tags=["Visit"]
+    tags=["Visit"], 
+    dependencies=[Depends(public_monitor)]
 )
 
 @router.post("/newvisit", response_model=VisitResponse)

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, Depends
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
@@ -11,6 +11,9 @@ from app.api.routes import router
 from pathlib import Path
 from app.api.ui_routes import ui_router
 from app.core.exceptions import AppException
+from app.core.config import MAX_REQUESTS, CLEANUP_INTERVAL_SECONDS
+from app.core.logging import log_request
+from app.core.re_monitor import public_monitor, admin_monitor
 from app.api.auth_routes import router as auth_router
 from app.api.visit_routes import router as visit_router
 from app.api.admin_routes import router as admin_router
@@ -20,6 +23,9 @@ async def lifespan(app: FastAPI):
     # Startup
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    await public_monitor.bg_cleanup()
+    await admin_monitor.bg_cleanup()
 
     print("\n===== SERVER AVVIATO =====")
     print("Swagger Docs: http://127.0.0.1:8000/docs")
@@ -44,6 +50,10 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+@app.middleware("http")
+async def logging_middleware(request: Request, call_next):
+    return await log_request(request, call_next)
+
 # Configura la cartella dei file statici
 app.mount("/css", StaticFiles(directory="app/css"), name="static")
 
@@ -67,6 +77,7 @@ async def app_exception_handler(
     exc: AppException
 ):
 
+    headers = exc.headers if hasattr(exc, 'headers') else dict()
     return templates.TemplateResponse(
         request=request, 
         name="pagina_errore.html",
@@ -77,5 +88,8 @@ async def app_exception_handler(
                 "error_code": exc.error_code,
                 "detail": exc.detail
             }
-        }
+        }, 
+        headers=headers
     )
+
+

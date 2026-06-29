@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.db.models import User
 from app.core.security import has_role_in
+from app.core.re_monitor import admin_monitor
 from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate, UserResponse
 from app.enum.ruolo import ruolo
 from app.service.visit_service import VisitService
@@ -13,7 +14,8 @@ from uuid import UUID
 
 router = APIRouter(
     prefix="/admin",
-    tags=["Admin"]
+    tags=["Admin"], 
+    dependencies=[Depends(admin_monitor)]
 )
 
 # La chiamata va triggerata e gli si deve passare id medico e paziente
@@ -100,5 +102,5 @@ async def get_users(
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
     db: AsyncSession = Depends(get_db)
 ):
-    return await UserService.get_all(db)
+    return await UserService.get_users(db)
 

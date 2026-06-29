@@ -6,13 +6,17 @@ class AppException(Exception):
         self,
         status_code: int,
         detail: str,
-        error_code: ErrorCode
+        error_code: ErrorCode, 
+        *args, 
+        **kwargs
     ):
         self.status_code = status_code
         self.detail = detail
         self.error_code = error_code
+        for k,v in kwargs.items():
+            setattr(self, k, v)
 
-        super().__init__(detail)
+        super().__init__(detail, *args)
 
 class VisitException(Exception):
 
@@ -163,3 +167,14 @@ class VisitTimeConflictException(VisitException):
             detail="Esiste già una visita nell'intervallo richiesto",
             error_code=ErrorCode.VISIT_TIME_CONFLICT
         )
+
+class RequestLimitExceededException(AppException):
+
+    def __init__(self, interval_seconds: int):
+        super().__init__(
+            status_code=429, 
+            detail="Limite richieste superato", 
+            error_code=ErrorCode.REQUEST_LIMIT_EXCEEDED, 
+            headers={ "Retry-After": str(interval_seconds) }
+        )
+
