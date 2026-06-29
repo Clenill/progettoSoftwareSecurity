@@ -14,6 +14,7 @@
         <a href="#" class="logo"><img src="/images/logo.png" style="height: 40px; vertical-align: middle;" alt="Logo"></a>
         <ul class="nav-menu">
             <li class="nav-item"><a href="/dashboard/authority" class="active">Home</a></li>
+            <li class="nav-item"><a href="/lista-utenti">Gestisci Utenti</a></li>
         </ul>
         <div class="col-md-2">
             <button onclick="logout()">Logout</button>
@@ -29,8 +30,8 @@
             <thead>
                 <tr>
                     <th>Data/Ora</th>
-                    <th>Medico (ID)</th>
-                    <th>Paziente (ID)</th>
+                    <th>Medico</th>
+                    <th>Paziente</th>
                     <th>Conferma Visita</th>
                     <th>Prove Attuali</th>
                     <th>Intervento Authority</th>
@@ -58,14 +59,19 @@ document.addEventListener('DOMContentLoaded', caricaTutteLeVisite);
 
 async function caricaTutteLeVisite() {
     try {
-        const response = await fetch('/admin/allvisits', {
-        //const response = await fetch('/visit/visits/all-visits', {
-            credentials: 'same-origin'
-        });
+        const [responseVisite, responseUtenti] = await Promise.all([
+            fetch('/admin/allvisits', { credentials: 'same-origin' }),
+            fetch('/api/getusers', { credentials: 'same-origin' })
+        ]);
         
-        if (!response.ok) throw new Error("Errore recupero visite globali");
+        if (!responseVisite.ok) throw new Error("Errore recupero visite globali");
         
-        const visite = await response.json();
+        const visite = await responseVisite.json();
+        const utenti = await responseUtenti.json();
+        // Mappa id → nome
+        const nomeUtente = {};
+        utenti.forEach(u => { nomeUtente[u.id] = u.name; });
+
         const body = document.getElementById('authorityBody');
         body.innerHTML = '';
 
@@ -73,57 +79,112 @@ async function caricaTutteLeVisite() {
             const row = document.createElement('tr');
             const dataFormattata = new Date(v.timestamp).toLocaleString('it-IT');
             const proveHtml = v.prove && v.prove.length > 0 ? v.prove.map(p => p.tipo).join(', ') : '<i>Nessuna</i>';
-            const conferma = v.confermata ? 'Visita confermata' : `<button class="btn-supervise" style="margin:0.5rem;" onclick="confermaVisita('${v.id}')">Conferma Visita</button><button class="btn-supervise" style="margin:0.5rem;" onclick="rifiutaVisita('${v.id}')">Rifiuta Visita</button>`;
+            const nomeMedico = nomeUtente[v.medico] || v.medico || 'Non assegnato';
+            const nomePaziente = nomeUtente[v.paziente] || v.paziente;
+            // Bottoni conferma/rifiuta con colori
+            const conferma = v.confermata
+                ? '<span style="color: #27ae60; font-weight: bold;">✔ Confermata</span>'
+                : `
+                    <button class="btn-supervise" style="background-color: #27ae60; margin: 0.3rem;"
+                        onclick="confermaVisita('${v.id}')">Conferma</button>
+                    <button class="btn-supervise" style="background-color: #e74c3c; margin: 0.3rem;"
+                        onclick="rifiutaVisita('${v.id}')">Rifiuta</button>
+                `;
+            // Invia Prova disabilitato se non confermata
+            const disabilitaProva = !v.confermata ? 'disabled' : '';
+            const coloreInviaProva = v.confermata ? '#8e44ad' : '#aaaaaa';
 
             row.innerHTML = `
                 <td>${dataFormattata}</td>
-                <td style="font-size: 0.8rem; color:#555;">${v.medico || 'Non assegnato'}</td>
-                <td style="font-size: 0.8rem; color:#555;">${v.paziente}</td>
+                <td>${nomeMedico}</td>
+                <td>${nomePaziente}</td>
                 <td>${conferma}</td>
                 <td>${proveHtml}</td>
                 <td>
-                    <button class="btn-supervise" onclick="togglePanel('${v.id}')">Invia Prova</button>
+                    <button class="btn-supervise"
+                        style="background-color: ${coloreInviaProva};"
+                        onclick="togglePanel('${v.id}')"
+                        ${disabilitaProva}>
+                        Invia Prova
+                    </button>
+
                     
                     <div id="panel-${v.id}" class="control-panel">
-                        <select id="tipo-${v.id}">
+                        <select id="tipo-${v.id}" ${disabilitaProva}>
                             <option value="sintomi">Sintomi</option>
                             <option value="attrezzatura">Attrezzatura</option>
                             <option value="prescrizione">Prescrizione</option>
                             <option value="gps">GPS</option>
                             <option value="conferma">Conferma (Certificato)</option>
                         </select>
-                        <input type="text" id="valore-${v.id}" placeholder="Valore/Descrizione prova...">
-                        <button class="btn-supervise" style="width: 100%; background-color:#27ae60;" onclick="forzaProva('${v.id}')">Esegui Iniezione</button>
+                        <button class="btn-supervise"
+                            style="width: 100%; background-color: ${v.confermata ? '#27ae60' : '#aaaaaa'};"
+                            onclick="forzaProva('${v.id}')"
+                            ${disabilitaProva}>
+                            Esegui Iniezione
+                        </button>
                     </div>
                 </td>
             `;
             body.appendChild(row);
         });
     } catch (err) {
-        document.getElementById('authorityBody').innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Qualcosa è andato storto</td></tr>';
+        document.getElementById('authorityBody').innerHTML = 
+        '<tr><td colspan="5" style="text-align:center; color:red;">Qualcosa è andato storto</td></tr>';
     }
+}
+
+function showToast(titolo, messaggio, tipo = 'toast-success', durata = 3000) {
+    const toast = document.getElementById('toast');
+    toast.innerHTML = `<div class="toast-title">${titolo}</div><div class="toast-body">${messaggio}</div>`;
+    toast.className = tipo;
+    void toast.offsetHeight;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), durata);
 }
 
 async function confermaVisita(id) {
     const response = await fetch(`/admin/visits/${id}/confirm`, {
-        method: 'PUT', 
-        credentials: 'same-origin', 
+        method: 'PUT', credentials: 'same-origin'
     });
-
     if (response.ok) {
-        alert("Visita confermata!");
-        window.location.reload();
+        showToast("✓ Visita confermata", "La visita è stata confermata.", "toast-success");
+        setTimeout(() => caricaTutteLeVisite(), 1500);
+    } else {
+        showToast("✗ Errore", "Impossibile confermare la visita.", "toast-error");
     }
 }
 
 async function rifiutaVisita(id) {
     const response = await fetch(`/admin/deletevisit/${id}`, {
-        method: 'DELETE', 
-        credentials: 'same-origin'
+        method: 'DELETE', credentials: 'same-origin'
     });
     if (response.ok) {
-        alert("Visita rifiutata!");
-        window.location.reload();
+        showToast("✓ Visita rifiutata", "La visita è stata rimossa.", "toast-success");
+        setTimeout(() => caricaTutteLeVisite(), 1500);
+    } else {
+        showToast("✗ Errore", "Impossibile rifiutare la visita.", "toast-error");
+    }
+}
+
+async function forzaProva(id) {
+    const tipo = document.getElementById(`tipo-${id}`).value;
+
+    try {
+        const response = await fetch(`/admin/addevidence/${id}`, {
+            method: 'POST', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tipo: tipo })
+        });
+        if (response.ok) {
+            showToast("✓ Prova inserita", "La prova è stata aggiunta correttamente.", "toast-success");
+            setTimeout(() => caricaTutteLeVisite(), 1500);
+        } else {
+            const errData = await response.json();
+            showToast("✗ Errore", errData.detail || "Operazione non consentita.", "toast-error");
+        }
+    } catch (err) {
+        showToast("✗ Errore di connessione", err.message, "toast-error");
     }
 }
 
@@ -131,38 +192,25 @@ function togglePanel(id) {
     const panel = document.getElementById(`panel-${id}`);
     panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
 }
-
-async function forzaProva(id) {
-    const tipo = document.getElementById(`tipo-${id}`).value;
-    const valore = document.getElementById(`valore-${id}`).value;
-
-    if (!valore) {
-        alert("Inserisci un valore per la prova!");
-        return;
-    }
-
-    try {
-        const response = await fetch(`/admin/addevidence/${id}`, {
-            method: 'POST',
-            credentials: 'same-origin', 
-            headers: { 
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ tipo: tipo, valore: valore })
-        });
-
-        if (response.ok) {
-            alert("Prova inserita con successo nel sistema!");
-            caricaTutteLeVisite();
-        } else {
-            const errData = await response.json();
-            alert("Errore: " + (errData.detail || "Operazione non consentita"));
-        }
-    } catch (err) {
-        console.error(err);
-    }
-}
 </script>
+<div id="toast"></div>
 
+<style>
+#toast {
+    position: fixed; bottom: 2rem; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: white; border-radius: 8px; padding: 1rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15); font-size: 0.95rem;
+    opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 9999; min-width: 280px; text-align: center; pointer-events: none;
+}
+#toast.show { opacity: 1 !important; transform: translateX(-50%) translateY(0) !important; }
+#toast .toast-title { font-weight: bold; margin-bottom: 0.3rem; }
+#toast .toast-body { color: #555; }
+#toast.toast-success { border-left: 4px solid #27ae60; }
+#toast.toast-success .toast-title { color: #27ae60; }
+#toast.toast-error { border-left: 4px solid #e74c3c; }
+#toast.toast-error .toast-title { color: #e74c3c; }
+</style>
 </body>
 </html>

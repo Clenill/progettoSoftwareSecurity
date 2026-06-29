@@ -99,4 +99,3 @@ async def dettagli_utente(id: UUID, request: Request, current_user: User = Depen
 async def errore(request: Request):
     """Qualcosa è andato storto"""
     return templates.TemplateResponse(request=request, name="pagina_errore.html")
-
