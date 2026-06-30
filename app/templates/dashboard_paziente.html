@@ -238,8 +238,7 @@ function showToast(titolo, messaggio, tipo = 'toast-success', durata = 2000) {
 
 async function prenotaVisita(medicoId, timestamp) {
     if (!mioIdPaziente) {
-        alert("Errore: Profilo non caricato. Ricarica la pagina.");
-        return;
+        showToast("Errore: Profilo non caricato. Ricarica la pagina.", "toast-error");
     }
 
     const payload = {
