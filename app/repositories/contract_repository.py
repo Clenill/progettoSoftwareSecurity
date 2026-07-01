@@ -17,13 +17,13 @@ class ContractRepository:
                 name
             ), 
             [
+                ("ZeroDivision", ), 
+                ("Unauthorized", ), 
                 ("VisitNotFound", "bytes16"), 
                 ("DuplicateVisit", "bytes16"), 
                 ("LikelihoodNotFound", "uint8"), 
                 ("DuplicateLikelihood", "uint8"), 
-                ("DuplicateEvidence", "uint8"), 
-                ("Unauthorized", ), 
-                ("ZeroDivision", "uint256", "uint256"), 
+                ("DuplicateEvidence", "bytes16", "uint8"), 
             ]
         )
     )

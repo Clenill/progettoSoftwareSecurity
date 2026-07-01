@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Response, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
-from app.db.models import User
+from app.db.models import User, Visit, Evidence
 from app.core.security import has_role_in
 from app.core.exceptions import UserNotAuthorizedException, InvalidCredentials
 from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate, PriorUpdate, LikelihoodUpdate, ContractAccountInfoRequest, UserResponse
@@ -15,7 +15,8 @@ from app.service.contract_service import ContractService
 
 from app.core.config import CONTRACT, SCALE
 
-from uuid import UUID
+from datetime import datetime
+from uuid import UUID, uuid4
 
 router = APIRouter(
     prefix="/admin",
@@ -62,16 +63,53 @@ async def confirm_visit(
     await db.refresh(visit)
     return visit
 
-@router.get("/allvisits", response_model=list[VisitResponse])
+#@router.get("/allvisits", response_model=list[VisitResponse])
+@router.get("/unconfirmed-visits", response_model=list[VisitResponse])
 async def admin_get_all_visits(
+    page: int = Query(1, ge=1), 
+    size: int = Query(10, ge=1, le=100), 
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
     db: AsyncSession = Depends(get_db)
 ):
-    visits = await VisitService.get_visits(None, db)
-    (bc_visits, probabilita_visite) = await ContractService.get_visits()
-    for (visit, bc_visit, probabilita) in zip(visits, bc_visits, probabilita_visite):
-        visit.probabilita = probabilita
+    offset = (page - 1) * size
+    visits = await VisitService.get_unconfirmed_visits_paged(offset, size, db)
     return visits
+
+@router.get("/sc-visits", response_model=list[VisitResponse])
+async def admin_get_all_visits(
+    page: int = Query(1, ge=1), 
+    size: int = Query(10, ge=1, le=100), 
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
+    db: AsyncSession = Depends(get_db)
+):
+    offset = (page - 1) * size
+    sc_visits = await ContractService.get_visits_paged(offset, size)
+    visits = await VisitService.get_visits_in(list(sc_visits.keys()), db, as_dict=True)
+    # Copia le probabilità dalle visite dello smart contract
+    for v in visits.values():
+        if v.id in sc_visits:
+            v.probabilita = sc_visits[v.id]['posterior']
+        else:
+            v.probabilita = None
+
+    # Reinserisce le visite presenti nello smart contract ma non nel DB
+    for id,v in sc_visits.items():
+        if id not in visits:
+            visits[id] = Visit(
+                id=id, 
+                paziente=UUID(bytes=v['patient']), 
+                medico=UUID(bytes=v['physician']), 
+                timestamp=datetime.fromisoformat('0001-01-01 00:00:00.000Z'), 
+                confermata=v['active'], 
+                prove=[Evidence(
+                    visita=id, 
+                    tipo=ID_PROVE[e[0]], 
+                    valore=e[1], 
+                ) for e in v['evidences']]
+            )
+            visits[id].probabilita = v['posterior']
+
+    return list(visits.values())
 
 @router.get("/dettagliovisita/{id}", response_model=VisitResponse)
 async def admin_get_visit(

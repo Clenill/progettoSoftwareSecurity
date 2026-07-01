@@ -78,6 +78,17 @@ class VisitRepository:
                 or_(Visit.paziente == user.id, Visit.medico == user.id)
             )
         return (await db.execute(statement)).unique().scalar_one_or_none()
+
+    @staticmethod
+    async def get_unconfirmed_visits_paged(db: AsyncSession, offset: int, size: int):
+        statement = (
+            select(Visit)
+            .options(joinedload(Visit.prove))
+            .where(Visit.confermata == False)
+            .offset(offset)
+            .limit(size)
+        )
+        return (await db.execute(statement)).unique().scalars().all()
     
     @staticmethod
     async def get_doctor_visits_by_day(
@@ -95,6 +106,16 @@ class VisitRepository:
         )
 
         return result.scalars().all()
+
+    @staticmethod
+    async def get_visits_in(db: AsyncSession, ids: list[UUID]):
+        statement = (
+            select(Visit)
+            .options(joinedload(Visit.prove))
+            .where(Visit.id.in_(ids))
+        )
+        result = await db.execute(statement)
+        return result.unique().scalars().all()
 
     @staticmethod
     async def edit_visit(

@@ -1,13 +1,24 @@
 
+from itertools import starmap
+from uuid import UUID
+from web3.exceptions import ContractLogicError
 from app.repositories.contract_repository import ContractRepository
 from app.core.config import CONTRACT, SCALE, W3_ACCOUNT, Web3, w3
 from app.db.models import User, Visit
 from app.enum.prova import TipoProva, ID_PROVE
-from uuid import UUID
 from app.core.exceptions import *
-from web3.exceptions import ContractLogicError
 
 class ContractService:
+
+    @staticmethod
+    def extract_visit_data(visit_data):
+        visit = dict(starmap(
+            lambda i,name: (name, visit_data[i]), 
+            enumerate(['id', 'physician', 'patient', 'active', 'posterior', 'evidences'])
+        ))
+        visit['id'] = UUID(bytes=visit['id'])
+        visit['posterior'] = visit['posterior'] / SCALE
+        return visit
 
     @staticmethod
     def visit_hash(visit: Visit):
@@ -123,12 +134,12 @@ class ContractService:
     @staticmethod
     async def get_visit(id: UUID):
         try:
-            (visit, probabilita) = await ContractRepository.call_function(
+            visit = await ContractRepository.call_function(
                 CONTRACT, 
                 "getVisit", 
                 id.bytes
             )
-            return visit, probabilita / SCALE
+            return ContractRepository.extract_visit_data(visit)
         except ContractLogicError as e:
             error = ContractRepository._get_error_name(CONTRACT, e)
             if error == "VisitNotFound":
@@ -137,17 +148,36 @@ class ContractService:
                 raise ProbabilityNotFoundException()
 
     @staticmethod
-    async def get_visits():
+    async def get_visits_in(ids: list[UUID]):
         try:
-            (visits, probabilita) = await ContractRepository.call_function(
+            ids = list(map(lambda id: id.bytes, ids))
+            visits = await ContractRepository.call_function(
                 CONTRACT, 
-                "getVisits"
+                "getVisits", 
+                ids
             )
+            visits = list(map(lambda v: ContractService.extract_visit_data(v), visits))
+            return dict(map(lambda v: (v['id'], v), visits))
         except ContractLogicError as e:
             error = ContractRepository._get_error_name(CONTRACT, e)
             if error == "LikelihoodNotFound":
                 raise ProbabilityNotFoundException()
-        return visits, list(map(lambda p: p / SCALE, probabilita))
+
+    @staticmethod
+    async def get_visits_paged(offset: int, size: int):
+        try:
+            visits = await ContractRepository.call_function(
+                CONTRACT, 
+                "getVisitsPaged", 
+                offset, 
+                size
+            )
+            visits = list(map(lambda v: ContractService.extract_visit_data(v), visits))
+            return dict(map(lambda v: (v['id'], v), visits))
+        except ContractLogicError as e:
+            error = ContractRepository._get_error_name(CONTRACT, e)
+            if error == "LikelihoodNotFound":
+                raise ProbabilityNotFoundException()
 
     @staticmethod
     async def add_visit(current_user: User, visit: Visit):

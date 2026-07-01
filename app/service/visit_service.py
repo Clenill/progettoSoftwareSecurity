@@ -71,8 +71,6 @@ class VisitService:
         )
         slots = []
         current = start_day
-        print("OCCUPIED:", occupied)
-        print("PRIMO SLOT:", start_day.astimezone(timezone.utc))
         while current < end_day:
 
             if current not in occupied and current > datetime.now(tz):
@@ -86,8 +84,11 @@ class VisitService:
         return slots
 
     @staticmethod
-    async def get_visits(user: User | None, db: AsyncSession):
-        return await VisitRepository.get_all(db, user)
+    async def get_visits(user: User | None, db: AsyncSession, as_dict: bool = False):
+        result = await VisitRepository.get_all(db, user)
+        if as_dict:
+            result = { v.id: v for v in result }
+        return result
 
     @staticmethod
     async def get_visit_by_id(id: UUID, user: User | None, db: AsyncSession):
@@ -95,6 +96,20 @@ class VisitService:
         if not visit:
             raise MissingVisitDetailsException(detail="Visita non trovata.")
         return visit
+
+    @staticmethod
+    async def get_unconfirmed_visits_paged(offset: int, size: int, db: AsyncSession, as_dict: bool = False):
+        result = await VisitRepository.get_unconfirmed_visits_paged(db, offset, size)
+        if as_dict:
+            result = { v.id: v for v in result }
+        return result
+
+    @staticmethod
+    async def get_visits_in(ids: list[UUID], db: AsyncSession, as_dict: bool = False):
+        result = await VisitRepository.get_visits_in(db, ids)
+        if as_dict:
+            result = { v.id: v for v in result }
+        return result
 
     @staticmethod
     async def edit_visit(

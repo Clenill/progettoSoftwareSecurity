@@ -88,6 +88,10 @@
                 <a href="/lista-utenti" class="btn btn-primary">Lista utenti</a>
             </div>
         </section>
+
+        <div id="unconfirmedVisitsContainer" class="hidden" style="margin-top: 1rem; overflow-x: auto;">
+        </div>
+
 </main>
 
 <div id="toast"></div>
@@ -132,40 +136,14 @@ const initialLikelihoodTableBody = `
                     </tr>
 `;
 
-document.addEventListener('DOMContentLoaded', caricaTutteLeVisite);
+document.addEventListener('DOMContentLoaded', caricaVisiteConfermate);
+document.addEventListener('DOMContentLoaded', caricaVisiteNonConfermate);
 document.addEventListener('DOMContentLoaded', caricaVerosimiglianze);
 
-async function addLikelihood() {
-    try {
-        // likelihood-type
-        // likelihood-ptrue/pfalse
-
-        let tipo = document.getElementById('likelihood-type').value;
-        let ptrue = document.getElementById('likelihood-ptrue').value;
-        let pfalse = document.getElementById('likelihood-pfalse').value;
-        let response = await fetch(`/admin/probabilita/prova`, {
-            method: 'POST', 
-            credentials: 'same-origin', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({
-                tipo: tipo, 
-                ptrue: parseFloat(ptrue), 
-                pfalse: parseFloat(pfalse)
-            })
-        });
-        if(!response.ok) throw new Error("Errore nell'invio della verosimiglianza");
-        showToast("✓ Probabilità inserite", "La probabilità sono state inserite correttamente.", "toast-success");
-        setTimeout(() => location.reload(), 1500);
-    }
-    catch(err) {
-        showToast("✗ Errore", err.detail || "Operazione non consentita.", "toast-error");
-    }
-}
-
-async function caricaTutteLeVisite() {
+async function caricaVisiteConfermate() {
     try {
         const [responseVisite, responseUtenti] = await Promise.all([
-            fetch('/admin/allvisits', { credentials: 'same-origin' }),
+            fetch('/admin/sc-visits', { credentials: 'same-origin' }),
             fetch('/admin/allusers', { credentials: 'same-origin' }) 
         ]);
         
@@ -230,13 +208,115 @@ async function caricaTutteLeVisite() {
                             Esegui Iniezione
                         </button>
                     </div>
-                </td>
-            `;
+                </td>`;
             body.appendChild(row);
         });
     } catch (err) {
         document.getElementById('authorityBody').innerHTML = 
         '<tr><td colspan="5" style="text-align:center; color:red;">Qualcosa è andato storto</td></tr>';
+    }
+}
+
+async function caricaVisiteNonConfermate() {
+    try {
+        const [responseVisite, responseUtenti] = await Promise.all([
+            fetch('/admin/unconfirmed-visits', { credentials: 'same-origin' }),
+            fetch('/admin/allusers', { credentials: 'same-origin' }) 
+        ]);
+        
+        if (!responseVisite.ok) throw new Error("Errore recupero visite globali");
+        
+        const visite = await responseVisite.json();
+        const utenti = await responseUtenti.json();
+        // Mappa id → nome
+        const nomeUtente = {};
+        utenti.forEach(u => { nomeUtente[u.id] = u.name; });
+
+        const container = document.getElementById('unconfirmedVisitsContainer');
+        container.innerHTML = '';
+
+        if (visite.length > 0) {
+            container.innerHTML = `
+                <table class="styled-table">
+                    <thead>
+                        <tr>
+                            <th>Medico</th>
+                            <th>Paziente</th>
+                            <th>Conferma Visita</th>
+                            <th>Data/Ora</th>
+                        </tr>
+                    </thead>
+                    <tbody id="unconfirmedVisits">
+                    </tbody>
+                </table>
+            `;
+            container.classList.remove('hidden');
+
+            const body = document.getElementById('unconfirmedVisits');
+            body.innerHTML = '';
+
+            visite.forEach(v => {
+                const row = document.createElement('tr');
+                const dataFormattata = new Date(v.timestamp).toLocaleString('it-IT');
+                const proveHtml = v.prove && v.prove.length > 0 ? v.prove.map(p => p.tipo).join(', ') : '<i>Nessuna</i>';
+                const nomeMedico = nomeUtente[v.medico] || v.medico || 'Non assegnato';
+                const nomePaziente = nomeUtente[v.paziente] || v.paziente;
+                // Bottoni conferma/rifiuta con colori
+                const conferma = v.confermata
+                    ? '<span style="color: #27ae60; font-weight: bold;">✔ Confermata</span>'
+                    : `
+                        <button class="btn-supervise" style="background-color: #27ae60; margin: 0.3rem;"
+                            onclick="confermaVisita('${v.id}')">Conferma</button>
+                        <button class="btn-supervise" style="background-color: #e74c3c; margin: 0.3rem;"
+                            onclick="rifiutaVisita('${v.id}')">Rifiuta</button>
+                    `;
+                // Invia Prova disabilitato se non confermata
+                const disabilitaProva = !v.confermata ? 'disabled' : '';
+                const coloreInviaProva = v.confermata ? '#8e44ad' : '#aaaaaa';
+
+                row.innerHTML = `
+                    <td>${dataFormattata}</td>
+                    <td>${nomeMedico}</td>
+                    <td>${nomePaziente}</td>
+                    <td>${conferma}</td>`;
+                body.appendChild(row);
+            });
+        }
+    } catch (err) {
+        document.getElementById('authorityBody').innerHTML = 
+        '<tr><td colspan="5" style="text-align:center; color:red;">Qualcosa è andato storto</td></tr>';
+    }
+}
+
+async function caricaTutteLeVisite() {
+    caricaVisiteConfermate();
+    caricaVisiteNonConfermate();
+}
+
+async function addLikelihood() {
+    try {
+        // likelihood-type
+        // likelihood-ptrue/pfalse
+
+        let tipo = document.getElementById('likelihood-type').value;
+        let ptrue = document.getElementById('likelihood-ptrue').value;
+        let pfalse = document.getElementById('likelihood-pfalse').value;
+        let response = await fetch(`/admin/probabilita/prova`, {
+            method: 'POST', 
+            credentials: 'same-origin', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({
+                tipo: tipo, 
+                ptrue: parseFloat(ptrue), 
+                pfalse: parseFloat(pfalse)
+            })
+        });
+        if(!response.ok) throw new Error("Errore nell'invio della verosimiglianza");
+        showToast("✓ Probabilità inserite", "La probabilità sono state inserite correttamente.", "toast-success");
+        setTimeout(() => location.reload(), 1500);
+    }
+    catch(err) {
+        showToast("✗ Errore", err.detail || "Operazione non consentita.", "toast-error");
     }
 }
 
