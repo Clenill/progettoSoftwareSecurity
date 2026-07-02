@@ -114,7 +114,7 @@ class VisitService:
     async def add_evidence(
         id: UUID, 
         tipo: TipoProva, 
-        user: User, 
+        user: User | None, 
         db: AsyncSession
     ):
         try:
@@ -190,6 +190,7 @@ class VisitService:
         
         await VisitRepository.delete_visit(db, visit)
         
+    @staticmethod
     async def confirm_visit(id: UUID, db: AsyncSession):
         return await VisitRepository.confirm_visit(db, id)
 

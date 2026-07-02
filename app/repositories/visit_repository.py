@@ -107,7 +107,7 @@ class VisitRepository:
         db: AsyncSession, 
         id: UUID, 
         tipo: TipoProva, 
-        user: User
+        user: User | None
     ):
         visit = await VisitRepository.get_by_id(db, id, user)
         if not visit:
