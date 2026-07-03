@@ -77,7 +77,6 @@ async def app_exception_handler(
     exc: AppException
 ):
 
-    headers = exc.headers if hasattr(exc, 'headers') else dict()
     return templates.TemplateResponse(
         request=request, 
         name="pagina_errore.html",
@@ -90,7 +89,7 @@ async def app_exception_handler(
                 "detail": exc.detail
             }
         }, 
-        headers=headers
+        headers=exc.headers or None
     )
 
 @app.exception_handler(StarletteHttpException)
