@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, UUID4, Field
+from pydantic import BaseModel, EmailStr, UUID4, Field, ConfigDict
 from app.enum.ruolo import ruolo as rules
 from app.enum.prova import TipoProva
 from datetime import datetime
@@ -15,14 +15,14 @@ class UserCreate(BaseModel):
 
 # dati in uscita (response)
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)  # ← sostituisce class Config
+
     id: UUID4
     name: str
     email: EmailStr
     attivo: bool
     ruolo: rules
 
-    class Config:
-        from_attributes = True  # necessario per SQLAlchemy
 
 class VisitCreate(BaseModel):
     paziente: UUID4
@@ -38,16 +38,15 @@ class EvidenceCreate(BaseModel):
     tipo: TipoProva
 
 class VisitResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)  # ← sostituisce class Config
+
     id: UUID4
     paziente: UUID4
     medico: Optional[UUID4]
     confermata: bool
     timestamp: Optional[datetime]
-
     prove: List['EvidenceCreate'] = []
 
-    class Config:
-        from_attributes = True
 
 class LoginRequest(BaseModel):
     email: EmailStr
