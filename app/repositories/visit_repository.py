@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 import sqlalchemy.exc as exc
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, aliased, selectinload
 from app.enum.prova import TipoProva
 from app.db.models import Visit, Evidence, User
 from app.models.schemas import VisitCreate, VisitUpdate
@@ -156,3 +156,36 @@ class VisitRepository:
         await db.delete(visit)
         await db.commit()
 
+    @staticmethod
+    async def get_agenda_with_names(db: AsyncSession, doctor_id: UUID):
+        # Alias per distinguere paziente e medico nella stessa tabella users
+        PazienteUser = aliased(User)
+        MedicoUser = aliased(User)
+
+        result = await db.execute(
+            select(
+                Visit,
+                PazienteUser.name.label("nome_paziente"),
+                MedicoUser.name.label("nome_medico")
+            )
+            .join(PazienteUser, PazienteUser.id == Visit.paziente)
+            .join(MedicoUser, MedicoUser.id == Visit.medico)
+            .where(Visit.medico == doctor_id)
+            .options(selectinload(Visit.prove))
+        )
+        rows = result.all()
+
+        # Costruisce una lista di dict con i nomi già risolti
+        agenda = []
+        for visit, nome_paziente, nome_medico in rows:
+            agenda.append({
+                "id": str(visit.id),
+                "timestamp": visit.timestamp.isoformat() if visit.timestamp else None,
+                "confermata": visit.confermata,
+                "paziente": str(visit.paziente),
+                "nome_paziente": nome_paziente,
+                "medico": str(visit.medico),
+                "nome_medico": nome_medico,
+                "prove": [{"tipo": p.tipo} for p in visit.prove]
+            })
+        return agenda

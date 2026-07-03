@@ -114,6 +114,13 @@ async def get_my_agenda(
     # Ritorna tutte le visite assegnate a questo medico
     return await VisitRepository.get_visits_by_doctor(db, current_user.id)
 
+@router.get("/visits/my-agenda-full")
+async def get_my_agenda_full(
+    current_user: User = Depends(has_role_in([ruolo.MEDICO])),
+    db: AsyncSession = Depends(get_db)
+):
+    return await VisitService.agenda_response_medico(db, current_user.id)
+
 @router.put("/visits/{id}/confirm")
 async def confirm_visit(
     id: UUID,

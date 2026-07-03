@@ -154,7 +154,7 @@ class VisitAlreadyOccurredException(AppException):
 
     def __init__(self):
         super().__init__(
-            status_code=400,
+            status_code=409,
             detail="La visita è già avvenuta e non può essere cancellata",
             error_code=ErrorCode.VISIT_ALREADY_OCCURRED
         )

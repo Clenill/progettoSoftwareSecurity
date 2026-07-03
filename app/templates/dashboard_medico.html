@@ -81,15 +81,11 @@ function showToast(titolo, messaggio, tipo = 'toast-success', durata = 3000) {
 }
 
 async function caricaAgenda() {
-    const [responseUtenti, responseVisite] = await Promise.all([
-        fetch('/api/getusers', { credentials: 'same-origin' }),
-        fetch('/visit/visits/my-agenda', { credentials: 'same-origin' })
-    ]);
-    const utenti = await responseUtenti.json();
-    const visite = await responseVisite.json();
-    // Mappa id → nome per i pazienti
-    const nomeUtente = {};
-    utenti.forEach(u => { nomeUtente[u.id] = u.name; });
+    const response = await fetch('/visit/visits/my-agenda-full', {
+        credentials: 'same-origin'
+    });
+
+    const visite = await response.json();
 
     const body = document.getElementById('agendaBody');
     body.innerHTML = '';
@@ -102,7 +98,7 @@ async function caricaAgenda() {
             ? v.prove.map(p => p.tipo).join(', ')
             : '<i>Nessuna</i>';
 
-        const nomePaziente = nomeUtente[v.paziente] || v.paziente;
+        const nomePaziente = v.nome_paziente || v.paziente;
 
         // Bottone conferma: blu se non confermata, verde se confermata
         const coloreConferma = v.confermata ? '#27ae60' : '#e67e22';

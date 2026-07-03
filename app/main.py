@@ -1,10 +1,10 @@
-from fastapi import FastAPI, Request, Response, Depends
+from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
-
+from starlette.exceptions import HTTPException as StarletteHttpException
 from app.db.database import engine
 from app.db.models import Base
 from app.api.routes import router   
@@ -81,6 +81,7 @@ async def app_exception_handler(
     return templates.TemplateResponse(
         request=request, 
         name="pagina_errore.html",
+        status_code=exc.status_code,
         context= {
             "status_code" : exc.status_code,
             "content" : {
@@ -92,4 +93,45 @@ async def app_exception_handler(
         headers=headers
     )
 
+@app.exception_handler(StarletteHttpException)
+async def app_exception_handler_due(
+    request: Request,
+    exc: StarletteHttpException
+):
 
+    headers = exc.headers if hasattr(exc, 'headers') else dict()
+    return templates.TemplateResponse(
+        request=request, 
+        name="pagina_errore.html",
+        status_code=exc.status_code,
+        context= {
+            "status_code" : exc.status_code,
+            "content" : {
+                "status_code": exc.status_code,
+                "detail": exc.detail
+            }
+        }, 
+        headers=headers
+    )
+
+
+@app.exception_handler(HTTPException)
+async def app_exception_handler_http(
+    request: Request,
+    exc: HTTPException
+):
+
+    headers = exc.headers if hasattr(exc, 'headers') else dict()
+    return templates.TemplateResponse(
+        request=request, 
+        name="pagina_errore.html",
+        status_code=exc.status_code,
+        context= {
+            "status_code" : exc.status_code,
+            "content" : {
+                "status_code": exc.status_code,
+                "detail": exc.detail
+            }
+        }, 
+        headers=headers
+    )
