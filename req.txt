@@ -58,3 +58,6 @@ Conferma Admin, visite ed utente.
 Sistemare orario visite, frontend e Backend
 Navbar Admin
 
+pip install pytest pytest-asyncio httpx --break-system-packages
+pytest tests/test_rate_limit.py -v
+

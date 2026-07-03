@@ -33,20 +33,23 @@ class UserService:
         # hashing password
         hashed_pw = hash_password(user_data.password)
 
+        #Il primo utente per ogni ruolo viente attivato automaticamente
+        utenti_con_ruolo = await UserRepository.get_all_with_role(db, user_data.ruolo)
+        primo_per_ruolo = len(utenti_con_ruolo) == 0
+
         # entity/Model
         new_user = User(
             id = uuid.uuid4(),
             name=user_data.name,
             email=user_data.email,
             hashed_password=hashed_pw,
-            attivo=False, #user_data.attivo,
+            attivo=primo_per_ruolo, # True solo se è il primo del suo ruolo
             ruolo=user_data.ruolo
         )
         try:
             return await UserRepository.create(db, new_user)
         except IntegrityError:
             await db.rollback()
-
             raise EmailAlreadyExistsException()
     
     @staticmethod
@@ -118,6 +121,7 @@ class UserService:
             raise UserNotFoundException()
         return user
 
+    @staticmethod
     async def get_all(db: AsyncSession):
         return await UserRepository.get_all(db)
 

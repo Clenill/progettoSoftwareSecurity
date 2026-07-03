@@ -8,11 +8,13 @@ class AppException(Exception):
         detail: str,
         error_code: ErrorCode, 
         *args, 
+        headers: dict | None = None,  # ← parametro esplicito
         **kwargs
     ):
         self.status_code = status_code
         self.detail = detail
         self.error_code = error_code
+        self.headers = headers or {}   # ← sempre presente, mai None
         for k,v in kwargs.items():
             setattr(self, k, v)
 
@@ -201,7 +203,7 @@ class VisitAlreadyOccurredException(AppException):
 
     def __init__(self):
         super().__init__(
-            status_code=400,
+            status_code=409,
             detail="La visita è già avvenuta e non può essere cancellata",
             error_code=ErrorCode.VISIT_ALREADY_OCCURRED
         )

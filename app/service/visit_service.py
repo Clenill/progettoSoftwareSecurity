@@ -196,6 +196,10 @@ class VisitService:
         return await VisitRepository.get_visits_by_doctor(db, id)
     
     @staticmethod
+    async def agenda_response_medico(db: AsyncSession, current_id: UUID):
+        return await VisitRepository.get_agenda_with_names(db, current_id)
+
+    @staticmethod
     async def delete_visit(visit_id: UUID, current_user: User, db: AsyncSession, commit: bool = True):
 
         user = None
