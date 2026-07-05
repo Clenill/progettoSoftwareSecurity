@@ -20,7 +20,7 @@ services:
         build:
             dockerfile: ./Dockerfile.app
         ports:
-            - "8000:${APP_PORT}"
+            - "${APP_PORT}:8000"
         environment:
             LOG_PATH: ${LOG_PATH}
             DB_USERNAME: ${DB_USERNAME}
