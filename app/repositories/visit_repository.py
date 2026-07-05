@@ -211,11 +211,6 @@ class VisitRepository:
         return visit
 
     @staticmethod
-    async def delete_visit(db: AsyncSession, visit: Visit):
-        await db.delete(visit)
-        await db.commit()
-
-    @staticmethod
     async def get_agenda_with_names(db: AsyncSession, doctor_id: UUID):
         # Alias per distinguere paziente e medico nella stessa tabella users
         PazienteUser = aliased(User)

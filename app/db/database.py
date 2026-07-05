@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import (
 )
 import os
 from dotenv import load_dotenv
+from app.core.config import ISOLATION_LEVEL
 
 load_dotenv()
 
@@ -17,7 +18,11 @@ DATABASE_URL = (
     f"{os.getenv('DB_NAME')}"
 )
 
-engine = create_async_engine(DATABASE_URL, echo=True)
+#engine = create_async_engine(DATABASE_URL, echo=True, isolation_level='SERIALIZABLE')
+if ISOLATION_LEVEL:
+    engine = create_async_engine(DATABASE_URL, echo=True, isolation_level=ISOLATION_LEVEL)
+else:
+    engine = create_async_engine(DATABASE_URL, echo=True)
 
 SessionLocal = async_sessionmaker(
     bind=engine,

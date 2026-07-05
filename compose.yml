@@ -1,0 +1,51 @@
+
+services:
+    database:
+        container_name: database
+        image: postgres:18.4-alpine3.23
+        environment:
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_PORT: ${DB_PORT}
+            POSTGRES_DB: ${DB_NAME}
+            PGUSER: postgres
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready", "-U $${POSTGRES_USER} -p $${POSTGRES_PORT}"]
+            interval: 5s
+            retries: 5
+            timeout: 5s
+
+    app:
+        container_name: app
+        build:
+            dockerfile: ./Dockerfile.app
+        ports:
+            - "8000:${APP_PORT}"
+        environment:
+            LOG_PATH: ${LOG_PATH}
+            DB_USERNAME: ${DB_USERNAME}
+            DB_PASSWORD: ${DB_PASSWORD}
+            DB_HOST: database
+            DB_PORT: ${DB_PORT}
+            DB_NAME: ${DB_NAME}
+            APP_PORT: ${APP_PORT}
+            SECRET_KEY: ${SECRET_KEY}
+            ALGORITHM: ${ALGORITHM}
+            ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
+            MAX_REQUESTS: ${MAX_REQUESTS}
+            CLEANUP_INTERVAL_SECONDS: ${CLEANUP_INTERVAL_SECONDS}
+            MAX_LOG_FILE_SIZE: ${MAX_LOG_FILE_SIZE}
+            LOG_RETENTION_PERIOD: ${LOG_RETENTION_PERIOD}
+            CONTRACT_NAME: ${CONTRACT_NAME}
+            ARTIFACTS_PATH: /var/artifacts
+            PRIVATE_KEY: ${PRIVATE_KEY}
+            SCALE: ${SCALE}
+        entrypoint: ./entrypoint.sh
+        depends_on:
+            database:
+                condition: service_healthy
+        volumes:
+            - ./logs:/var/log
+            - ./blockchain/artifacts:/var/artifacts
+            - ./blockchain/ignition/deployments:/var/deployments
+

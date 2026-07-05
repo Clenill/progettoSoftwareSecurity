@@ -1,0 +1,29 @@
+
+services:
+    blockchain:
+        container_name: blockchain
+        build:
+            dockerfile: ./Dockerfile.hardhat
+        environment:
+            NODE_ENV: development
+            CONTRACT_NAME: ${CONTRACT_NAME}
+            W3_ACCOUNT: ${W3_ACCOUNT}
+            SCALE: ${SCALE}
+        volumes:
+            - ./blockchain/ignition/deployments:/usr/blockchain/ignition/deployments
+        command: >
+            sh -c "
+            rm -rf /usr/blockchain/ignition/deployments/* &&
+            (while ! nc -z 127.0.0.1 8545; do sleep 1; done && npx hardhat ignition deploy /usr/blockchain/ignition/modules/${CONTRACT_NAME}.ts --network localhost) & 
+            npx hardhat node --hostname 0.0.0.0
+            "
+
+    app:
+        depends_on:
+            - blockchain
+        environment:
+            NODE_ENV: development
+            RPC_URL: http://blockchain:8545
+            DEPLOYMENTS_PATH: /var/deployments/chain-31337
+            WORKERS: 1
+

@@ -21,8 +21,6 @@ from app.api.admin_routes import router as admin_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
     await public_monitor.bg_cleanup()
     await admin_monitor.bg_cleanup()
