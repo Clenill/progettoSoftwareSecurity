@@ -1,0 +1,51 @@
+
+{
+    "blockchain": {
+        "nodes": {
+            "generate": true, 
+            "count": 4
+        }
+    }, 
+    "genesis": {
+        "config": {
+            "chainId": 1337, 
+            "qbft": {
+                "blockperiodseconds": 2, 
+                "epochlength": 30000, 
+                "requesttimeoutseconds": 4, 
+                "validatorscount": 4
+            }
+        }, 
+        "gasLimit": "0x1fffffffffffff", 
+        "difficulty": "0x1", 
+
+        "alloc": {
+            "W3_ACCOUNT": {
+                "balance": "1000000000000000000000000000000"
+            }
+        }, 
+
+        "homesteadBlock": 0,
+        "daoForkBlock": 0,
+        "eip150Block": 0,
+        "eip158Block": 0,
+        "byzantiumBlock": 0,
+        "constantinopleBlock": 0,
+        "constantinopleFixBlock": 0,
+        "istanbulBlock": 0,
+        "muirGlacierBlock": 0,
+        "berlinBlock": 0,
+        "londonBlock": 0,
+        "arrowGlacierBlock": 0,
+        "grayGlacierBlock": 0,
+        "terminalTotalDifficulty": 0,
+        "shanghaiTime": 0,
+        "cancunTime": 0,
+        "pragueTime": 0,
+        "osakaTime": 0,
+        "bpo1Time": 0,
+        "bpo2Time": 0, 
+        "zeroBaseFee": true
+    }
+}
+

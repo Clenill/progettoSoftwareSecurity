@@ -22,7 +22,7 @@ services:
         ports:
             - "${APP_PORT}:8000"
         environment:
-            LOG_PATH: ${LOG_PATH}
+            LOG_PATH: /var/log
             DB_USERNAME: ${DB_USERNAME}
             DB_PASSWORD: ${DB_PASSWORD}
             DB_HOST: database
@@ -38,7 +38,6 @@ services:
             LOG_RETENTION_PERIOD: ${LOG_RETENTION_PERIOD}
             CONTRACT_NAME: ${CONTRACT_NAME}
             ARTIFACTS_PATH: /var/artifacts
-            PRIVATE_KEY: ${PRIVATE_KEY}
             SCALE: ${SCALE}
         entrypoint: ./entrypoint.sh
         depends_on:

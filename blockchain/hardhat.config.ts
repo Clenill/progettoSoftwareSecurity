@@ -1,5 +1,11 @@
 import hardhatToolboxMochaEthersPlugin from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
 import { configVariable, defineConfig } from "hardhat/config";
+import dotenv from "dotenv";
+import path from "path";
+
+dotenv.config({
+    path: path.join(import.meta.dirname, '..', '.env')
+});
 
 export default defineConfig({
   plugins: [hardhatToolboxMochaEthersPlugin],
@@ -34,5 +40,11 @@ export default defineConfig({
       url: configVariable("SEPOLIA_RPC_URL"),
       accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
     },
+    besu_prod: {
+      type: "http", 
+      chainId: 1337, 
+      url: process.env.RPC_URL || 'http://127.0.0.1:8545', 
+      accounts: process.env.PROD_PRIVATE_KEY ? [process.env.PROD_PRIVATE_KEY] : []
+    }
   },
 });

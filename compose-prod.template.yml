@@ -1,0 +1,126 @@
+
+services:
+    app:
+        depends_on:
+            - besu-node-1
+        environment:
+            RPC_URL: ${RPC_URL}
+            ISOLATION_LEVEL: SERIALIZABLE
+            WORKERS: ${WORKERS}
+        network:
+            - besu-network
+
+    besu-node-1:
+        container_name: besu-node-1
+        image: hyperledger/besu:26.6.1
+        environment:
+            - BESU_LOGGING=INFO
+            - CONTRACT_NAME=${CONTRACT_NAME}
+        volumes:
+            - ./blockchain/config/networkFiles/genesis.json:/opt/besu/genesis.json:ro
+            - ./blockchain/config/networkFiles/keys/node1/key.priv:/opt/besu/key:ro
+            - ./blockchain/config/networkFiles/keys/node1/key.pub:/opt/besu/key.pub:ro
+            - besu_data_1:/opt/besu/data
+        command:
+            - --data-path=/opt/besu/data
+            - --genesis-file=/opt/besu/genesis.json
+            - --node-private-key-file=/opt/besu/key
+            - --p2p-enabled=true
+            - --p2p-host=172.20.0.11
+            - --p2p-port=30303
+            - --rpc-http-enabled=true
+            - --rpc-http-host=0.0.0.0
+            - --rpc-http-port=8545
+            - --rpc-http-api=ETH,NET,WEB3,QBFT
+            - --rpc-http-cors-origins=*
+            - --host-allowlist=*
+        networks:
+            besu-network:
+                ipv4_address: 172.20.0.11
+        ports:
+            - "8545:8545"
+        restart: always
+
+    besu-node-2:
+        container_name: besu-node-2
+        image: hyperledger/besu:26.6.1
+        volumes:
+            - ./blockchain/config/networkFiles/genesis.json:/opt/besu/genesis.json:ro
+            - ./blockchain/config/networkFiles/keys/node2/key.priv:/opt/besu/key:ro
+            - ./blockchain/config/networkFiles/keys/node2/key.pub:/opt/besu/key.pub:ro
+            - besu_data_2:/opt/besu/data
+        command:
+            - --data-path=/opt/besu/data
+            - --genesis-file=/opt/besu/genesis.json
+            - --node-private-key-file=/opt/besu/key
+            - --p2p-enabled=true
+            - --p2p-host=172.20.0.12
+            - --p2p-port=30303
+            - --bootnodes=${ENODE}
+        networks:
+            besu-network:
+                ipv4_address: 172.20.0.12
+        depends_on:
+            - besu-node-1
+        restart: always
+
+    besu-node-3:
+        container_name: besu-node-3
+        image: hyperledger/besu:26.6.1
+        volumes:
+            - ./blockchain/config/networkFiles/genesis.json:/opt/besu/genesis.json:ro
+            - ./blockchain/config/networkFiles/keys/node3/key.priv:/opt/besu/key:ro
+            - ./blockchain/config/networkFiles/keys/node3/key.pub:/opt/besu/key.pub:ro
+            - besu_data_3:/opt/besu/data
+        command:
+            - --data-path=/opt/besu/data
+            - --genesis-file=/opt/besu/genesis.json
+            - --node-private-key-file=/opt/besu/key
+            - --p2p-enabled=true
+            - --p2p-host=172.20.0.13
+            - --p2p-port=30303
+            - --bootnodes=${ENODE}
+        networks:
+            besu-network:
+                ipv4_address: 172.20.0.13
+        depends_on:
+            - besu-node-1
+        restart: always
+
+    besu-node-4:
+        container_name: besu-node-4
+        image: hyperledger/besu:26.6.1
+        volumes:
+            - ./blockchain/config/networkFiles/genesis.json:/opt/besu/genesis.json:ro
+            - ./blockchain/config/networkFiles/keys/node4/key.priv:/opt/besu/key:ro
+            - ./blockchain/config/networkFiles/keys/node4/key.pub:/opt/besu/key.pub:ro
+            - besu_data_4:/opt/besu/data
+        command:
+            - --data-path=/opt/besu/data
+            - --genesis-file=/opt/besu/genesis.json
+            - --node-private-key-file=/opt/besu/key
+            - --p2p-enabled=true
+            - --p2p-host=172.20.0.14
+            - --p2p-port=30303
+            - --bootnodes=${ENODE}
+        networks:
+            besu-network:
+                ipv4_address: 172.20.0.14
+        depends_on:
+            - besu-node-1
+        restart: always
+
+
+networks:
+    besu-network:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 172.20.0.0/16
+
+volumes:
+    besu_data_1:
+    besu_data_2:
+    besu_data_3:
+    besu_data_4:
+
