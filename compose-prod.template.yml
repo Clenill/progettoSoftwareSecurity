@@ -29,9 +29,14 @@ services:
             SCALE: ${SCALE}
         volumes:
             - ./blockchain/ignition/deployments:/usr/blockchain/ignition/deployments
+            - ./blockchain/artifacts:/usr/blockchain/output/artifacts
+            - ./blockchain/cache:/usr/blockchain/output/cache
         command: >
             sh -c "rm -rf /usr/blockchain/ignition/deployments/* &&
             while ! nc -z 172.20.0.11 8545; do sleep 1; done &&
+            npx hardhat compile &&
+            cp -r /usr/blockchain/artifacts/* /usr/blockchain/output/artifacts &&
+            cp -r /usr/blockchain/cache/* /usr/blockchain/output/cache &&
             npx hardhat run scripts/deploy.ts --network besu_prod &&
             chown -R ${USER_ID}:${GROUP_ID} /usr/blockchain
             "

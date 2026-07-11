@@ -5,7 +5,6 @@ COPY blockchain/*.json blockchain/hardhat.config.ts .
 RUN npm install
 RUN apk add netcat-openbsd
 COPY blockchain/scripts/ ./scripts/
-COPY blockchain/types/ ./types/
 COPY blockchain/ignition/modules ./ignition/modules/
 COPY blockchain/contracts/ ./contracts/
 
