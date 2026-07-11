@@ -3,6 +3,7 @@ from os import getenv
 from os.path import join
 from json import load
 from web3 import Web3
+from web3.middleware import ExtraDataToPOAMiddleware
 from dotenv import load_dotenv
 from string import ascii_letters, digits
 from secrets import choice
@@ -32,6 +33,7 @@ ISOLATION_LEVEL = getenv("ISOLATION_LEVEL")
 # web3
 RPC_URL = getenv("RPC_URL", "")
 w3 = Web3(Web3.HTTPProvider(RPC_URL))
+w3.middleware_onion.inject(ExtraDataToPOAMiddleware, name="extradata_to_poa", layer=0)
 if not w3.is_connected():
     raise RuntimeError("Cannot connect to Web3 RPC provider")
 

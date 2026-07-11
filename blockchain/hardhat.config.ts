@@ -42,9 +42,11 @@ export default defineConfig({
     },
     besu_prod: {
       type: "http", 
-      chainId: 1337, 
+      chainId: parseInt(process.env.NETWORK_ID || '1337'), 
       url: process.env.RPC_URL || 'http://127.0.0.1:8545', 
-      accounts: process.env.PROD_PRIVATE_KEY ? [process.env.PROD_PRIVATE_KEY] : []
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [], 
+      gas: 6000000, 
+      gasPrice: 0
     }
   },
 });

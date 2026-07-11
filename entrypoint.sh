@@ -6,11 +6,12 @@ while [ ! -f "/var/artifacts/contracts/$CONTRACT_NAME.sol/$CONTRACT_NAME.json" ]
 done
 
 echo "In attesa del contract deployment..."
-while [ ! -f "/var/deployments/chain-31337/deployed_addresses.json" ]; do
+while [ ! -f "/var/deployments/chain-$NETWORK_ID/deployed_addresses.json" ]; do
     sleep 2
 done
 
 echo "Creazione tabelle del database..."
 python app/init_db.py
-exec uvicorn main:app --app-dir app --host 0.0.0.0 --port 8000 --workers $WORKERS
+echo "Avvio di uvicorn..."
+exec uvicorn main:app --app-dir app --host 0.0.0.0 --port 8000
 

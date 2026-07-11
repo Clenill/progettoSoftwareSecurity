@@ -5,8 +5,8 @@ services:
         build:
             dockerfile: ./Dockerfile.hardhat
         environment:
-            W3_ACCOUNT: ${DEV_ACCOUNT:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}
-            PRIVATE_KEY: ${DEV_PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
+            W3_ACCOUNT: ${W3_ACCOUNT:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}
+            PRIVATE_KEY: ${PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
             CONTRACT_NAME: ${CONTRACT_NAME}
             SCALE: ${SCALE}
         volumes:
@@ -24,7 +24,6 @@ services:
         environment:
             RPC_URL: http://hardhat-node:8545
             DEPLOYMENTS_PATH: /var/deployments/chain-31337
-            WORKERS: 1
             W3_ACCOUNT: ${DEV_ACCOUNT:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}
             PRIVATE_KEY: ${DEV_PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
 

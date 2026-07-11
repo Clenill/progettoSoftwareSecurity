@@ -11,9 +11,9 @@ services:
             PGUSER: postgres
         healthcheck:
             test: ["CMD-SHELL", "pg_isready", "-U $${POSTGRES_USER} -p $${POSTGRES_PORT}"]
-            interval: 5s
+            interval: 10s
             retries: 5
-            timeout: 5s
+            timeout: 10s
 
     app:
         container_name: app
@@ -38,7 +38,10 @@ services:
             LOG_RETENTION_PERIOD: ${LOG_RETENTION_PERIOD}
             CONTRACT_NAME: ${CONTRACT_NAME}
             ARTIFACTS_PATH: /var/artifacts
+            DEPLOYMENTS_PATH: /var/deployments/chain-${NETWORK_ID}
+            NETWORK_ID: ${NETWORK_ID}
             SCALE: ${SCALE}
+            PRIVATE_KEY: ${PRIVATE_KEY}
         entrypoint: ./entrypoint.sh
         depends_on:
             database:
