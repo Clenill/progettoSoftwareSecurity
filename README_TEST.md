@@ -7,6 +7,10 @@ pip install pytest pytest-asyncio httpx
 pytest tests/test_rate_limit.py -v
 pytest tests/test_autenticazione.py -v
 pytest tests/test_sql_injection.py -v
+pytest tests/test_input_validation.py -v
+
+Per eseguire tutti i test insieme:
+pytest tests/ -v
 
 ## Test disponibili
 - **sotto_soglia**: verifica che le richieste normali non vengano bloccate
