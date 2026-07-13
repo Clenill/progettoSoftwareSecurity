@@ -128,7 +128,7 @@ async def confirm_visit(
     db: AsyncSession = Depends(get_db)
 ):
     #return await VisitRepository.confirm_visit(db, id)
-    return await VisitService.confirm_visit(id, db)
+    return await VisitService.confirm_visit_medico(id, db)
 
 @router.post("/visits/prenota", response_model=VisitResponse)
 async def prenota_visita(

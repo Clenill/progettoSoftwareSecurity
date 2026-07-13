@@ -196,5 +196,17 @@ class VisitService:
         
     @staticmethod
     async def confirm_visit(id: UUID, db: AsyncSession):
+             
+        return await VisitRepository.confirm_visit(db, id)
+    
+    @staticmethod
+    async def confirm_visit_medico(id: UUID, db: AsyncSession):
+        visit = await VisitRepository.get_by_id(db, id)
+        if (visit == None):
+            raise VisitNotFoundException()
+        
+        if (visit.timestamp != None and visit.timestamp < datetime.now(timezone.utc) ):
+            raise VisitTimeConflictException()
+        
         return await VisitRepository.confirm_visit(db, id)
 
