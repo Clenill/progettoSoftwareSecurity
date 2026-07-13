@@ -15,7 +15,7 @@ python-jose
 loguru
 
 Avvio server
-uvicorn app.main:app --
+uvicorn app.main:app --reload
 
 pip install jinja2
 
