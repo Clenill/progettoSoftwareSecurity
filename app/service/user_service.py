@@ -23,6 +23,10 @@ class UserService:
             db,
             user_data.email
         )
+        if len(user_data.password) < 8 :
+            raise PasswordTooShortException()
+        
+        UserService.check_password_strength(user_data.password)
 
         if len(user_data.password.encode("utf-8")) > 72:
             raise PasswordTooLongException()
@@ -51,6 +55,21 @@ class UserService:
         except IntegrityError:
             await db.rollback()
             raise EmailAlreadyExistsException()
+        
+    @staticmethod
+    def check_password_strength(password: str):
+        has_upper = any(char.isupper() for char in password)
+        has_digit = any(char.isdigit() for char in password)
+        has_lower = any(char.islower() for char in password)
+
+        if not has_lower:
+            raise InvalidCredentials()
+        
+        if not has_upper:
+            raise InvalidCredentials()
+
+        if not has_digit:
+            raise InvalidCredentials()
     
     @staticmethod
     async def get_user_by_email(email: str, db:AsyncSession):

@@ -107,6 +107,15 @@ class PasswordTooLongException(AppException):
             error_code=ErrorCode.PASSWORD_TOO_LONG
         )
 
+class PasswordTooShortException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="Password troppo corta",
+            error_code=ErrorCode.PASSWORD_TOO_SHORT
+        )
+
 class InvalidDoctorIdException(AppException):
 
     def __init__(self):
