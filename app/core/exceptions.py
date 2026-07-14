@@ -97,6 +97,14 @@ class EmailAlreadyExistsException(AppException):
             error_code=ErrorCode.EMAIL_ALREADY_EXISTS
         )
 
+class InvalidNameException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="Nome utente non valido",
+            error_code=ErrorCode.INVALID_NAME
+        )
 
 class PasswordTooLongException(AppException):
 

@@ -1,4 +1,5 @@
 import uuid
+import re
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,6 +24,9 @@ class UserService:
             db,
             user_data.email
         )
+
+        UserService.check_name(user_data.name)
+
         if len(user_data.password) < 8 :
             raise PasswordTooShortException()
         
@@ -55,6 +59,15 @@ class UserService:
         except IntegrityError:
             await db.rollback()
             raise EmailAlreadyExistsException()
+        
+    @staticmethod
+    def check_name(name: str):
+
+        # consenti lettere, spazi, apostrofo e trattino
+        pattern = r"^[a-zA-ZÀ-ÖØ-öø-ÿ\s'-]+$"
+
+        if not re.match(pattern, name):
+            raise InvalidNameException()
         
     @staticmethod
     def check_password_strength(password: str):
