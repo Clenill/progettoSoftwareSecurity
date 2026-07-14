@@ -19,13 +19,13 @@ class UserService:
     @staticmethod
     async def create_user(user_data: UserCreate, db: AsyncSession):
 
+        UserService.check_name(user_data.name)
+
         # controllo email
         existing_user = await UserRepository.get_by_email(
             db,
             user_data.email
         )
-
-        UserService.check_name(user_data.name)
 
         if len(user_data.password) < 8 :
             raise PasswordTooShortException()
@@ -66,8 +66,20 @@ class UserService:
         # consenti lettere, spazi, apostrofo e trattino
         pattern = r"^[a-zA-ZÀ-ÖØ-öø-ÿ\s'-]+$"
 
-        if not re.match(pattern, name):
-            raise InvalidNameException()
+        suspicious_patterns = [
+        r"--",
+        r";",
+        r"=",
+        r"\bOR\b",
+        r"\bAND\b",
+        r"\bDROP\b",
+        r"\bSELECT\b",
+        r"\bUNION\b"
+    ]
+
+        for pattern in suspicious_patterns:
+            if re.search(pattern, name, re.IGNORECASE):
+                raise InvalidNameException()
         
     @staticmethod
     def check_password_strength(password: str):

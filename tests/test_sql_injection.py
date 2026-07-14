@@ -56,17 +56,27 @@ async def test_sql_injection_login_password():
 
 @pytest.mark.asyncio
 async def test_sql_injection_registrazione_nome():
-    """Payload SQL injection nel campo nome durante la registrazione."""
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    """Payload SQL injection nel campo nome deve essere rifiutato."""
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test"
+    ) as client:
+
         for payload in PAYLOAD_SQL:
+
             r = await client.post("/auth/register", json={
                 "name": payload,
                 "email": f"test_{hash(payload)}@test.com",
                 "password": "Password123",
                 "ruolo": "utente"
             })
+
+            assert r.status_code in (400, 422), \
+                f"Payload SQLi nel nome '{payload}' accettato: {r.status_code}"
+
             assert r.status_code != 500, \
-                f"Payload SQLi nel nome '{payload}' ha causato un errore 500"
+                f"Payload SQLi nel nome '{payload}' ha causato errore 500"
 
 
 @pytest.mark.asyncio
