@@ -92,12 +92,15 @@ class UserService:
     async def authenticate_user(login_data: LoginRequest, db: AsyncSession):
         user = await UserRepository.get_by_email(db, login_data.email)
         
-        if not user or not verify_password(login_data.password, cast(str, user.hashed_password)):
-            raise InvalidCredentials()
+        if user is None:
+            raise UserNotFoundException()
         
         if not cast(bool, user.attivo):
             raise UserNotActive()
-
+        
+        if not user or not verify_password(login_data.password, cast(str, user.hashed_password)):
+            raise InvalidCredentials()
+        
         # Generiamo il token includendo email e ruolo (opzionale)
         token_data = {"sub": user.email, "role": user.ruolo}
         token = create_access_token(token_data)

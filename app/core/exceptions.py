@@ -74,7 +74,7 @@ class UserNotActive(AppException):
 
     def __init__(self):
         super().__init__(
-            status_code=400,
+            status_code=403,
             detail="Utente non attivo",
             error_code=ErrorCode.NOT_ACTIVE_USER
         )
