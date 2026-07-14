@@ -77,6 +77,17 @@ async def app_exception_handler(
     exc: AppException
 ):
 
+    if request.url.path.startswith(("/api", "/auth", "/visit", "/admin")):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "status_code": exc.status_code,
+                "error_code": exc.error_code,
+                "detail": exc.detail
+            },
+            headers=exc.headers or None
+        )
+
     return templates.TemplateResponse(
         request=request, 
         name="pagina_errore.html",
@@ -99,6 +110,17 @@ async def app_exception_handler_due(
 ):
 
     headers = exc.headers if hasattr(exc, 'headers') else dict()
+
+    if request.url.path.startswith(("/api", "/auth", "/visit", "/admin")):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "status_code": exc.status_code,
+                "detail": exc.detail
+            },
+            headers=headers
+        )
+
     return templates.TemplateResponse(
         request=request, 
         name="pagina_errore.html",
@@ -119,8 +141,19 @@ async def app_exception_handler_http(
     request: Request,
     exc: HTTPException
 ):
-
+    
     headers = exc.headers if hasattr(exc, 'headers') else dict()
+
+    if request.url.path.startswith(("/api", "/auth", "/visit", "/admin")):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "status_code": exc.status_code,
+                "detail": exc.detail
+            },
+            headers=headers
+        )
+
     return templates.TemplateResponse(
         request=request, 
         name="pagina_errore.html",
