@@ -28,8 +28,9 @@ async def lifespan(app: FastAPI):
     await admin_monitor.bg_cleanup()
 
     print("\n===== SERVER AVVIATO =====")
-    print("Swagger Docs: http://127.0.0.1:8000/docs")
-    print("ReDoc: http://127.0.0.1:8000/redoc")
+    print("Swagger Docs: https://127.0.0.1:8443/docs")
+    print("ReDoc: https://127.0.0.1:8443/redoc")
+    print("Pagina HOME: https://127.0.0.1:8443/")
     print("==========================\n")
 
     yield
