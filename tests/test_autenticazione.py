@@ -3,6 +3,11 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.core.re_monitor import public_monitor, admin_monitor
+from app.core.security import hash_password, create_access_token
+from app.enum.ruolo import ruolo
+from app.db.models import User
+from app.db.database import SessionLocal
+from sqlalchemy import select
 
 @pytest.fixture(autouse=True)
 def pulisci_monitor():
@@ -80,19 +85,52 @@ async def test_token_jwt_firma_errata():
 
 @pytest.mark.asyncio
 async def test_paziente_non_accede_a_rotta_medico():
-    """Un paziente autenticato non deve accedere a rotte riservate al medico."""
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        # Login come paziente
-        r = await client.post("/auth/login", json={
-            "email": "paziente@example.com",
-            "password": "password_paziente"
-        })
-        if r.status_code != 200:
-            pytest.skip("Credenziali paziente non disponibili nel DB di test")
 
-        r = await client.get("/dashboard/staff")
-        assert r.status_code in (401, 307, 403), \
-            f"Paziente ha acceduto a rotta medico: {r.status_code}"
+    async with SessionLocal() as db:
+
+        paziente = User(
+            name="Test Paziente",
+            email="paziente@test.com",
+            hashed_password=hash_password("Password123!"),
+            attivo=True,
+            ruolo=ruolo.PAZIENTE
+        )
+
+        db.add(paziente)
+        await db.commit()
+
+    try:
+        token = create_access_token(
+            data={
+                "sub": "paziente@test.com"
+            }
+        )
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test"
+        ) as client:
+
+            client.cookies.set(
+                "access_token",
+                f"Bearer {token}"
+            )
+
+            r = await client.get("/dashboard/staff")
+
+            assert r.status_code in (401, 403)
+
+    finally:
+        async with SessionLocal() as db:
+            user = await db.scalar(
+                select(User).where(
+                    User.email == "paziente@test.com"
+                )
+            )
+
+            if user:
+                await db.delete(user)
+                await db.commit()
 
 @pytest.mark.asyncio
 async def test_paziente_non_accede_a_rotta_admin():

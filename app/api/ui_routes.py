@@ -69,11 +69,6 @@ async def dettagli_visita_page(request: Request, current_user: User = Depends(ha
     """Pagina di dettaglio della singola visita per il Medico"""
     return templates.TemplateResponse(request=request, name="dettagli_visita.html")
 
-@ui_router.get("/dashboard/admin", response_class=HTMLResponse)
-async def dashboard_admin(request: Request, current_user: User = Depends(has_role_in([ruolo.AUTORITY]))):
-    """Area riservata all'Autorità di Controllo"""
-    return templates.TemplateResponse(request=request, name="dashboard_admin.html")
-
 @ui_router.get("/dashboard/authority", response_class=HTMLResponse)
 async def dashboard_authority(request: Request, current_user: User = Depends(has_role_in([ruolo.AUTORITY]))):
     """Area riservata all'Autorità di Controllo"""
