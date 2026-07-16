@@ -134,30 +134,103 @@ async def test_paziente_non_accede_a_rotta_medico():
 
 @pytest.mark.asyncio
 async def test_paziente_non_accede_a_rotta_admin():
-    """Un paziente autenticato non deve accedere a rotte admin."""
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        r = await client.post("/auth/login", json={
-            "email": "paziente@example.com",
-            "password": "password_paziente"
-        })
-        if r.status_code != 200:
-            pytest.skip("Credenziali paziente non disponibili nel DB di test")
 
-        r = await client.get("/dashboard/authority")
-        assert r.status_code in (401, 307, 403), \
-            f"Paziente ha acceduto a rotta admin: {r.status_code}"
+    async with SessionLocal() as db:
+
+        paziente = User(
+            name="Test Paziente",
+            email="paziente@test.com",
+            hashed_password=hash_password("Password123!"),
+            attivo=True,
+            ruolo=ruolo.PAZIENTE
+        )
+
+        db.add(paziente)
+        await db.commit()
+
+    try:
+        token = create_access_token(
+            data={
+                "sub": "paziente@test.com"
+            }
+        )
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test"
+        ) as client:
+
+            client.cookies.set(
+                "access_token",
+                f"Bearer {token}"
+            )
+
+            r = await client.get("/dashboard/authority")
+
+            assert r.status_code in (401, 403), \
+                f"Paziente ha acceduto a rotta admin: {r.status_code}"
+
+    finally:
+        async with SessionLocal() as db:
+
+            user = await db.scalar(
+                select(User).where(
+                    User.email == "paziente@test.com"
+                )
+            )
+
+            if user:
+                await db.delete(user)
+                await db.commit()
+
 
 @pytest.mark.asyncio
 async def test_medico_non_accede_a_rotta_admin():
-    """Un medico autenticato non deve accedere a rotte admin."""
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        r = await client.post("/auth/login", json={
-            "email": "medico@example.com",
-            "password": "password_medico"
-        })
-        if r.status_code != 200:
-            pytest.skip("Credenziali medico non disponibili nel DB di test")
 
-        r = await client.get("/dashboard/authority")
-        assert r.status_code in (401, 307, 403), \
-            f"Medico ha acceduto a rotta admin: {r.status_code}"
+    async with SessionLocal() as db:
+
+        medico = User(
+            name="Test Medico",
+            email="medico@test.com",
+            hashed_password=hash_password("Password123!"),
+            attivo=True,
+            ruolo=ruolo.MEDICO
+        )
+
+        db.add(medico)
+        await db.commit()
+
+    try:
+        token = create_access_token(
+            data={
+                "sub": "medico@test.com"
+            }
+        )
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test"
+        ) as client:
+
+            client.cookies.set(
+                "access_token",
+                f"Bearer {token}"
+            )
+
+            r = await client.get("/dashboard/authority")
+
+            assert r.status_code in (401, 403), \
+                f"Medico ha acceduto a rotta admin: {r.status_code}"
+
+    finally:
+        async with SessionLocal() as db:
+
+            user = await db.scalar(
+                select(User).where(
+                    User.email == "medico@test.com"
+                )
+            )
+
+            if user:
+                await db.delete(user)
+                await db.commit()          
