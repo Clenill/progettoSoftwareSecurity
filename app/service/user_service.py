@@ -1,4 +1,5 @@
 import uuid
+import re
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,11 +19,18 @@ class UserService:
     @staticmethod
     async def create_user(user_data: UserCreate, db: AsyncSession):
 
+        UserService.check_name(user_data.name)
+
         # controllo email
         existing_user = await UserRepository.get_by_email(
             db,
             user_data.email
         )
+
+        if len(user_data.password) < 8 :
+            raise PasswordTooShortException()
+        
+        UserService.check_password_strength(user_data.password)
 
         if len(user_data.password.encode("utf-8")) > 72:
             raise PasswordTooLongException()
@@ -51,6 +59,42 @@ class UserService:
         except IntegrityError:
             await db.rollback()
             raise EmailAlreadyExistsException()
+        
+    @staticmethod
+    def check_name(name: str):
+
+        # consenti lettere, spazi, apostrofo e trattino
+        pattern = r"^[a-zA-ZÀ-ÖØ-öø-ÿ\s'-]+$"
+
+        suspicious_patterns = [
+        r"--",
+        r";",
+        r"=",
+        r"\bOR\b",
+        r"\bAND\b",
+        r"\bDROP\b",
+        r"\bSELECT\b",
+        r"\bUNION\b"
+    ]
+
+        for pattern in suspicious_patterns:
+            if re.search(pattern, name, re.IGNORECASE):
+                raise InvalidNameException()
+        
+    @staticmethod
+    def check_password_strength(password: str):
+        has_upper = any(char.isupper() for char in password)
+        has_digit = any(char.isdigit() for char in password)
+        has_lower = any(char.islower() for char in password)
+
+        if not has_lower:
+            raise InvalidCredentials()
+        
+        if not has_upper:
+            raise InvalidCredentials()
+
+        if not has_digit:
+            raise InvalidCredentials()
     
     @staticmethod
     async def get_user_by_email(email: str, db:AsyncSession):
@@ -73,12 +117,15 @@ class UserService:
     async def authenticate_user(login_data: LoginRequest, db: AsyncSession):
         user = await UserRepository.get_by_email(db, login_data.email)
         
-        if not user or not verify_password(login_data.password, cast(str, user.hashed_password)):
-            raise InvalidCredentials()
+        if user is None:
+            raise UserNotFoundException()
         
         if not cast(bool, user.attivo):
             raise UserNotActive()
-
+        
+        if not user or not verify_password(login_data.password, cast(str, user.hashed_password)):
+            raise InvalidCredentials()
+        
         # Generiamo il token includendo email e ruolo (opzionale)
         token_data = {"sub": user.email, "role": user.ruolo}
         token = create_access_token(token_data)

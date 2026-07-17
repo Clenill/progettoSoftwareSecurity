@@ -47,6 +47,23 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         });
 
         if (!response.ok) {
+            switch (response.status) {
+                case 401:
+                    errorMsg.textContent = "Email o password non corrette.";
+                    break;
+
+                case 403:
+                    errorMsg.textContent = "Il tuo account non è ancora stato attivato.";
+                    break;
+
+                    case 404:
+                    errorMsg.textContent = "Errore credenziali, controllarle.";
+                    break;
+
+                default:
+                    errorMsg.textContent = "Errore durante il login.";
+            }
+
             errorMsg.style.display = 'block';
             return;
         }

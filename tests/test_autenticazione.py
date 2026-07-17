@@ -1,0 +1,236 @@
+# tests/test_autenticazione.py
+import pytest
+from httpx import AsyncClient, ASGITransport
+from app.main import app
+from app.core.re_monitor import public_monitor, admin_monitor
+from app.core.security import hash_password, create_access_token
+from app.enum.ruolo import ruolo
+from app.db.models import User
+from app.db.database import SessionLocal
+from sqlalchemy import select
+
+@pytest.fixture(autouse=True)
+def pulisci_monitor():
+    public_monitor._history.clear()
+    admin_monitor._history.clear()
+    yield
+    public_monitor._history.clear()
+    admin_monitor._history.clear()
+
+
+# ── Rotte protette senza token ──────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_rotta_paziente_senza_token():
+    """Accesso a rotta paziente senza token deve restituire 401 o 307."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        r = await client.get("/utente/visite")
+        assert r.status_code in (401, 307, 403), \
+            f"Rotta paziente accessibile senza token: {r.status_code}"
+
+@pytest.mark.asyncio
+async def test_rotta_medico_senza_token():
+    """Accesso a rotta medico senza token deve essere bloccato."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        r = await client.get("/dashboard/staff")
+        assert r.status_code in (401, 307, 403), \
+            f"Rotta medico accessibile senza token: {r.status_code}"
+
+@pytest.mark.asyncio
+async def test_rotta_admin_senza_token():
+    """Accesso a rotta admin senza token deve essere bloccato."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        r = await client.get("/dashboard/authority")
+        assert r.status_code in (401, 307, 403), \
+            f"Rotta admin accessibile senza token: {r.status_code}"
+
+
+# ── Token invalidi ──────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_token_invalido_stringa_casuale():
+    """Un token completamente inventato deve essere rifiutato."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        client.cookies.set("access_token", "Bearer token_falso_12345")
+        r = await client.get("/utente/visite")
+        assert r.status_code in (401, 307, 403), \
+            f"Token falso accettato: {r.status_code}"
+
+@pytest.mark.asyncio
+async def test_token_malformato_senza_bearer():
+    """Token senza prefisso Bearer deve essere rifiutato."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        client.cookies.set("access_token", "solounastringacasuale")
+        r = await client.get("/utente/visite")
+        assert r.status_code in (401, 307, 403), \
+            f"Token malformato accettato: {r.status_code}"
+
+@pytest.mark.asyncio
+async def test_token_jwt_firma_errata():
+    """JWT con firma errata deve essere rifiutato."""
+    # JWT valido strutturalmente ma firmato con chiave sbagliata
+    jwt_falso = (
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"  # header
+        ".eyJzdWIiOiJ0ZXN0QHRlc3QuY29tIiwicm9sZSI6InV0ZW50ZSJ9"  # payload
+        ".firma_completamente_sbagliata"  # firma invalida
+    )
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        client.cookies.set("access_token", f"Bearer {jwt_falso}")
+        r = await client.get("/utente/visite")
+        assert r.status_code in (401, 307, 403), \
+            f"JWT con firma errata accettato: {r.status_code}"
+
+
+# ── Accesso cross-ruolo ─────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_paziente_non_accede_a_rotta_medico():
+
+    async with SessionLocal() as db:
+
+        paziente = User(
+            name="Test Paziente",
+            email="paziente@test.com",
+            hashed_password=hash_password("Password123!"),
+            attivo=True,
+            ruolo=ruolo.PAZIENTE
+        )
+
+        db.add(paziente)
+        await db.commit()
+
+    try:
+        token = create_access_token(
+            data={
+                "sub": "paziente@test.com"
+            }
+        )
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test"
+        ) as client:
+
+            client.cookies.set(
+                "access_token",
+                f"Bearer {token}"
+            )
+
+            r = await client.get("/dashboard/staff")
+
+            assert r.status_code in (401, 403)
+
+    finally:
+        async with SessionLocal() as db:
+            user = await db.scalar(
+                select(User).where(
+                    User.email == "paziente@test.com"
+                )
+            )
+
+            if user:
+                await db.delete(user)
+                await db.commit()
+
+@pytest.mark.asyncio
+async def test_paziente_non_accede_a_rotta_admin():
+
+    async with SessionLocal() as db:
+
+        paziente = User(
+            name="Test Paziente",
+            email="paziente@test.com",
+            hashed_password=hash_password("Password123!"),
+            attivo=True,
+            ruolo=ruolo.PAZIENTE
+        )
+
+        db.add(paziente)
+        await db.commit()
+
+    try:
+        token = create_access_token(
+            data={
+                "sub": "paziente@test.com"
+            }
+        )
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test"
+        ) as client:
+
+            client.cookies.set(
+                "access_token",
+                f"Bearer {token}"
+            )
+
+            r = await client.get("/dashboard/authority")
+
+            assert r.status_code in (401, 403), \
+                f"Paziente ha acceduto a rotta admin: {r.status_code}"
+
+    finally:
+        async with SessionLocal() as db:
+
+            user = await db.scalar(
+                select(User).where(
+                    User.email == "paziente@test.com"
+                )
+            )
+
+            if user:
+                await db.delete(user)
+                await db.commit()
+
+
+@pytest.mark.asyncio
+async def test_medico_non_accede_a_rotta_admin():
+
+    async with SessionLocal() as db:
+
+        medico = User(
+            name="Test Medico",
+            email="medico@test.com",
+            hashed_password=hash_password("Password123!"),
+            attivo=True,
+            ruolo=ruolo.MEDICO
+        )
+
+        db.add(medico)
+        await db.commit()
+
+    try:
+        token = create_access_token(
+            data={
+                "sub": "medico@test.com"
+            }
+        )
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test"
+        ) as client:
+
+            client.cookies.set(
+                "access_token",
+                f"Bearer {token}"
+            )
+
+            r = await client.get("/dashboard/authority")
+
+            assert r.status_code in (401, 403), \
+                f"Medico ha acceduto a rotta admin: {r.status_code}"
+
+    finally:
+        async with SessionLocal() as db:
+
+            user = await db.scalar(
+                select(User).where(
+                    User.email == "medico@test.com"
+                )
+            )
+
+            if user:
+                await db.delete(user)
+                await db.commit()          

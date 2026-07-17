@@ -15,7 +15,7 @@ python-jose
 loguru
 
 Avvio server
-uvicorn app.main:app --
+uvicorn app.main:app --reload
 
 pip install jinja2
 
@@ -60,4 +60,20 @@ Navbar Admin
 
 pip install pytest pytest-asyncio httpx --break-system-packages
 pytest tests/test_rate_limit.py -v
+
+Usa RSA 4mb sha256 
+openssl req \
+    -x509 \
+    -nodes \
+    -days 365 \
+    -newkey rsa:4096 \
+    -keyout key.pem \
+    -out cert.pem \
+    -config localhost.cnf
+
+uvicorn app.main:app \
+    --host 127.0.0.1 \
+    --port 8443 \
+    --ssl-keyfile key.pem \
+    --ssl-certfile cert.pem
 

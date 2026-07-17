@@ -74,7 +74,7 @@ class UserNotActive(AppException):
 
     def __init__(self):
         super().__init__(
-            status_code=400,
+            status_code=403,
             detail="Utente non attivo",
             error_code=ErrorCode.NOT_ACTIVE_USER
         )
@@ -97,6 +97,14 @@ class EmailAlreadyExistsException(AppException):
             error_code=ErrorCode.EMAIL_ALREADY_EXISTS
         )
 
+class InvalidNameException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="Nome utente non valido",
+            error_code=ErrorCode.INVALID_NAME
+        )
 
 class PasswordTooLongException(AppException):
 
@@ -105,6 +113,15 @@ class PasswordTooLongException(AppException):
             status_code=400,
             detail="Password troppo lunga",
             error_code=ErrorCode.PASSWORD_TOO_LONG
+        )
+
+class PasswordTooShortException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail="Password troppo corta",
+            error_code=ErrorCode.PASSWORD_TOO_SHORT
         )
 
 class InvalidDoctorIdException(AppException):

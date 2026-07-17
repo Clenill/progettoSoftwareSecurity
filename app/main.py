@@ -26,8 +26,9 @@ async def lifespan(app: FastAPI):
     await admin_monitor.bg_cleanup()
 
     print("\n===== SERVER AVVIATO =====")
-    print("Swagger Docs: http://127.0.0.1:8000/docs")
-    print("ReDoc: http://127.0.0.1:8000/redoc")
+    print("Swagger Docs: https://127.0.0.1:8443/docs")
+    print("ReDoc: https://127.0.0.1:8443/redoc")
+    print("Pagina HOME: https://127.0.0.1:8443/")
     print("==========================\n")
 
     yield
@@ -75,6 +76,17 @@ async def app_exception_handler(
     exc: AppException
 ):
 
+    if request.url.path.startswith(("/api", "/auth", "/visit", "/admin")):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "status_code": exc.status_code,
+                "error_code": exc.error_code,
+                "detail": exc.detail
+            },
+            headers=exc.headers or None
+        )
+
     return templates.TemplateResponse(
         request=request, 
         name="pagina_errore.html",
@@ -97,6 +109,17 @@ async def app_exception_handler_due(
 ):
 
     headers = exc.headers if hasattr(exc, 'headers') else dict()
+
+    if request.url.path.startswith(("/api", "/auth", "/visit", "/admin")):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "status_code": exc.status_code,
+                "detail": exc.detail
+            },
+            headers=headers
+        )
+
     return templates.TemplateResponse(
         request=request, 
         name="pagina_errore.html",
@@ -117,8 +140,19 @@ async def app_exception_handler_http(
     request: Request,
     exc: HTTPException
 ):
-
+    
     headers = exc.headers if hasattr(exc, 'headers') else dict()
+
+    if request.url.path.startswith(("/api", "/auth", "/visit", "/admin")):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "status_code": exc.status_code,
+                "detail": exc.detail
+            },
+            headers=headers
+        )
+
     return templates.TemplateResponse(
         request=request, 
         name="pagina_errore.html",

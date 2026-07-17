@@ -41,12 +41,15 @@ services:
             NETWORK_ID: ${NETWORK_ID}
             SCALE: ${SCALE}
             PRIVATE_KEY: ${PRIVATE_KEY}
+            USER_ID: ${USER_ID}
+            GROUP_ID: ${GROUP_ID}
         entrypoint: ./entrypoint.sh
         depends_on:
             database:
                 condition: service_healthy
         volumes:
             - ./logs:/var/log
+            - ./ssl:/etc/ssl
             - ./blockchain/artifacts:/var/artifacts
             - ./blockchain/ignition/deployments:/var/deployments
 

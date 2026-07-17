@@ -135,7 +135,7 @@ async def confirm_visit(
     current_user: User = Depends(has_role_in([ruolo.MEDICO])),
     db: AsyncSession = Depends(get_db)
 ):
-    visit = await VisitService.confirm_visit(db, id, commit=False)
+    visit = await VisitService.confirm_visit_medico(id, db, commit=False)
     await ContractService.add_visit(current_user, visit)
     await db.commit()
     await db.refresh(visit)

@@ -6,20 +6,6 @@ GROUP_ID=$(id -g "$(logname)")
 NETWORK_ID=$(cat .env | grep NETWORK_ID | grep -E -o [0-9]+)
 W3_ACCOUNT=$(cat .env | grep W3_ACCOUNT | grep -E -o "=.*" | grep -E -o "[a-zA-Z0-9]+")
 
-#if [ -f .env ]; then
-#    set -a
-#    . ./.env
-#    set +a
-#else
-#    echo "Nessun file .env rilevato."
-#    exit 1
-#fi
-
-#W3_ACCOUNT="$1"
-#if [ -z "$W3_ACCOUNT" ]; then
-#    printf "Indirizzo dell'account da utilizzare per le operazioni: "
-#    read W3_ACCOUNT
-#fi
 
 echo "Rimozione della vecchia configurazione..."
 rm -rf blockchain/config/networkFiles
@@ -46,7 +32,9 @@ echo "Configurazione delle directory e dei permessi..."
 mkdir -p blockchain/artifacts
 mkdir -p blockchain/ignition/deployments/chain-"${NETWORK_ID}"
 mkdir -p logs
-chown -R "$USER_ID:$GROUP_ID" compose-prod.yml blockchain/ logs/
+mkdir -p ssl/certs
+mkdir -p ssl/private
+chown -R "$USER_ID:$GROUP_ID" compose-prod.yml blockchain/ logs/ ssl/
 
 if ! grep -q "^\s*USER_ID" .env; then
     echo "USER_ID=$USER_ID" >> .env
