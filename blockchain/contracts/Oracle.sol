@@ -68,10 +68,10 @@ contract Oracle is AccessControl {
     error DuplicateEvidence(bytes16 visit, EvidenceType evidence);
 
     // constructor
-    constructor(address admin_account, uint256 scale_value) {
-        _grantRole(DEFAULT_ADMIN_ROLE, admin_account);
-        _grantRole(PERMISSIONED_ROLE, admin_account);
-        scale = scale_value;
+    constructor(address adminAccount, uint256 scaleValue) {
+        _grantRole(DEFAULT_ADMIN_ROLE, adminAccount);
+        _grantRole(PERMISSIONED_ROLE, adminAccount);
+        scale = scaleValue;
         _visits.push();
         _likelihoods.push();
     }

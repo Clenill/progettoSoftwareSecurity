@@ -78,6 +78,7 @@ class ContractRepository:
         )
 
         if transaction_receipt["status"] == 0:
-            raise TransactionFailedException(transaction_receipt)
+            print('RECEIPT:', transaction_receipt)
+            raise TransactionFailedException()
         return transaction_receipt
 
