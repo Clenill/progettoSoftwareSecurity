@@ -163,6 +163,7 @@ class VisitRepository:
         db: AsyncSession, 
         id: UUID, 
         tipo: TipoProva, 
+        valore: bool,
         user: User | None, 
         commit: bool = True
     ):
@@ -182,7 +183,8 @@ class VisitRepository:
         
         evidence = Evidence(
             visita = id, 
-            tipo = tipo
+            tipo = tipo,
+            valore = valore
         )
 
         db.add(evidence)

@@ -14,7 +14,7 @@ from app.core.config import CONTRACT
 from app.core.re_monitor import public_monitor
 from app.db.models import User
 from app.enum.ruolo import ruolo
-from app.enum.prova import PROVE_RUOLI, ID_PROVE
+from app.enum.prova import PROVE_RUOLI, ID_PROVE, TipoProva
 from uuid import UUID
 from datetime import datetime, timezone, date
 
@@ -76,11 +76,11 @@ async def edit_visit(
     if visit.timestamp < datetime.now(timezone.utc):
         raise InvalidVisitDateException()
     
-    visit = await VisitService.edit_visit(id, visit, current_user, db, commit=False)
-    await ContractService.edit_visit(current_user, visit)
+    visita = await VisitService.edit_visit(id, visit, current_user, db, commit=False)
+    await ContractService.edit_visit(current_user, visita)
     await db.commit()
-    await db.refresh(visit)
-    return visit
+    await db.refresh(visita)
+    return visita
 
 @router.post("/addevidence/{id}")
 async def add_evidence(
@@ -92,7 +92,7 @@ async def add_evidence(
     if evidence.tipo not in PROVE_RUOLI[current_user.ruolo]:
         raise InvalidCredentials()
     
-    await VisitService.add_evidence(id, evidence.tipo, current_user, db, commit=False)
+    await VisitService.add_evidence(id, evidence.tipo, evidence.valore, current_user, db, commit=False)
     await ContractService.add_evidence(current_user, id, evidence.tipo, evidence.valore)
     await db.commit()
     return {

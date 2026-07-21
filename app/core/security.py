@@ -30,7 +30,7 @@ if _algorithm is None:
 SECRET_KEY: str = _secret_key
 ALGORITHM: str = _algorithm
 
-def hash_password(password: str) -> str:
+def hash_password(password: str) -> bytes:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
 def verify_password(plain: str, hashed: str) -> bool:

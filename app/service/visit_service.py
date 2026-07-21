@@ -107,8 +107,8 @@ class VisitService:
     @staticmethod
     async def get_visits_in(ids: list[UUID], db: AsyncSession, as_dict: bool = False):
         result = await VisitRepository.get_visits_in(db, ids)
-        if as_dict:
-            result = { v.id: v for v in result }
+        
+        result = { v.id: v for v in result }
         return result
 
     @staticmethod
@@ -131,12 +131,13 @@ class VisitService:
     async def add_evidence(
         id: UUID, 
         tipo: TipoProva, 
+        valore: bool,
         user: User | None, 
         db: AsyncSession, 
         commit: bool = True
     ):
         try:
-            await VisitRepository.add_evidence(db, id, tipo, user, commit)
+            await VisitRepository.add_evidence(db, id, tipo, valore, user, commit)
         except NoResultFound as e:
             raise MissingVisitDetailsException(detail="Visita non trovata.")
         except ValueError as e:
@@ -249,7 +250,7 @@ class VisitService:
         ):
             raise VisitAlreadyOccurredException()
         
-        return await VisitRepository.cancel_visit(db, visit, commit)
+        return await VisitRepository.cancel_visit(db, visit.id, commit)
     
     @staticmethod
     async def confirm_visit_medico(id: UUID, db: AsyncSession, commit: bool = True):

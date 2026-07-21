@@ -4,10 +4,10 @@ class AppException(Exception):
 
     def __init__(
         self,
+        *args,
         status_code: int,
         detail: str,
-        error_code: ErrorCode, 
-        *args, 
+        error_code: ErrorCode,
         headers: dict | None = None,  # ← parametro esplicito
         **kwargs
     ):
@@ -213,7 +213,7 @@ class EvidenceAlreadyAddedException(AppException):
         super().__init__(
             status_code=400, 
             detail="Prova già inserita", 
-            error_code=ErrorCode.DuplicateEvidence
+            error_code=ErrorCode.EVIDENCE_ALREADY_ADDED
         )
 
 class VisitAlreadyOccurredException(AppException):

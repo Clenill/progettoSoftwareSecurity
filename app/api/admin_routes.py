@@ -31,7 +31,7 @@ async def admin_create_visit(
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])),
     db: AsyncSession = Depends(get_db)
 ):
-    visit = await VisitService.admin_create_visit(
+    visita = await VisitService.admin_create_visit(
         visit,
         db,
         current_user, 
@@ -39,8 +39,8 @@ async def admin_create_visit(
     )
     #await ContractService.add_visit(current_user, visit)
     await db.commit()
-    await db.refresh(visit)
-    return visit
+    await db.refresh(visita)
+    return visita
 
 @router.get("/visiteutente/{id}", response_model=list[VisitResponse])
 async def get_user_visits(
@@ -65,7 +65,7 @@ async def confirm_visit(
 
 #@router.get("/allvisits", response_model=list[VisitResponse])
 @router.get("/unconfirmed-visits", response_model=list[VisitResponse])
-async def admin_get_all_visits(
+async def admin_get_all_visits_unconfirmed(
     page: int = Query(1, ge=1), 
     size: int = Query(10, ge=1, le=100), 
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
@@ -131,11 +131,11 @@ async def edit_visit(
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
     db: AsyncSession = Depends(get_db)
 ):
-    visit = await VisitService.edit_visit(id, visit, None, db, commit=False)
-    await ContractService.edit_visit(current_user, visit)
+    visita = await VisitService.edit_visit(id, visit, None, db, commit=False)
+    await ContractService.edit_visit(current_user, visita)
     await db.commit()
-    await db.refresh(visit)
-    return visit
+    await db.refresh(visita)
+    return visita
 
 @router.delete("/deletevisit/{id}")
 async def delete_visit(
@@ -157,7 +157,7 @@ async def add_evidence(
     current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
     db: AsyncSession = Depends(get_db)
 ):
-    await VisitService.add_evidence(id, evidence.tipo, None, db, commit=False)
+    await VisitService.add_evidence(id, evidence.tipo, evidence.valore, None, db, commit=False)
     await ContractService.add_evidence(current_user, id, evidence.tipo, evidence.valore)
     await db.commit()
     return { 

@@ -37,7 +37,7 @@ mkdir -p ssl/private
 chown -R "$USER_ID:$GROUP_ID" compose-prod.yml blockchain/ logs/ ssl/
 
 if ! grep -q "^\s*USER_ID" .env; then
-    echo "USER_ID=$USER_ID" >> .env
+    echo -e "\nUSER_ID=$USER_ID" >> .env
 fi
 if ! grep -q "^\s*GROUP_ID" .env; then
     echo "GROUP_ID=$GROUP_ID" >> .env

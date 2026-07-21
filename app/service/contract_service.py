@@ -7,6 +7,7 @@ from app.core.config import CONTRACT, SCALE, W3_ACCOUNT, Web3, w3
 from app.db.models import User, Visit
 from app.enum.prova import TipoProva, ID_PROVE
 from app.core.exceptions import *
+from typing import Any
 
 class ContractService:
 
@@ -62,6 +63,8 @@ class ContractService:
             CONTRACT, 
             "getFactPrior"
         )
+        prior = Web3.to_int(prior)
+        
         return prior / SCALE
 
     @staticmethod
@@ -139,7 +142,7 @@ class ContractService:
                 "getVisit", 
                 id.bytes
             )
-            return ContractRepository.extract_visit_data(visit)
+            return visit
         except ContractLogicError as e:
             error = ContractRepository._get_error_name(CONTRACT, e)
             if error == "VisitNotFound":
@@ -165,6 +168,7 @@ class ContractService:
 
     @staticmethod
     async def get_visits_paged(offset: int, size: int):
+        result:dict[Any, dict[Any, Any]] = dict()
         try:
             visits = await ContractRepository.call_function(
                 CONTRACT, 
@@ -173,11 +177,13 @@ class ContractService:
                 size
             )
             visits = list(map(lambda v: ContractService.extract_visit_data(v), visits))
-            return dict(map(lambda v: (v['id'], v), visits))
+            result = dict(map(lambda v: (v['id'], v), visits))
         except ContractLogicError as e:
             error = ContractRepository._get_error_name(CONTRACT, e)
             if error == "LikelihoodNotFound":
                 raise ProbabilityNotFoundException()
+            
+        return result
 
     @staticmethod
     async def add_visit(current_user: User, visit: Visit):
@@ -194,7 +200,7 @@ class ContractService:
         except ContractLogicError as e:
             error = ContractRepository._get_error_name(CONTRACT, e)
             if error == "DuplicateVisit":
-                raise VisitAlreadyAddedException()
+                raise VisitAlreadyConfirmedException()
 
     @staticmethod
     async def cancel_visit(current_user: User, id: UUID):
