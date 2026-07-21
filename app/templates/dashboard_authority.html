@@ -33,18 +33,65 @@
         <table class="styled-table">
             <thead>
                 <tr>
-                    <th>Data/Ora</th>
                     <th>Medico</th>
                     <th>Paziente</th>
                     <th>Conferma Visita</th>
+                    <th>Data/Ora</th>
+                    <th>Probabilità</th>
                     <th>Prove Attuali</th>
                     <th>Intervento Authority</th>
                 </tr>
             </thead>
             <tbody id="authorityBody">
-                </tbody>
+            </tbody>
         </table>
     </div>
+
+    <div class="probability-container" style="margin: 1rem 0 0 0">
+        <div class="table-container">
+            <table class="styled-table">
+                <tr>
+                    <td>Probabilità a priori delle visite</td>
+                    <td id="prior-value"></td>
+                    <td>
+                        <input type="text" id="prior-new-value" placeholder="Nuovo valore">
+                    </td>
+                    <td>
+                        <button class="btn-supervise" onclick="setPrior()">Imposta valore</button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="table-container">
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th>Categoria prova</th>
+                        <th>Valore per visita avvenuta</th>
+                        <th>Valore per visita non avvenuta</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody id="likelihoods-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <section class="welcome-section">
+            <h1>Benvenuto admin!</h1>
+            <p>Cosa vuoi fare?</p>
+            
+            <!-- Azioni rapide collegate al menu -->
+            <div class="cta-buttons">
+                <a href="/admin/prenota" class="btn btn-primary">Prenota</a>
+                <a href="/lista-utenti" class="btn btn-primary">Lista utenti</a>
+            </div>
+        </section>
+
+        <div id="unconfirmedVisitsContainer" style="margin-top: 1rem; overflow-x: auto;">
+        </div>
+
 </main>
 
 <div id="toast"></div>
@@ -68,12 +115,44 @@
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', caricaTutteLeVisite);
+const initialLikelihoodTableBody = `
+                    <tr>
+                        <td></td>
+                        <td colspan="2">
+                            <div style="text-align: center;" id="add-likelihood-container">
+                                <select id="likelihood-type">
+                                    <option value="sintomi">Sintomi</option>
+                                    <option value="attrezzatura">Attrezzatura</option>
+                                    <option value="prescrizione">Prescrizione</option>
+                                    <option value="gps">GPS</option>
+                                    <option value="conferma">Conferma (Certificato)</option>
+                                </select>
+                                <input type="text" style="margin: 0.5rem;" id="likelihood-ptrue" placeholder="Valore per visita avvenuta">
+                                <input type="text" style="margin: 0.5rem;" id="likelihood-pfalse" placeholder="Valore per visita non avvenuta">
+                                <button class="btn-supervise" style="width: 100%; background-color:#27ae60;" onclick="addLikelihood()">Aggiungi verosimiglianza</button>
+                            </div>
+                        </td>
+                        <td></td>
+                    </tr>
+`;
 
-async function caricaTutteLeVisite() {
+document.addEventListener('DOMContentLoaded', caricaVisiteConfermate);
+document.addEventListener('DOMContentLoaded', caricaVisiteNonConfermate);
+document.addEventListener('DOMContentLoaded', caricaVerosimiglianze);
+
+async function caricaVisiteConfermate() {
+    return await caricaPaginaVisiteConfermate(1);
+}
+
+async function caricaVisiteNonConfermate() {
+    return await caricaPaginaVisiteNonConfermate(1);
+}
+
+async function caricaPaginaVisiteConfermate(pagina) {
     try {
+        const queryString = new URLSearchParams({ page: pagina }).toString();
         const [responseVisite, responseUtenti] = await Promise.all([
-            fetch('/admin/allvisits', { credentials: 'same-origin' }),
+            fetch(`/admin/sc-visits?${queryString}`, { credentials: 'same-origin' }),
             fetch('/admin/allusers', { credentials: 'same-origin' }) 
         ]);
         
@@ -112,6 +191,7 @@ async function caricaTutteLeVisite() {
                 <td>${nomeMedico}</td>
                 <td>${nomePaziente}</td>
                 <td>${conferma}</td>
+                <td>${v.probabilita}</td>
                 <td>${proveHtml}</td>
                 <td>
                     <button class="btn-supervise"
@@ -121,7 +201,6 @@ async function caricaTutteLeVisite() {
                         Invia Prova
                     </button>
 
-                    
                     <div id="panel-${v.id}" class="control-panel">
                         <select id="tipo-${v.id}" ${disabilitaProva}>
                             <option value="sintomi">Sintomi</option>
@@ -130,6 +209,7 @@ async function caricaTutteLeVisite() {
                             <option value="gps">GPS</option>
                             <option value="conferma">Conferma (Certificato)</option>
                         </select>
+                        <input type="checkbox" id="valore-${v.id}" checked="checked">
                         <button class="btn-supervise"
                             style="width: 100%; background-color: ${v.confermata ? '#27ae60' : '#aaaaaa'};"
                             onclick="forzaProva('${v.id}')"
@@ -137,13 +217,246 @@ async function caricaTutteLeVisite() {
                             Esegui Iniezione
                         </button>
                     </div>
+                </td>`;
+            body.appendChild(row);
+        });
+
+
+        let row = document.createElement('tr');
+        row.innerHTML = '';
+        if(pagina > 1) {
+            row.innerHTML = `<td colspan="3"><button onclick="caricaPaginaVisiteConfermate(${pagina-1})">Indietro</button></td>`;
+        }
+        else {
+            row.innerHTML = '<td colspan="3"></td>';
+        }
+
+        if(visite.length > 9) {
+            row.innerHTML += `<td colspan="3"><button onclick="caricaPaginaVisiteConfermate(${pagina+1})">Avanti</button></td><td></td>`;
+        }
+
+        if(pagina === 1 && visite.length < 10) {
+            row = null;
+        }
+        else {
+            body.appendChild(row);
+        }
+    } catch (err) {
+        document.getElementById('authorityBody').innerHTML = 
+        '<tr><td colspan="7" style="text-align:center; color:red;">Qualcosa è andato storto</td></tr>';
+    }
+}
+
+async function caricaPaginaVisiteNonConfermate(pagina) {
+    try {
+        const queryString = new URLSearchParams({ page: pagina }).toString();
+        const [responseVisite, responseUtenti] = await Promise.all([
+            fetch(`/admin/unconfirmed-visits?${queryString}`, { credentials: 'same-origin' }),
+            fetch('/admin/allusers', { credentials: 'same-origin' }) 
+        ]);
+        
+        if (!responseVisite.ok) throw new Error("Errore recupero visite globali");
+        
+        const visite = await responseVisite.json();
+        const utenti = await responseUtenti.json();
+        // Mappa id → nome
+        const nomeUtente = {};
+        utenti.forEach(u => { nomeUtente[u.id] = u.name; });
+
+        const container = document.getElementById('unconfirmedVisitsContainer');
+        container.innerHTML = `
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th>Medico</th>
+                        <th>Paziente</th>
+                        <th>Conferma Visita</th>
+                        <th>Data/Ora</th>
+                    </tr>
+                </thead>
+                <tbody id="unconfirmedVisits">
+                </tbody>
+            </table>
+        `;
+        const body = document.getElementById('unconfirmedVisits');
+        body.innerHTML = '';
+
+
+        if (visite.length > 0) {
+            container.classList.remove('hidden');
+
+            visite.forEach(v => {
+                const row = document.createElement('tr');
+                const dataFormattata = new Date(v.timestamp).toLocaleString('it-IT');
+                const proveHtml = v.prove && v.prove.length > 0 ? v.prove.map(p => p.tipo).join(', ') : '<i>Nessuna</i>';
+                const nomeMedico = nomeUtente[v.medico] || v.medico || 'Non assegnato';
+                const nomePaziente = nomeUtente[v.paziente] || v.paziente;
+                // Bottoni conferma/rifiuta con colori
+                const conferma = v.confermata
+                    ? '<span style="color: #27ae60; font-weight: bold;">✔ Confermata</span>'
+                    : `
+                        <button class="btn-supervise" style="background-color: #27ae60; margin: 0.3rem;"
+                            onclick="confermaVisita('${v.id}')">Conferma</button>
+                        <button class="btn-supervise" style="background-color: #e74c3c; margin: 0.3rem;"
+                            onclick="rifiutaVisita('${v.id}')">Rifiuta</button>
+                    `;
+                // Invia Prova disabilitato se non confermata
+                const disabilitaProva = !v.confermata ? 'disabled' : '';
+                const coloreInviaProva = v.confermata ? '#8e44ad' : '#aaaaaa';
+
+                row.innerHTML = `
+                    <td>${dataFormattata}</td>
+                    <td>${nomeMedico}</td>
+                    <td>${nomePaziente}</td>
+                    <td>${conferma}</td>`;
+                body.appendChild(row);
+            });
+        }
+
+        let row = document.createElement('tr');
+        row.innerHTML = '';
+        if(pagina > 1) {
+            row.innerHTML = `<td colspan="2"><button onclick="caricaPaginaVisiteNonConfermate(${pagina-1})">Indietro</button></td>`;
+        }
+        else {
+            row.innerHTML = '<td colspan="2"></td>';
+        }
+
+        if(visite.length > 9) {
+            row.innerHTML += `<td colspan="2"><button onclick="caricaPaginaVisiteNonConfermate(${pagina+1})">Avanti</button></td><td></td>`;
+        }
+
+        if(pagina === 1 && visite.length < 10) {
+            row = null;
+        }
+        else {
+            body.appendChild(row);
+        }
+
+    } catch (err) {
+        document.getElementById('unconfirmedVisits').innerHTML = 
+        '<tr><td colspan="5" style="text-align:center; color:red;">Qualcosa è andato storto</td></tr>';
+    }
+}
+
+async function caricaTutteLeVisite() {
+    caricaVisiteConfermate();
+    caricaVisiteNonConfermate();
+}
+
+async function addLikelihood() {
+    try {
+        // likelihood-type
+        // likelihood-ptrue/pfalse
+
+        let tipo = document.getElementById('likelihood-type').value;
+        let ptrue = document.getElementById('likelihood-ptrue').value;
+        let pfalse = document.getElementById('likelihood-pfalse').value;
+        let response = await fetch(`/admin/probabilita/prova`, {
+            method: 'POST', 
+            credentials: 'same-origin', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({
+                tipo: tipo, 
+                ptrue: parseFloat(ptrue), 
+                pfalse: parseFloat(pfalse)
+            })
+        });
+        if(!response.ok) throw new Error("Errore nell'invio della verosimiglianza");
+        showToast("✓ Probabilità inserite", "La probabilità sono state inserite correttamente.", "toast-success");
+        setTimeout(() => location.reload(), 1500);
+    }
+    catch(err) {
+        showToast("✗ Errore", err.detail || "Operazione non consentita.", "toast-error");
+    }
+}
+
+async function caricaVerosimiglianze() {
+    try {
+        let response = await fetch('/admin/probabilita/priori', {
+            credentials: 'same-origin'
+        });
+
+        if(!response.ok) throw new Error("Errore nel recupero della probabilità");
+
+        let content = await response.json();
+        document.getElementById('prior-value').innerHTML = `${content.value}`;
+        response = await fetch('/admin/probabilita/prove', {
+            credentials: 'same-origin'
+        });
+        
+        if (!response.ok) throw new Error("Errore recupero verosimiglianze");
+        
+        const prove = await response.json();
+        const body = document.getElementById('likelihoods-body');
+        body.innerHTML = initialLikelihoodTableBody;
+        prove.forEach(p => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${p.tipo}</td>
+                <td id="${p.tipo}-true" style="font-size: 0.8rem; color:#555;">${p.ptrue}</td>
+                <td id="${p.tipo}-false" style="font-size: 0.8rem; color:#555;">${p.pfalse}</td>
+                <td>
+                    <button class="btn-supervise" onclick="togglePanel('${p.tipo}')">Cambia valore</button>
+                    
+                    <div id="panel-${p.tipo}" class="control-panel">
+                        <input type="text" id="valore-${p.tipo}-ptrue" placeholder="Nuovo valore per visita avvenuta">
+                        <input type="text" id="valore-${p.tipo}-pfalse" placeholder="Nuovo valore per visita non avvenuta">
+                        <button class="btn-supervise" style="width: 100%; background-color:#27ae60;" onclick="setLikelihood('${p.tipo}')">Imposta</button>
+                    </div>
                 </td>
             `;
             body.appendChild(row);
         });
     } catch (err) {
-        document.getElementById('authorityBody').innerHTML = 
-        '<tr><td colspan="5" style="text-align:center; color:red;">Qualcosa è andato storto</td></tr>';
+        document.getElementById('probability-body').innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Qualcosa è andato storto</td></tr>';
+    }
+}
+
+async function setPrior() {
+    try {
+        let response = await fetch('/admin/probabilita/priori', {
+            method: 'POST', 
+            credentials: 'same-origin', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({
+                value: parseFloat(document.getElementById('prior-new-value').value)
+            })
+        });
+
+        if(!response.ok) throw new Error("Errore nell'invio del nuovo valore");
+        showToast("✓ Probabilità aggiornata", "La probabilità è stata aggiornata correttamente.", "toast-success");
+        setTimeout(() => location.reload(), 1500);
+    }
+    catch(err) {
+        showToast("✗ Errore", err.detail || "Operazione non consentita.", "toast-error");
+    }
+}
+
+async function setLikelihood(tipo) {
+    try {
+        console.log('tipo: ', tipo, '; ptrue: ', document.getElementById(`valore-${tipo}-ptrue`).value, '; pfalse: ', document.getElementById(`valore-${tipo}-pfalse`).value);
+        let response = await fetch(`/admin/probabilita/prova`, {
+            method: 'POST', 
+            credentials: 'same-origin', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({
+                tipo: tipo, 
+                ptrue: parseFloat(
+                    document.getElementById(`valore-${tipo}-ptrue`).value
+                ), 
+                pfalse: parseFloat(
+                    document.getElementById(`valore-${tipo}-pfalse`).value
+                )
+            })
+        });
+
+        if(!response.ok) throw new Error("Errore nell'invio dei valori");
+        showToast("✓ Probabilità aggiornate", "Le probabilità sono state aggiornate correttamente.", "toast-success");
+        setTimeout(() => location.reload(), 1500);
+    }
+    catch(err) {
+        showToast("✗ Errore", err.detail || "Operazione non consentita.", "toast-error");
     }
 }
 
@@ -180,18 +493,31 @@ async function rifiutaVisita(id) {
     }
 }
 
+function togglePanel(id) {
+    const panel = document.getElementById(`panel-${id}`);
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+}
+
 async function forzaProva(id) {
     const tipo = document.getElementById(`tipo-${id}`).value;
+    const valore = document.getElementById(`valore-${id}`).checked;
+
+    console.log('valore: ', valore);
 
     try {
         const response = await fetch(`/admin/addevidence/${id}`, {
-            method: 'POST', credentials: 'same-origin',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tipo: tipo })
+            method: 'POST',
+            credentials: 'same-origin', 
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ tipo: tipo, valore: valore })
         });
+
         if (response.ok) {
             showToast("✓ Prova inserita", "La prova è stata aggiunta correttamente.", "toast-success");
             setTimeout(() => caricaTutteLeVisite(), 1500);
+            caricaTutteLeVisite();
         } else {
             const errData = await response.json();
             showToast("✗ Errore", errData.detail || "Operazione non consentita.", "toast-error");
@@ -199,11 +525,6 @@ async function forzaProva(id) {
     } catch (err) {
         showToast("✗ Errore di connessione", err.message, "toast-error");
     }
-}
-
-function togglePanel(id) {
-    const panel = document.getElementById(`panel-${id}`);
-    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
 }
 </script>
 </body>

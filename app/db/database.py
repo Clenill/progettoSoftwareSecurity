@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool
 import os
 from dotenv import load_dotenv
+from app.core.config import ISOLATION_LEVEL
 
 load_dotenv()
 

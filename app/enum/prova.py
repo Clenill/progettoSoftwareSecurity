@@ -9,6 +9,12 @@ class TipoProva(str, Enum):
     CONFERMA = 'conferma'
     GPS = 'gps'
 
+# mappa le prove ai loro indici sequenziali e gli indici alle prove
+ID_PROVE = dict(zip(
+    list(TipoProva) + list(range(len(TipoProva))), 
+    list(range(len(TipoProva))) + list(TipoProva)
+))
+
 PROVE_RUOLI = {
     ruolo.PAZIENTE: { TipoProva.CONFERMA }, 
     ruolo.MEDICO: {

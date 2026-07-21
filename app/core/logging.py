@@ -1,12 +1,19 @@
 
 import time
+from os.path import join
 from loguru import logger
 from fastapi import Request
 from app.core.security import sanitize_str, get_client_metadata
-from app.core.config import MAX_LOG_FILE_SIZE, LOG_RETENTION
+from app.core.config import MAX_LOG_FILE_SIZE, LOG_RETENTION, LOG_PATH
 
 logger.remove()
-logger.add("system.log", rotation=MAX_LOG_FILE_SIZE, retention=LOG_RETENTION, compression="zip", serialize=True)
+logger.add(
+    join(LOG_PATH, "system.log"), 
+    rotation=MAX_LOG_FILE_SIZE, 
+    retention=LOG_RETENTION, 
+    compression="zip", 
+    serialize=True
+)
 
 async def log_request(request: Request, call_next):
     ip, email, role = get_client_metadata(request)

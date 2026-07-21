@@ -1,0 +1,148 @@
+
+services:
+    app:
+        depends_on:
+            - besu-node-1
+        environment:
+            - RPC_URL=${RPC_URL}
+            - ISOLATION_LEVEL=SERIALIZABLE
+            - DB_HOST=172.20.0.2
+
+    hardhat-node:
+        container_name: hardhat-node
+        build:
+            dockerfile: ./Dockerfile.hardhat
+        environment:
+            RPC_URL: ${RPC_URL}
+            NETWORK_ID: ${NETWORK_ID}
+            W3_ACCOUNT: ${W3_ACCOUNT}
+            PRIVATE_KEY: ${PRIVATE_KEY}
+            CONTRACT_NAME: ${CONTRACT_NAME}
+            SCALE: ${SCALE}
+        volumes:
+            - blockchain_artifacts:/usr/blockchain/output/artifacts
+            - blockchain_cache:/usr/blockchain/output/cache
+            - blockchain_deployments:/usr/blockchain/ignition/deployments
+        command: >
+            sh -c "rm -rf /usr/blockchain/ignition/deployments/* &&
+            while ! nc -z 172.20.0.11 8545; do sleep 1; done &&
+            npx hardhat compile &&
+            cp -r /usr/blockchain/artifacts/* /usr/blockchain/output/artifacts &&
+            cp -r /usr/blockchain/cache/* /usr/blockchain/output/cache &&
+            npx hardhat run scripts/deploy.ts --network besu_prod &&
+            chown -R ${USER_ID}:${GROUP_ID} /usr/blockchain
+            "
+        networks:
+            internal-network:
+                ipv4_address: 172.20.0.4
+
+    besu-node-1:
+        container_name: besu-node-1
+        image: hyperledger/besu:26.6.1
+        environment:
+            - BESU_LOGGING=INFO
+            - CONTRACT_NAME=${CONTRACT_NAME}
+        volumes:
+            - ./blockchain/config/networkFiles/genesis.json:/opt/besu/genesis.json:ro
+            - ./blockchain/config/networkFiles/keys/node1/key.priv:/opt/besu/key:ro
+            - ./blockchain/config/networkFiles/keys/node1/key.pub:/opt/besu/key.pub:ro
+        command:
+            - --data-path=/opt/besu/data
+            - --genesis-file=/opt/besu/genesis.json
+            - --node-private-key-file=/opt/besu/key
+            - --p2p-enabled=true
+            - --p2p-host=172.20.0.11
+            - --p2p-port=30303
+            - --rpc-http-enabled=true
+            - --rpc-http-host=0.0.0.0
+            - --rpc-http-port=8545
+            - --rpc-http-api=ETH,NET,WEB3,QBFT,MINER
+            - --rpc-http-cors-origins=*
+            - --host-allowlist=*
+            - --min-gas-price=0
+            - --network-id=${NETWORK_ID}
+        networks:
+            internal-network:
+                ipv4_address: 172.20.0.11
+        ports:
+            - "8545:8545"
+        restart: always
+
+    besu-node-2:
+        container_name: besu-node-2
+        image: hyperledger/besu:26.6.1
+        environment:
+            - BESU_LOGGING=WARN
+        volumes:
+            - ./blockchain/config/networkFiles/genesis.json:/opt/besu/genesis.json:ro
+            - ./blockchain/config/networkFiles/keys/node2/key.priv:/opt/besu/key:ro
+            - ./blockchain/config/networkFiles/keys/node2/key.pub:/opt/besu/key.pub:ro
+        command:
+            - --data-path=/opt/besu/data
+            - --genesis-file=/opt/besu/genesis.json
+            - --node-private-key-file=/opt/besu/key
+            - --p2p-enabled=true
+            - --p2p-host=172.20.0.12
+            - --p2p-port=30303
+            - --bootnodes=${ENODE}
+            - --min-gas-price=0
+            - --network-id=${NETWORK_ID}
+        networks:
+            internal-network:
+                ipv4_address: 172.20.0.12
+        depends_on:
+            - besu-node-1
+        restart: always
+
+    besu-node-3:
+        container_name: besu-node-3
+        image: hyperledger/besu:26.6.1
+        environment:
+            - BESU_LOGGING=WARN
+        volumes:
+            - ./blockchain/config/networkFiles/genesis.json:/opt/besu/genesis.json:ro
+            - ./blockchain/config/networkFiles/keys/node3/key.priv:/opt/besu/key:ro
+            - ./blockchain/config/networkFiles/keys/node3/key.pub:/opt/besu/key.pub:ro
+        command:
+            - --data-path=/opt/besu/data
+            - --genesis-file=/opt/besu/genesis.json
+            - --node-private-key-file=/opt/besu/key
+            - --p2p-enabled=true
+            - --p2p-host=172.20.0.13
+            - --p2p-port=30303
+            - --bootnodes=${ENODE}
+            - --min-gas-price=0
+            - --network-id=${NETWORK_ID}
+        networks:
+            internal-network:
+                ipv4_address: 172.20.0.13
+        depends_on:
+            - besu-node-1
+        restart: always
+
+    besu-node-4:
+        container_name: besu-node-4
+        image: hyperledger/besu:26.6.1
+        environment:
+            - BESU_LOGGING=WARN
+        volumes:
+            - ./blockchain/config/networkFiles/genesis.json:/opt/besu/genesis.json:ro
+            - ./blockchain/config/networkFiles/keys/node4/key.priv:/opt/besu/key:ro
+            - ./blockchain/config/networkFiles/keys/node4/key.pub:/opt/besu/key.pub:ro
+        command:
+            - --data-path=/opt/besu/data
+            - --genesis-file=/opt/besu/genesis.json
+            - --node-private-key-file=/opt/besu/key
+            - --p2p-enabled=true
+            - --p2p-host=172.20.0.14
+            - --p2p-port=30303
+            - --bootnodes=${ENODE}
+            - --min-gas-price=0
+            - --network-id=${NETWORK_ID}
+        networks:
+            internal-network:
+                ipv4_address: 172.20.0.14
+        depends_on:
+            - besu-node-1
+        restart: always
+

@@ -94,8 +94,9 @@
                     <option value="prescrizione">Prescrizione</option>
                     <option value="gps">GPS</option>
                 </select>
+                <label>Prova presente </label>
+                <input type="checkbox" id="valoreProva" checked="checked">
             </div>
-            
             <button type="submit" id="btnSalvaProva">Salva Prova</button>
         </form>
     </div>
@@ -212,6 +213,14 @@ async function rifiutaVisita(id) {
 document.getElementById('evidenceForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const tipo = document.getElementById('tipoProva').value;
+    const valore = document.getElementById('valoreProva').checked;
+
+    const bodyData = { 
+        tipo: tipo,
+        valore: valore
+    };
+
+    console.log('valore: ', valore);
 
     try {
         const response = await fetch(`/visit/addevidence/${visitId}`, {
@@ -220,7 +229,7 @@ document.getElementById('evidenceForm').addEventListener('submit', async (e) => 
             headers: { 
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ tipo: tipo })
+            body: JSON.stringify(bodyData)
         });
         
         if (response.ok) {

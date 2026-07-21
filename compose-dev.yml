@@ -1,0 +1,33 @@
+
+services:
+    hardhat-node:
+        container_name: hardhat-node
+        build:
+            dockerfile: ./Dockerfile.hardhat
+        environment:
+            W3_ACCOUNT: ${W3_ACCOUNT:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}
+            PRIVATE_KEY: ${PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
+            CONTRACT_NAME: ${CONTRACT_NAME}
+            SCALE: ${SCALE}
+            NETWORK_ID: ${NETWORK_ID}
+        volumes:
+            - blockchain_artifacts:/usr/blockchain/output/artifacts
+            - blockchain_deployments:/usr/blockchain/ignition/deployments
+            - blockchain_cache:/usr/blockchain/output/cache
+        command: >
+            sh -c "
+            rm -rf /usr/blockchain/ignition/deployments/* &&
+            (while ! nc -z 127.0.0.1 8545; do sleep 1; done && npx hardhat compile && cp -r /usr/blockchain/artifacts/* /usr/blockchain/output/artifacts && cp -r /usr/blockchain/cache/* /usr/blockchain/output/cache && npx hardhat run scripts/deploy.ts --network besu_prod) & npx hardhat node --hostname 0.0.0.0 --chain-id ${NETWORK_ID}
+            "
+        networks:
+            internal-network:
+                ipv4_address: 172.20.0.11
+
+    app:
+        depends_on:
+            - hardhat-node
+        environment:
+            RPC_URL: http://172.20.0.11:8545
+            W3_ACCOUNT: ${DEV_ACCOUNT:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}
+            PRIVATE_KEY: ${DEV_PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
+

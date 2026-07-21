@@ -151,6 +151,44 @@ class InvalidVisitDateException(AppException):
             error_code=ErrorCode.INVALID_DATE
         )
 
+class ProbabilityNotFoundException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=404, 
+            detail="Probabilità della prova non trovata", 
+            error_code=ErrorCode.PROBABILITY_NOT_FOUND
+        )
+
+class InvalidProbabilityException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=400, 
+            detail="Valore di probabilità non valido, deve essere compreso tra 0 e 1", 
+            error_code=ErrorCode.INVALID_PROBABILITY
+        )
+
+class TransactionFailedException(AppException):
+
+    def __init__(self, *args):
+        super().__init__(
+            *args, 
+            status_code=500, 
+            detail="Transazione fallita", 
+            error_code=ErrorCode.TRANSACTION_FAILED, 
+        )
+
+class FunctionNotFoundException(AppException):
+
+    def __init__(self, name):
+        super().__init__(
+            name, 
+            status_code=503, 
+            detail="Funzione non disponibile", 
+            error_code=ErrorCode.FUNCTION_NOT_FOUND
+        )
+
 class VisitAlreadyConfirmedException(AppException):
 
     def __init__(self):
@@ -164,9 +202,18 @@ class VisitNotFoundException(AppException):
 
     def __init__(self):
         super().__init__(
-            status_code=404,
-            detail="Visita non trovata",
+            status_code=404, 
+            detail="Visita non trovata", 
             error_code=ErrorCode.VISIT_NOT_FOUND
+        )
+
+class EvidenceAlreadyAddedException(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=400, 
+            detail="Prova già inserita", 
+            error_code=ErrorCode.DuplicateEvidence
         )
 
 class VisitAlreadyOccurredException(AppException):

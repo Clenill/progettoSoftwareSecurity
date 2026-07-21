@@ -39,7 +39,7 @@ class UserService:
             raise EmailAlreadyExistsException()
         
         # hashing password
-        hashed_pw = hash_password(user_data.password)
+        hashed_pw = hash_password(user_data.password).decode('utf-8')
 
         #Il primo utente per ogni ruolo viente attivato automaticamente
         utenti_con_ruolo = await UserRepository.get_all_with_role(db, user_data.ruolo)

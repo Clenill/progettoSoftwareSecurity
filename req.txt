@@ -24,6 +24,40 @@ SECRET_KEY="09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM="HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 
+# ULTERIORI VARIABILI DA AGGIUNGERE AL .env:
+RPC_PROVIDER_URL=indirizzo blockchain (locale: http://127.0.0.1:8545)
+CONTRACT_ADDRESS=indirizzo contratto dopo il deployment
+CONTRACT_ABI=path al file contenente l'output di compilazione del contratto
+PRIVATE_KEY=chiave privata indirizzo account blockchain
+W3_ACCOUNT=indirizzo account blockchain
+SCALE=100000000 # potenza di 10 che stabilisce la scala (precisione) dei float nel contratto
+
+# nota: procedura per testare la app, ora che dipende anche dal contratto:
+1. Eseguire la rete hardhat con `npx hardhat node --hostname 0.0.0.0` da dentro la directory `blockchain`.
+2. In un'altro terminale, compilare il contratto con `npx hardhat compile` e poi effettuare il deployment con `npx hardhat ignition deploy ignition/modules/Oracle.ts`.
+3. Lanciare il server.
+
+
+Frontend
+-Registrazione
+-Pagina benvenuto utenti
+- Due viste per il medico e utente (accettazione visite e storico visite).
+- Per le visite in corso il medico può caricare le sue prove.
+- Per l'utente con visita in corso può confermare la presenza del dottore.
+- Viste admin
+
+Backend
+- Check orario visita prima di crearla (5 minuti variabile .env)
+- Medico può rifiutare la visita e questa verrà cancellata a DB --------------- FATTO
+- La cancellazione visita può essere fatta se la visita non è avvenuta ---------- FATTO
+- query sulle visite ed evitare che queste si sovrappongono 
+
+Manca:
+Invio prova Paziente
+Conferma Admin, visite ed utente.
+Sistemare orario visite, frontend e Backend
+Navbar Admin
+
 pip install pytest pytest-asyncio httpx --break-system-packages
 pytest tests/test_rate_limit.py -v
 
@@ -42,3 +76,4 @@ uvicorn app.main:app \
     --port 8443 \
     --ssl-keyfile key.pem \
     --ssl-certfile cert.pem
+

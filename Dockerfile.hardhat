@@ -1,0 +1,11 @@
+
+FROM node:26.4-alpine3.23
+WORKDIR /usr/blockchain
+COPY blockchain/*.json .
+RUN npm install
+RUN apk add netcat-openbsd
+COPY blockchain/hardhat.config.ts .
+COPY blockchain/scripts/ ./scripts/
+COPY blockchain/ignition/modules ./ignition/modules/
+COPY blockchain/contracts/ ./contracts/
+

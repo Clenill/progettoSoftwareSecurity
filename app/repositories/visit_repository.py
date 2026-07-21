@@ -14,19 +14,30 @@ from datetime import datetime, timezone
 class VisitRepository:
 
     @staticmethod
-    async def create(db: AsyncSession, visit_data: VisitCreate, user: User):
+    async def create(
+        db: AsyncSession, 
+        visit_data: VisitCreate, 
+        user: User, 
+        commit: bool = True
+    ):
         if visit_data.timestamp is not None and visit_data.timestamp <= datetime.now(timezone.utc):
             raise InvalidVisitDateException()
+        confermata = visit_data.confermata
+        if confermata == None:
+            confermata = False
         visit = Visit(
             id = uuid4(), 
             paziente = visit_data.paziente, 
             medico = visit_data.medico, 
-            timestamp = visit_data.timestamp
+            timestamp = visit_data.timestamp, 
+            confermata = confermata
         )
 
         db.add(visit)
-        await db.commit()
-        await db.refresh(visit)
+        await db.flush()
+        if commit:
+            await db.commit()
+            await db.refresh(visit)
         return visit
     
     @staticmethod
@@ -67,6 +78,17 @@ class VisitRepository:
                 or_(Visit.paziente == user.id, Visit.medico == user.id)
             )
         return (await db.execute(statement)).unique().scalar_one_or_none()
+
+    @staticmethod
+    async def get_unconfirmed_visits_paged(db: AsyncSession, offset: int, size: int):
+        statement = (
+            select(Visit)
+            .options(joinedload(Visit.prove))
+            .where(Visit.confermata == False)
+            .offset(offset)
+            .limit(size)
+        )
+        return (await db.execute(statement)).unique().scalars().all()
     
     @staticmethod
     async def get_doctor_visits_by_day(
@@ -86,11 +108,22 @@ class VisitRepository:
         return result.scalars().all()
 
     @staticmethod
+    async def get_visits_in(db: AsyncSession, ids: list[UUID]):
+        statement = (
+            select(Visit)
+            .options(joinedload(Visit.prove))
+            .where(Visit.id.in_(ids))
+        )
+        result = await db.execute(statement)
+        return result.unique().scalars().all()
+
+    @staticmethod
     async def edit_visit(
         db: AsyncSession, 
         id: UUID, 
         user: User | None, 
-        visit_data: VisitUpdate
+        visit_data: VisitUpdate, 
+        commit: bool = True
     ):
         visit = await VisitRepository.get_by_id(db, id, user)
         if not visit:
@@ -98,8 +131,31 @@ class VisitRepository:
         data = visit_data.model_dump(exclude_unset=True)
         for k,v in data.items():
             setattr(visit, k, v)
-        await db.commit()
-        await db.refresh(visit)
+        if commit:
+            await db.commit()
+            await db.refresh(visit)
+        return visit
+    
+    @staticmethod
+    async def delete_visit(db: AsyncSession, id: UUID, commit: bool = True):
+        visit = await VisitRepository.get_by_id(db, id)
+        if not visit:
+            raise exc.NoResultFound("Visita non trovata")
+        else:
+            await db.delete(visit)
+            if commit:
+                await db.commit()
+
+    @staticmethod
+    async def cancel_visit(db: AsyncSession, id: UUID, commit: bool = True):
+        visit = await VisitRepository.get_by_id(db, id)
+        if not visit:
+            raise exc.NoResultFound("Visita non trovata")
+        else:
+            # visit.annullata = True
+            if commit:
+                await db.commit()
+                await db.refresh(visit)
         return visit
 
     @staticmethod
@@ -107,7 +163,8 @@ class VisitRepository:
         db: AsyncSession, 
         id: UUID, 
         tipo: TipoProva, 
-        user: User | None
+        user: User | None, 
+        commit: bool = True
     ):
         visit = await VisitRepository.get_by_id(db, id, user)
         if not visit:
@@ -129,8 +186,9 @@ class VisitRepository:
         )
 
         db.add(evidence)
-        await db.commit()
-        await db.refresh(evidence)
+        if commit:
+            await db.commit()
+            await db.refresh(evidence)
         return evidence
     
     @staticmethod
@@ -142,19 +200,15 @@ class VisitRepository:
         return result.scalars().all()
 
     @staticmethod
-    async def confirm_visit(db: AsyncSession, visit_id: UUID):
+    async def confirm_visit(db: AsyncSession, visit_id: UUID, commit: bool = True):
         visit = await db.get(Visit, visit_id)
         if not visit:
             raise Exception("Visita non trovata")
         visit.confermata = True
-        await db.commit()
-        await db.refresh(visit)
+        if commit:
+            await db.commit()
+            await db.refresh(visit)
         return visit
-
-    @staticmethod
-    async def delete_visit(db: AsyncSession, visit: Visit):
-        await db.delete(visit)
-        await db.commit()
 
     @staticmethod
     async def get_agenda_with_names(db: AsyncSession, doctor_id: UUID):
@@ -189,3 +243,4 @@ class VisitRepository:
                 "prove": [{"tipo": p.tipo} for p in visit.prove]
             })
         return agenda
+

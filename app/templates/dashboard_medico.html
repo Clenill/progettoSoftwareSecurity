@@ -116,6 +116,8 @@ async function caricaAgenda() {
                     <option value="prescrizione">Prescrizione</option>
                     <option value="gps">GPS</option>
                 </select>
+                <label>Prova presente </label>
+                <input type="checkbox" id="valoreProva-${v.id}" checked="checked">
                 <button onclick="inviaProva('${v.id}')" 
                 style="background-color: ${coloreProva};"
                 ${disabilitaProva}>
@@ -123,6 +125,8 @@ async function caricaAgenda() {
                 </button>
             </div>
         `;
+
+        const rifiutaProva = v.confermata ? '' : `<button onclick="rifiutaVisita('${v.id}')" style="background-color: ${coloreConferma}; margin-bottom: 5px;" ${disabilitaConferma}>Rifiuta Visita</button>`;
 
         row.innerHTML = `
             <td>${nomePaziente}</td>
@@ -132,7 +136,7 @@ async function caricaAgenda() {
                     style="background-color: ${coloreConferma}; margin-bottom: 5px;"
                     ${disabilitaConferma}>
                     ${testoConferma}
-                </button>
+                </button>` + rifiutaProva + `
             </td>
             <td>${proveHtml}</td>
             <td>
@@ -166,8 +170,24 @@ async function confermaVisita(visitId) {
     }
 }
 
+async function rifiutaVisita(id) {
+    const response = await fetch(`/visit/denied-visit/${id}`, {
+        method: 'DELETE', 
+        credentials: 'same-origin'
+    });
+
+    if (response.ok) {
+        showToast("✓ Visita rifiutata", "La visita è stata rimossa.", "toast-success");
+        setTimeout(() => window.location.replace("/dashboard/staff"), 1500);
+    }
+    else {
+        showToast("✗ Errore", "Impossibile rifiutare la visita.", "toast-error");
+    }
+}
+
 async function inviaProva(visitId) {
     const tipoProva = document.getElementById(`select-evidence-${visitId}`).value;
+    const valoreProva = document.getElementById(`valoreProva-${visitId}`).checked;
 
     try {
         const response = await fetch(`/visit/addevidence/${visitId}`, {
@@ -176,7 +196,7 @@ async function inviaProva(visitId) {
             headers: { 
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ tipo: tipoProva })
+            body: JSON.stringify({ tipo: tipoProva, valore: valoreProva })
         });
         
         if (response.ok) {

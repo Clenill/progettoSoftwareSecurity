@@ -28,6 +28,7 @@ class VisitCreate(BaseModel):
     paziente: UUID4
     medico: UUID4
     timestamp: Optional[datetime] = None
+    confermata: Optional[bool] = None
 
 class VisitUpdate(BaseModel):
     paziente: Optional[UUID4] = None
@@ -36,6 +37,7 @@ class VisitUpdate(BaseModel):
 
 class EvidenceCreate(BaseModel):
     tipo: TipoProva
+    valore: bool
 
 class VisitResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)  # ← sostituisce class Config
@@ -46,6 +48,7 @@ class VisitResponse(BaseModel):
     confermata: bool
     timestamp: Optional[datetime]
     prove: List['EvidenceCreate'] = []
+    probabilita: Optional[float] | None = None
 
 
 class LoginRequest(BaseModel):
@@ -55,4 +58,15 @@ class LoginRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class PriorUpdate(BaseModel):
+    value: float
+
+class LikelihoodUpdate(BaseModel):
+    tipo: TipoProva
+    ptrue: float
+    pfalse: float
+
+class ContractAccountInfoRequest(BaseModel):
+    address: str
 

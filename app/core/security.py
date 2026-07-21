@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 import os
 from dotenv import load_dotenv
 
@@ -12,8 +11,7 @@ from app.core.exceptions import InvalidCredentials
 from app.db.database import get_db
 from app.db.models import User
 from app.enum.ruolo import ruolo
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 
 # Dove FastAPI deve cercare il token
 oauth2_scheme = APIKeyHeader(name="Authorization", auto_error=False)
@@ -33,10 +31,10 @@ SECRET_KEY: str = _secret_key
 ALGORITHM: str = _algorithm
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    return bcrypt.checkpw(plain.encode('utf-8'), hashed.encode('utf-8'))
 
 # Calcola il momento in cui il token smette di funzionare. Ora è 30 minuti
 # COntrollo automatico. Se il tempo è scaduto restituisce 401

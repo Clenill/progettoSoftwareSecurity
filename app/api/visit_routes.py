@@ -7,15 +7,16 @@ from app.db.models import Visit
 from app.db.database import get_db
 from app.models.schemas import VisitCreate, VisitUpdate, VisitResponse, EvidenceCreate
 from app.service.visit_service import VisitService
+from app.service.contract_service import ContractService
 from app.core.exceptions import *
 from app.core.security import get_current_user, has_role_in
+from app.core.config import CONTRACT
 from app.core.re_monitor import public_monitor
 from app.db.models import User
 from app.enum.ruolo import ruolo
-from app.enum.prova import PROVE_RUOLI
+from app.enum.prova import PROVE_RUOLI, ID_PROVE
 from uuid import UUID
 from datetime import datetime, timezone, date
-from app.repositories.visit_repository import VisitRepository
 
 router = APIRouter(
     prefix="/visit",
@@ -75,7 +76,11 @@ async def edit_visit(
     if visit.timestamp < datetime.now(timezone.utc):
         raise InvalidVisitDateException()
     
-    return await VisitService.edit_visit(id, visit, current_user, db)
+    visit = await VisitService.edit_visit(id, visit, current_user, db, commit=False)
+    await ContractService.edit_visit(current_user, visit)
+    await db.commit()
+    await db.refresh(visit)
+    return visit
 
 @router.post("/addevidence/{id}")
 async def add_evidence(
@@ -87,12 +92,15 @@ async def add_evidence(
     if evidence.tipo not in PROVE_RUOLI[current_user.ruolo]:
         raise InvalidCredentials()
     
-    await VisitService.add_evidence(id, evidence.tipo, current_user, db)
-    return { 
+    await VisitService.add_evidence(id, evidence.tipo, current_user, db, commit=False)
+    await ContractService.add_evidence(current_user, id, evidence.tipo, evidence.valore)
+    await db.commit()
+    return {
         "message": "Prova aggiunta con successo",
         "visit_id": id,
-        "evidence_type": evidence.tipo
-        }
+        "evidence_type": evidence.tipo, 
+        "valore": evidence.valore
+    }
 
 @router.get("/disponibilita/{medico_id}")
 async def visite_disponibili_medico(
@@ -112,7 +120,7 @@ async def get_my_agenda(
     db: AsyncSession = Depends(get_db)
 ):
     # Ritorna tutte le visite assegnate a questo medico
-    return await VisitRepository.get_visits_by_doctor(db, current_user.id)
+    return await VisitService.get_visits_by_doctor(db, current_user.id)
 
 @router.get("/visits/my-agenda-full")
 async def get_my_agenda_full(
@@ -127,8 +135,11 @@ async def confirm_visit(
     current_user: User = Depends(has_role_in([ruolo.MEDICO])),
     db: AsyncSession = Depends(get_db)
 ):
-    #return await VisitRepository.confirm_visit(db, id)
-    return await VisitService.confirm_visit_medico(id, db)
+    visit = await VisitService.confirm_visit_medico(id, db, commit=False)
+    await ContractService.add_visit(current_user, visit)
+    await db.commit()
+    await db.refresh(visit)
+    return visit
 
 @router.post("/visits/prenota", response_model=VisitResponse)
 async def prenota_visita(
@@ -167,9 +178,14 @@ async def delete_visit(id: UUID, current_user: User = Depends(
     has_role_in([ruolo.MEDICO])
 ), db: AsyncSession = Depends(get_db)
 ):
-    await VisitService.delete_visit(
-        id,
-        current_user,
-        db
-    )
+    visit = await VisitService.get_visit_by_id(id, current_user, db)
+    if visit.confermata:
+        await ContractService.cancel_visit(current_user, id)
+    else:
+        await VisitService.delete_visit(id, current_user, db, commit=True)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.get("/evidencetypes")
+async def get_evidence_types(current_user: User = Depends(get_current_user)):
+    return list(map(lambda e: e.name, TipoProva))
+

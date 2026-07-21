@@ -9,7 +9,7 @@ from app.enum.ruolo import ruolo as rules
 from app.enum.prova import TipoProva
 import uuid
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, ClassVar
 
 class Base(DeclarativeBase):
     pass
@@ -98,6 +98,8 @@ class Visit(Base):
         lazy="selectin"
     )
 
+    probabilita: ClassVar[Optional[float] | None]
+
     __table_args__ = (
         ForeignKeyConstraint(
             ["paziente", "ruolo_paziente"], 
@@ -134,6 +136,7 @@ class Evidence(Base):
         primary_key=True,
         nullable=False
     )
+    valore: Mapped[bool] = mapped_column(Boolean, default=False)
 
     __table_args__ = (
         UniqueConstraint("visita", "tipo", name="unique_visita_tipo"), 
