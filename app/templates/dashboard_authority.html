@@ -221,7 +221,8 @@ async function caricaPaginaVisiteConfermate(pagina) {
             body.appendChild(row);
         });
 
-        const row = document.createElement('tr');
+
+        let row = document.createElement('tr');
         row.innerHTML = '';
         if(pagina > 1) {
             row.innerHTML = `<td colspan="3"><button onclick="caricaPaginaVisiteConfermate(${pagina-1})">Indietro</button></td>`;
@@ -229,8 +230,17 @@ async function caricaPaginaVisiteConfermate(pagina) {
         else {
             row.innerHTML = '<td colspan="3"></td>';
         }
-        row.innerHTML += `<td colspan="3"><button onclick="caricaPaginaVisiteConfermate(${pagina+1})">Avanti</button></td><td></td>`;
-        body.appendChild(row);
+
+        if(visite.length > 9) {
+            row.innerHTML += `<td colspan="3"><button onclick="caricaPaginaVisiteConfermate(${pagina+1})">Avanti</button></td><td></td>`;
+        }
+
+        if(pagina === 1 && visite.length < 10) {
+            row = null;
+        }
+        else {
+            body.appendChild(row);
+        }
     } catch (err) {
         document.getElementById('authorityBody').innerHTML = 
         '<tr><td colspan="7" style="text-align:center; color:red;">Qualcosa è andato storto</td></tr>';
@@ -254,27 +264,26 @@ async function caricaPaginaVisiteNonConfermate(pagina) {
         utenti.forEach(u => { nomeUtente[u.id] = u.name; });
 
         const container = document.getElementById('unconfirmedVisitsContainer');
-        container.innerHTML = '';
+        container.innerHTML = `
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th>Medico</th>
+                        <th>Paziente</th>
+                        <th>Conferma Visita</th>
+                        <th>Data/Ora</th>
+                    </tr>
+                </thead>
+                <tbody id="unconfirmedVisits">
+                </tbody>
+            </table>
+        `;
+        const body = document.getElementById('unconfirmedVisits');
+        body.innerHTML = '';
+
 
         if (visite.length > 0) {
-            container.innerHTML = `
-                <table class="styled-table">
-                    <thead>
-                        <tr>
-                            <th>Medico</th>
-                            <th>Paziente</th>
-                            <th>Conferma Visita</th>
-                            <th>Data/Ora</th>
-                        </tr>
-                    </thead>
-                    <tbody id="unconfirmedVisits">
-                    </tbody>
-                </table>
-            `;
             container.classList.remove('hidden');
-
-            const body = document.getElementById('unconfirmedVisits');
-            body.innerHTML = '';
 
             visite.forEach(v => {
                 const row = document.createElement('tr');
@@ -302,17 +311,28 @@ async function caricaPaginaVisiteNonConfermate(pagina) {
                     <td>${conferma}</td>`;
                 body.appendChild(row);
             });
-            const row = document.createElement('tr');
-            row.innerHTML = '';
-            if(pagina > 1) {
-                row.innerHTML = `<td colspan="3"><button onclick="caricaPaginaVisiteNonConfermate(${pagina-1})">Indietro</button></td>`;
-            }
-            else {
-                row.innerHTML = '<td colspan="2"></td>';
-            }
-            row.innerHTML += `<td colspan="2"><button onclick="caricaPaginaVisiteNonConfermate(${pagina+1})">Avanti</button></td>`;
+        }
+
+        let row = document.createElement('tr');
+        row.innerHTML = '';
+        if(pagina > 1) {
+            row.innerHTML = `<td colspan="2"><button onclick="caricaPaginaVisiteNonConfermate(${pagina-1})">Indietro</button></td>`;
+        }
+        else {
+            row.innerHTML = '<td colspan="2"></td>';
+        }
+
+        if(visite.length > 9) {
+            row.innerHTML += `<td colspan="2"><button onclick="caricaPaginaVisiteNonConfermate(${pagina+1})">Avanti</button></td><td></td>`;
+        }
+
+        if(pagina === 1 && visite.length < 10) {
+            row = null;
+        }
+        else {
             body.appendChild(row);
         }
+
     } catch (err) {
         document.getElementById('unconfirmedVisits').innerHTML = 
         '<tr><td colspan="5" style="text-align:center; color:red;">Qualcosa è andato storto</td></tr>';

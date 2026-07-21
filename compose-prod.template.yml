@@ -7,14 +7,6 @@ services:
             - RPC_URL=${RPC_URL}
             - ISOLATION_LEVEL=SERIALIZABLE
             - DB_HOST=172.20.0.2
-        networks:
-            besu-network:
-                ipv4_address: 172.20.0.3
-
-    database:
-        networks:
-            besu-network:
-                ipv4_address: 172.20.0.2
 
     hardhat-node:
         container_name: hardhat-node
@@ -28,9 +20,9 @@ services:
             CONTRACT_NAME: ${CONTRACT_NAME}
             SCALE: ${SCALE}
         volumes:
-            - ./blockchain/ignition/deployments:/usr/blockchain/ignition/deployments
-            - ./blockchain/artifacts:/usr/blockchain/output/artifacts
-            - ./blockchain/cache:/usr/blockchain/output/cache
+            - blockchain_artifacts:/usr/blockchain/output/artifacts
+            - blockchain_cache:/usr/blockchain/output/cache
+            - blockchain_deployments:/usr/blockchain/ignition/deployments
         command: >
             sh -c "rm -rf /usr/blockchain/ignition/deployments/* &&
             while ! nc -z 172.20.0.11 8545; do sleep 1; done &&
@@ -41,7 +33,7 @@ services:
             chown -R ${USER_ID}:${GROUP_ID} /usr/blockchain
             "
         networks:
-            besu-network:
+            internal-network:
                 ipv4_address: 172.20.0.4
 
     besu-node-1:
@@ -70,7 +62,7 @@ services:
             - --min-gas-price=0
             - --network-id=${NETWORK_ID}
         networks:
-            besu-network:
+            internal-network:
                 ipv4_address: 172.20.0.11
         ports:
             - "8545:8545"
@@ -96,7 +88,7 @@ services:
             - --min-gas-price=0
             - --network-id=${NETWORK_ID}
         networks:
-            besu-network:
+            internal-network:
                 ipv4_address: 172.20.0.12
         depends_on:
             - besu-node-1
@@ -122,7 +114,7 @@ services:
             - --min-gas-price=0
             - --network-id=${NETWORK_ID}
         networks:
-            besu-network:
+            internal-network:
                 ipv4_address: 172.20.0.13
         depends_on:
             - besu-node-1
@@ -148,17 +140,9 @@ services:
             - --min-gas-price=0
             - --network-id=${NETWORK_ID}
         networks:
-            besu-network:
+            internal-network:
                 ipv4_address: 172.20.0.14
         depends_on:
             - besu-node-1
         restart: always
-
-
-networks:
-    besu-network:
-        driver: bridge
-        ipam:
-            config:
-                - subnet: 172.20.0.0/16
 

@@ -26,11 +26,23 @@ export default defineConfig({
     },
   },
   networks: {
+    hardhat: {
+        chainId: 1337, 
+        type: "edr-simulated", 
+        initialBaseFeePerGas: 0
+    }, 
+    node: {
+        chainId: 1337, 
+        type: "edr-simulated", 
+        initialBaseFeePerGas: 0
+    }, 
     hardhatMainnet: {
+      chainId: 1337, 
       type: "edr-simulated",
       chainType: "l1",
     },
     hardhatOp: {
+      chainId: 1337, 
       type: "edr-simulated",
       chainType: "op",
     },

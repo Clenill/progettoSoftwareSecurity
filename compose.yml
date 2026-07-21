@@ -13,6 +13,9 @@ services:
             interval: 10s
             retries: 5
             timeout: 10s
+        networks:
+            internal-network:
+                ipv4_address: 172.20.0.2
 
     app:
         container_name: app
@@ -50,6 +53,21 @@ services:
         volumes:
             - ./logs:/var/log
             - ./ssl:/etc/ssl
-            - ./blockchain/artifacts:/var/artifacts
-            - ./blockchain/ignition/deployments:/var/deployments
+            - blockchain_artifacts:/var/artifacts
+            - blockchain_deployments:/var/deployments
+        networks:
+            internal-network:
+                ipv4_address: 172.20.0.3
+
+volumes:
+    blockchain_artifacts:
+    blockchain_deployments:
+    blockchain_cache:
+
+networks:
+    internal-network:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 172.20.0.0/16
 

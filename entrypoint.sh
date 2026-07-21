@@ -10,21 +10,21 @@ while [ ! -f "/var/deployments/chain-$NETWORK_ID/deployed_addresses.json" ]; do
     sleep 2
 done
 
-if [ ! -f /etc/ssl/certs/cert.pem ] || [ ! -f /etc/ssl/private/key.pem ]; then
+if [ ! -f /etc/ssl/cert.pem ] || [ ! -f /etc/ssl/key.pem ]; then
     echo "Certificato non trovato. Generazione di un nuovo certificato..."
     openssl req \
         -x509 \
         -nodes \
         -days 365 \
         -newkey rsa:4096 \
-        -keyout /etc/ssl/private/key.pem \
-        -out /etc/ssl/certs/cert.pem \
+        -keyout /etc/ssl/key.pem \
+        -out /etc/ssl/cert.pem \
         -config /usr/backend/localhost.cnf
-    chmod -R ${USER_ID}:${GROUP_ID} /etc/ssl
+    chown -R ${USER_ID}:${GROUP_ID} /etc/ssl
 fi
 
 echo "Creazione tabelle del database..."
 python app/init_db.py
 echo "Avvio di uvicorn..."
-exec uvicorn main:app --app-dir app --host 0.0.0.0 --port 8000 --ssl-keyfile /etc/ssl/private/key.pem --ssl-certfile /etc/ssl/certs/cert.pem
+exec uvicorn main:app --app-dir app --host 0.0.0.0 --port 8000 --ssl-keyfile /etc/ssl/key.pem --ssl-certfile /etc/ssl/cert.pem
 
