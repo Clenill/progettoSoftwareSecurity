@@ -69,6 +69,9 @@ class ContractService:
 
     @staticmethod
     async def set_prior(value: float):
+        if not (0 < value < 1):
+            raise InvalidProbabilityException()
+        
         await ContractRepository.call_function(
             CONTRACT, 
             "setFactPrior", 

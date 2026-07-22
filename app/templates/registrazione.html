@@ -80,8 +80,22 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
 
         if (!response.ok) {
             const errorData = await response.json();
-            errorMsg.textContent = errorData.detail || "Errore nella compilazione dei dati.";
-            errorMsg.style.display = 'block';
+
+            let messaggio = "Errore nella compilazione dei dati.";
+
+            if (typeof errorData.detail === "string") {
+                messaggio = errorData.detail;
+            } else if (
+                Array.isArray(errorData.detail) &&
+                errorData.detail.length > 0
+            ) {
+                messaggio = errorData.detail
+                    .map(e => e.msg)
+                    .join(", ");
+            }
+
+            errorMsg.textContent = messaggio;
+            errorMsg.style.display = "block";
             return;
         }
 

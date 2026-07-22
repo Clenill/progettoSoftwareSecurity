@@ -15,7 +15,7 @@ from app.service.contract_service import ContractService
 
 from app.core.config import CONTRACT, SCALE
 
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 router = APIRouter(
@@ -99,7 +99,7 @@ async def admin_get_all_visits(
                 id=id, 
                 paziente=UUID(bytes=v['patient']), 
                 medico=UUID(bytes=v['physician']), 
-                timestamp=datetime.fromisoformat('0001-01-01 00:00:00.000Z'), 
+                timestamp=datetime.min.replace(tzinfo=timezone.utc), 
                 confermata=v['active'], 
                 prove=[Evidence(
                     visita=id, 
