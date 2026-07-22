@@ -57,6 +57,28 @@
 #toast .toast-body {
     color: #555;
 }
+/* Lista prove incolonnate */
+.prove-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.prove-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 2px 0;
+    white-space: nowrap;
+}
+.prova-check {
+    color: #27ae60;
+    font-weight: bold;
+}
+.prova-cross {
+    color: #e74c3c;
+    font-weight: bold;
+}
 </style>
 
 <script>
@@ -118,6 +140,15 @@ async function caricaStorico() {
             const testoBottone = provaGiaInviata ? '✓ Prova già inviata' : 'Invia prova';
             // Usa il nome dalla mappa, fallback all'id se non trovato
             const nomeMed = nomeMedico[v.medico] || v.medico;
+            // Prove incolonnate: nome prova a sinistra, spunta verde/croce rossa a destra
+            const proveHtml = v.prove && v.prove.length > 0
+            ? '<ul class="prove-list">' + v.prove.map(p => {
+                const icona = p.valore
+                    ? '<span class="prova-check">&#10003;</span>'
+                    : '<span class="prova-cross">&#10007;</span>';
+                return `<li><span>${p.tipo}</span>${icona}</li>`;
+            }).join('') + '</ul>'
+            : '<i>Nessuna</i>';
 
             tableHTML += `
                 <tr>
@@ -125,7 +156,7 @@ async function caricaStorico() {
                     <td>${ora}</td>
                     <td>${nomeMed}</td>
                     <td>${confermataText}</td>
-                    <td>${v.prove && v.prove.length > 0 ? v.prove.map(p => p.tipo).join(', ') : 'Nessuna'}</td>
+                    <td>${proveHtml}</td>
                     <td>
                         <label>Il medico è presente: </label>
                         <input id="${v.id}-checkbox" type="checkbox" ${v.confermata ? 'checked' : ''} ${disabilitato}>

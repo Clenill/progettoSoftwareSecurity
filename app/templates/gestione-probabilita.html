@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Probabilità - Dashboard Authority</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/functions.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="#" class="logo"><img src="/images/logo.png" style="height: 40px; vertical-align: middle;" alt="Logo"></a>
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="/dashboard/authority">Home</a></li>
+            <li class="nav-item"><a href="/lista-utenti">Gestisci Utenti</a></li>
+            <li class="nav-item"><a href="/admin/prenota">Nuova Visita</a></li>
+            <li class="nav-item"><a href="/gestione-probabilita" class="active">Gestione Probabilità</a></li>
+        </ul>
+        <div class="col-md-2">
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<main class="main-container" style="max-width: 1200px;">
+    <section class="welcome-section">
+        <h1>Gestione Probabilità <span class="badge-auth">Authority</span></h1>
+        <p>Imposta la probabilità a priori delle visite e le verosimiglianze delle singole prove.</p>
+    </section>
+
+    <div class="probability-container" style="margin: 1rem 0 0 0">
+        <div class="table-container">
+            <table class="styled-table">
+                <tr>
+                    <td>Probabilità a priori delle visite</td>
+                    <td id="prior-value"></td>
+                    <td>
+                        <input type="text" id="prior-new-value" placeholder="Nuovo valore">
+                    </td>
+                    <td>
+                        <button class="btn-supervise" onclick="setPrior()">Imposta valore</button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="table-container">
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th>Categoria prova</th>
+                        <th>Valore per visita avvenuta</th>
+                        <th>Valore per visita non avvenuta</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody id="likelihoods-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<div id="toast"></div>
+
+<style>
+#toast {
+    position: fixed; bottom: 2rem; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: white; border-radius: 8px; padding: 1rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15); font-size: 0.95rem;
+    opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 9999; min-width: 280px; text-align: center; pointer-events: none;
+}
+#toast.show { opacity: 1 !important; transform: translateX(-50%) translateY(0) !important; }
+#toast .toast-title { font-weight: bold; margin-bottom: 0.3rem; }
+#toast .toast-body { color: #555; }
+#toast.toast-success { border-left: 4px solid #27ae60; }
+#toast.toast-success .toast-title { color: #27ae60; }
+#toast.toast-error { border-left: 4px solid #e74c3c; }
+#toast.toast-error .toast-title { color: #e74c3c; }
+</style>
+
+<script>
+const initialLikelihoodTableBody = `
+                    <tr>
+                        <td></td>
+                        <td colspan="2">
+                            <div style="text-align: center;" id="add-likelihood-container">
+                                <select id="likelihood-type">
+                                    <option value="sintomi">Sintomi</option>
+                                    <option value="attrezzatura">Attrezzatura</option>
+                                    <option value="prescrizione">Prescrizione</option>
+                                    <option value="gps">GPS</option>
+                                    <option value="conferma">Conferma (Certificato)</option>
+                                </select>
+                                <input type="text" style="margin: 0.5rem;" id="likelihood-ptrue" placeholder="Valore per visita avvenuta">
+                                <input type="text" style="margin: 0.5rem;" id="likelihood-pfalse" placeholder="Valore per visita non avvenuta">
+                                <button class="btn-supervise" style="width: 100%; background-color:#27ae60;" onclick="addLikelihood()">Aggiungi verosimiglianza</button>
+                            </div>
+                        </td>
+                        <td></td>
+                    </tr>
+`;
+
+document.addEventListener('DOMContentLoaded', caricaVerosimiglianze);
+
+async function addLikelihood() {
+    try {
+        // likelihood-type
+        // likelihood-ptrue/pfalse
+
+        let tipo = document.getElementById('likelihood-type').value;
+        let ptrue = document.getElementById('likelihood-ptrue').value;
+        let pfalse = document.getElementById('likelihood-pfalse').value;
+        let response = await fetch(`/admin/probabilita/prova`, {
+            method: 'POST', 
+            credentials: 'same-origin', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({
+                tipo: tipo, 
+                ptrue: parseFloat(ptrue), 
+                pfalse: parseFloat(pfalse)
+            })
+        });
+        if(!response.ok) throw new Error("Errore nell'invio della verosimiglianza");
+        showToast("✓ Probabilità inserite", "La probabilità sono state inserite correttamente.", "toast-success");
+        setTimeout(() => location.reload(), 1000);
+    }
+    catch(err) {
+        showToast("✗ Errore", err.detail || "Operazione non consentita.", "toast-error");
+    }
+}
+
+async function caricaVerosimiglianze() {
+    try {
+        let response = await fetch('/admin/probabilita/priori', {
+            credentials: 'same-origin'
+        });
+
+        if(!response.ok) throw new Error("Errore nel recupero della probabilità");
+
+        let content = await response.json();
+        document.getElementById('prior-value').innerHTML = `${content.value}`;
+        response = await fetch('/admin/probabilita/prove', {
+            credentials: 'same-origin'
+        });
+        
+        if (!response.ok) throw new Error("Errore recupero verosimiglianze");
+        
+        const prove = await response.json();
+        const body = document.getElementById('likelihoods-body');
+        body.innerHTML = initialLikelihoodTableBody;
+        prove.forEach(p => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${p.tipo}</td>
+                <td id="${p.tipo}-true" style="font-size: 0.8rem; color:#555;">${p.ptrue}</td>
+                <td id="${p.tipo}-false" style="font-size: 0.8rem; color:#555;">${p.pfalse}</td>
+                <td>
+                    <button class="btn-supervise" onclick="togglePanel('${p.tipo}')">Cambia valore</button>
+                    
+                    <div id="panel-${p.tipo}" class="control-panel">
+                        <input type="text" id="valore-${p.tipo}-ptrue" placeholder="Nuovo valore per visita avvenuta">
+                        <input type="text" id="valore-${p.tipo}-pfalse" placeholder="Nuovo valore per visita non avvenuta">
+                        <button class="btn-supervise" style="width: 100%; background-color:#27ae60;" onclick="setLikelihood('${p.tipo}')">Imposta</button>
+                    </div>
+                </td>
+            `;
+            body.appendChild(row);
+        });
+    } catch (err) {
+        document.getElementById('likelihoods-body').innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">Qualcosa è andato storto</td></tr>';
+    }
+}
+
+async function setPrior() {
+    try {
+        let response = await fetch('/admin/probabilita/priori', {
+            method: 'POST', 
+            credentials: 'same-origin', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({
+                value: parseFloat(document.getElementById('prior-new-value').value)
+            })
+        });
+
+        if(!response.ok) throw new Error("Errore nell'invio del nuovo valore");
+        showToast("✓ Probabilità aggiornata", "La probabilità è stata aggiornata correttamente.", "toast-success");
+        setTimeout(() => location.reload(), 1000);
+    }
+    catch(err) {
+        showToast("✗ Errore", err.detail || "Operazione non consentita.", "toast-error");
+    }
+}
+
+async function setLikelihood(tipo) {
+    try {
+        console.log('tipo: ', tipo, '; ptrue: ', document.getElementById(`valore-${tipo}-ptrue`).value, '; pfalse: ', document.getElementById(`valore-${tipo}-pfalse`).value);
+        let response = await fetch(`/admin/probabilita/prova`, {
+            method: 'POST', 
+            credentials: 'same-origin', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({
+                tipo: tipo, 
+                ptrue: parseFloat(
+                    document.getElementById(`valore-${tipo}-ptrue`).value
+                ), 
+                pfalse: parseFloat(
+                    document.getElementById(`valore-${tipo}-pfalse`).value
+                )
+            })
+        });
+
+        if(!response.ok) throw new Error("Errore nell'invio dei valori");
+        showToast("✓ Probabilità aggiornate", "Le probabilità sono state aggiornate correttamente.", "toast-success");
+        setTimeout(() => location.reload(), 1000);
+    }
+    catch(err) {
+        showToast("✗ Errore", err.detail || "Operazione non consentita.", "toast-error");
+    }
+}
+
+function showToast(titolo, messaggio, tipo = 'toast-success', durata = 3000) {
+    const toast = document.getElementById('toast');
+    toast.innerHTML = `<div class="toast-title">${titolo}</div><div class="toast-body">${messaggio}</div>`;
+    toast.className = tipo;
+    void toast.offsetHeight;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), durata);
+}
+
+function togglePanel(id) {
+    const panel = document.getElementById(`panel-${id}`);
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+}
+</script>
+</body>
+</html>

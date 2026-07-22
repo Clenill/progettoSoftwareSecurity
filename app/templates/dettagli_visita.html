@@ -53,6 +53,43 @@
         #toast.toast-success .toast-title { color: #27ae60; }
         #toast.toast-error { border-left: 4px solid #e74c3c; }
         #toast.toast-error .toast-title { color: #e74c3c; }
+
+        /* Lista prove incolonnate */
+.prove-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.prove-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 2px 0;
+    white-space: nowrap;
+}
+.prova-check {
+    color: #27ae60;
+    font-weight: bold;
+}
+.prova-cross {
+    color: #e74c3c;
+    font-weight: bold;
+}
+/* Prove in linea, una via l'altra, con spunta/croce */
+.prove-inline {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    vertical-align: middle;
+}
+.prova-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
     </style>
 </head>
 <body>
@@ -147,9 +184,16 @@ async function caricaDettagli() {
         const nomePaziente = nomeUtente[v.paziente] || v.paziente;
         
         const dataFormattata = new Date(v.timestamp).toLocaleString('it-IT');
-        const proveHtml = v.prove && v.prove.length > 0 
-            ? v.prove.map(p => p.tipo).join(', ') 
+        // Prove in linea, una dopo l'altra, con spunta verde/croce rossa a seconda del valore
+        const proveHtml = v.prove && v.prove.length > 0
+            ? '<span class="prove-inline">' + v.prove.map(p => {
+                const icona = p.valore
+                    ? '<span class="prova-check">&#10003;</span>'
+                    : '<span class="prova-cross">&#10007;</span>';
+                return `<span class="prova-pill">${p.tipo} ${icona}</span>`;
+            }).join('') + '</span>'
             : 'Nessuna prova caricata';
+
 
         document.getElementById('visitInfo').innerHTML = `
             <div class="info-group"><span>Nome Paziente:</span> ${nomePaziente}</div>

@@ -74,6 +74,11 @@ async def dashboard_authority(request: Request, current_user: User = Depends(has
     """Area riservata all'Autorità di Controllo"""
     return templates.TemplateResponse(request=request, name="dashboard_authority.html")
 
+@ui_router.get("/gestione-probabilita", response_class=HTMLResponse)
+async def gestione_probabilita(request: Request, current_user: User = Depends(has_role_in([ruolo.AUTORITY]))):
+    """Gestione Probabilita' Autority"""
+    return templates.TemplateResponse(request=request, name="gestione-probabilita.html")
+
 @ui_router.get("/lista-utenti", response_class=HTMLResponse)
 async def lista_utenti(request: Request, current_user: User = Depends(has_role_in([ruolo.AUTORITY]))):
     """Lista degli utenti registrati"""

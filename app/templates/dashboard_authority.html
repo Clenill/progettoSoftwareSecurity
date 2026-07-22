@@ -16,6 +16,7 @@
             <li class="nav-item"><a href="/dashboard/authority" class="active">Home</a></li>
             <li class="nav-item"><a href="/lista-utenti">Gestisci Utenti</a></li>
             <li class="nav-item"><a href="/admin/prenota">Nuova Visita</a></li>
+            <li class="nav-item"><a href="/gestione-probabilita">Gestione Probabilità</a></li>
         </ul>
         <div class="col-md-2">
             <button onclick="logout()">Logout</button>
@@ -33,10 +34,10 @@
         <table class="styled-table">
             <thead>
                 <tr>
+                    <th>Data/Ora</th>
                     <th>Medico</th>
                     <th>Paziente</th>
-                    <th>Conferma Visita</th>
-                    <th>Data/Ora</th>
+                    <th>Conferma</th>
                     <th>Probabilità</th>
                     <th>Prove Attuali</th>
                     <th>Intervento Authority</th>
@@ -45,37 +46,6 @@
             <tbody id="authorityBody">
             </tbody>
         </table>
-    </div>
-
-    <div class="probability-container" style="margin: 1rem 0 0 0">
-        <div class="table-container">
-            <table class="styled-table">
-                <tr>
-                    <td>Probabilità a priori delle visite</td>
-                    <td id="prior-value"></td>
-                    <td>
-                        <input type="text" id="prior-new-value" placeholder="Nuovo valore">
-                    </td>
-                    <td>
-                        <button class="btn-supervise" onclick="setPrior()">Imposta valore</button>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        <div class="table-container">
-            <table class="styled-table">
-                <thead>
-                    <tr>
-                        <th>Categoria prova</th>
-                        <th>Valore per visita avvenuta</th>
-                        <th>Valore per visita non avvenuta</th>
-                        <th>Azioni</th>
-                    </tr>
-                </thead>
-                <tbody id="likelihoods-body">
-                </tbody>
-            </table>
-        </div>
     </div>
 
     <section class="welcome-section">
@@ -105,33 +75,33 @@
 #toast.toast-success .toast-title { color: #27ae60; }
 #toast.toast-error { border-left: 4px solid #e74c3c; }
 #toast.toast-error .toast-title { color: #e74c3c; }
+/* Lista prove incolonnate */
+.prove-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.prove-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 2px 0;
+    white-space: nowrap;
+}
+.prova-check {
+    color: #27ae60;
+    font-weight: bold;
+}
+.prova-cross {
+    color: #e74c3c;
+    font-weight: bold;
+}
 </style>
-
 <script>
-const initialLikelihoodTableBody = `
-                    <tr>
-                        <td></td>
-                        <td colspan="2">
-                            <div style="text-align: center;" id="add-likelihood-container">
-                                <select id="likelihood-type">
-                                    <option value="sintomi">Sintomi</option>
-                                    <option value="attrezzatura">Attrezzatura</option>
-                                    <option value="prescrizione">Prescrizione</option>
-                                    <option value="gps">GPS</option>
-                                    <option value="conferma">Conferma (Certificato)</option>
-                                </select>
-                                <input type="text" style="margin: 0.5rem;" id="likelihood-ptrue" placeholder="Valore per visita avvenuta">
-                                <input type="text" style="margin: 0.5rem;" id="likelihood-pfalse" placeholder="Valore per visita non avvenuta">
-                                <button class="btn-supervise" style="width: 100%; background-color:#27ae60;" onclick="addLikelihood()">Aggiungi verosimiglianza</button>
-                            </div>
-                        </td>
-                        <td></td>
-                    </tr>
-`;
 
 document.addEventListener('DOMContentLoaded', caricaVisiteConfermate);
 document.addEventListener('DOMContentLoaded', caricaVisiteNonConfermate);
-document.addEventListener('DOMContentLoaded', caricaVerosimiglianze);
 
 async function caricaVisiteConfermate() {
     return await caricaPaginaVisiteConfermate(1);
@@ -163,7 +133,15 @@ async function caricaPaginaVisiteConfermate(pagina) {
         visite.forEach(v => {
             const row = document.createElement('tr');
             const dataFormattata = new Date(v.timestamp).toLocaleString('it-IT');
-            const proveHtml = v.prove && v.prove.length > 0 ? v.prove.map(p => p.tipo).join(', ') : '<i>Nessuna</i>';
+            // Prove incolonnate: nome prova a sinistra, spunta verde/croce rossa a destra
+            const proveHtml = v.prove && v.prove.length > 0
+            ? '<ul class="prove-list">' + v.prove.map(p => {
+                const icona = p.valore
+                    ? '<span class="prova-check">&#10003;</span>'
+                    : '<span class="prova-cross">&#10007;</span>';
+                return `<li><span>${p.tipo}</span>${icona}</li>`;
+            }).join('') + '</ul>'
+            : '<i>Nessuna</i>';
             const nomeMedico = nomeUtente[v.medico] || v.medico || 'Non assegnato';
             const nomePaziente = nomeUtente[v.paziente] || v.paziente;
             // Bottoni conferma/rifiuta con colori
@@ -337,121 +315,6 @@ async function caricaTutteLeVisite() {
     caricaVisiteNonConfermate();
 }
 
-async function addLikelihood() {
-    try {
-        // likelihood-type
-        // likelihood-ptrue/pfalse
-
-        let tipo = document.getElementById('likelihood-type').value;
-        let ptrue = document.getElementById('likelihood-ptrue').value;
-        let pfalse = document.getElementById('likelihood-pfalse').value;
-        let response = await fetch(`/admin/probabilita/prova`, {
-            method: 'POST', 
-            credentials: 'same-origin', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({
-                tipo: tipo, 
-                ptrue: parseFloat(ptrue), 
-                pfalse: parseFloat(pfalse)
-            })
-        });
-        if(!response.ok) throw new Error("Errore nell'invio della verosimiglianza");
-        showToast("✓ Probabilità inserite", "La probabilità sono state inserite correttamente.", "toast-success");
-        setTimeout(() => location.reload(), 1000);
-    }
-    catch(err) {
-        showToast("✗ Errore", err.detail || "Operazione non consentita.", "toast-error");
-    }
-}
-
-async function caricaVerosimiglianze() {
-    try {
-        let response = await fetch('/admin/probabilita/priori', {
-            credentials: 'same-origin'
-        });
-
-        if(!response.ok) throw new Error("Errore nel recupero della probabilità");
-
-        let content = await response.json();
-        document.getElementById('prior-value').innerHTML = `${content.value}`;
-        response = await fetch('/admin/probabilita/prove', {
-            credentials: 'same-origin'
-        });
-        
-        if (!response.ok) throw new Error("Errore recupero verosimiglianze");
-        
-        const prove = await response.json();
-        const body = document.getElementById('likelihoods-body');
-        body.innerHTML = initialLikelihoodTableBody;
-        prove.forEach(p => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${p.tipo}</td>
-                <td id="${p.tipo}-true" style="font-size: 0.8rem; color:#555;">${p.ptrue}</td>
-                <td id="${p.tipo}-false" style="font-size: 0.8rem; color:#555;">${p.pfalse}</td>
-                <td>
-                    <button class="btn-supervise" onclick="togglePanel('${p.tipo}')">Cambia valore</button>
-                    
-                    <div id="panel-${p.tipo}" class="control-panel">
-                        <input type="text" id="valore-${p.tipo}-ptrue" placeholder="Nuovo valore per visita avvenuta">
-                        <input type="text" id="valore-${p.tipo}-pfalse" placeholder="Nuovo valore per visita non avvenuta">
-                        <button class="btn-supervise" style="width: 100%; background-color:#27ae60;" onclick="setLikelihood('${p.tipo}')">Imposta</button>
-                    </div>
-                </td>
-            `;
-            body.appendChild(row);
-        });
-    } catch (err) {
-        document.getElementById('probability-body').innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Qualcosa è andato storto</td></tr>';
-    }
-}
-
-async function setPrior() {
-    try {
-        let response = await fetch('/admin/probabilita/priori', {
-            method: 'POST', 
-            credentials: 'same-origin', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({
-                value: parseFloat(document.getElementById('prior-new-value').value)
-            })
-        });
-
-        if(!response.ok) throw new Error("Errore nell'invio del nuovo valore");
-        showToast("✓ Probabilità aggiornata", "La probabilità è stata aggiornata correttamente.", "toast-success");
-        setTimeout(() => location.reload(), 1000);
-    }
-    catch(err) {
-        showToast("✗ Errore", err.detail || "Operazione non consentita.", "toast-error");
-    }
-}
-
-async function setLikelihood(tipo) {
-    try {
-        console.log('tipo: ', tipo, '; ptrue: ', document.getElementById(`valore-${tipo}-ptrue`).value, '; pfalse: ', document.getElementById(`valore-${tipo}-pfalse`).value);
-        let response = await fetch(`/admin/probabilita/prova`, {
-            method: 'POST', 
-            credentials: 'same-origin', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({
-                tipo: tipo, 
-                ptrue: parseFloat(
-                    document.getElementById(`valore-${tipo}-ptrue`).value
-                ), 
-                pfalse: parseFloat(
-                    document.getElementById(`valore-${tipo}-pfalse`).value
-                )
-            })
-        });
-
-        if(!response.ok) throw new Error("Errore nell'invio dei valori");
-        showToast("✓ Probabilità aggiornate", "Le probabilità sono state aggiornate correttamente.", "toast-success");
-        setTimeout(() => location.reload(), 1000);
-    }
-    catch(err) {
-        showToast("✗ Errore", err.detail || "Operazione non consentita.", "toast-error");
-    }
-}
 
 function showToast(titolo, messaggio, tipo = 'toast-success', durata = 3000) {
     const toast = document.getElementById('toast');

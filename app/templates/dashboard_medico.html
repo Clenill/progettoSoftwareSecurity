@@ -140,7 +140,6 @@ async function caricaAgenda() {
         // Prove incolonnate: nome prova a sinistra, spunta verde/croce rossa a destra
         const proveHtml = v.prove && v.prove.length > 0
             ? '<ul class="prove-list">' + v.prove.map(p => {
-                console.log(p.valore);
                 const icona = p.valore
                     ? '<span class="prova-check">&#10003;</span>'
                     : '<span class="prova-cross">&#10007;</span>';
