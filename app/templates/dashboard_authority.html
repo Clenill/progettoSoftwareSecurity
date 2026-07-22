@@ -129,6 +129,17 @@ async function caricaPaginaVisiteConfermate(pagina) {
 
         const body = document.getElementById('authorityBody');
         body.innerHTML = '';
+        
+        if (visite.length === 0) {
+            body.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:2rem; color:#666;">
+                        Non ci sono visite confermate al momento.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
 
         visite.forEach(v => {
             const row = document.createElement('tr');
@@ -235,26 +246,37 @@ async function caricaPaginaVisiteNonConfermate(pagina) {
         utenti.forEach(u => { nomeUtente[u.id] = u.name; });
 
         const container = document.getElementById('unconfirmedVisitsContainer');
-        container.innerHTML = `
-            <table class="styled-table">
-                <thead>
-                    <tr>
-                        <th>Medico</th>
-                        <th>Paziente</th>
-                        <th>Conferma Visita</th>
-                        <th>Data/Ora</th>
-                    </tr>
-                </thead>
-                <tbody id="unconfirmedVisits">
-                </tbody>
-            </table>
-        `;
-        const body = document.getElementById('unconfirmedVisits');
-        body.innerHTML = '';
 
+if (visite.length === 0) {
+    container.innerHTML = `
+        <p style="
+            text-align:center;
+            color:#666;
+            padding:2rem;
+            font-style:italic;
+        ">
+            Nessuna visita in sospeso.
+        </p>
+    `;
+    return;
+}
 
-        if (visite.length > 0) {
-            container.classList.remove('hidden');
+container.innerHTML = `
+    <table class="styled-table">
+        <thead>
+            <tr>
+                <th>Data/Ora</th>
+                <th>Medico</th>
+                <th>Paziente</th>
+                <th>Conferma Visita</th>
+            </tr>
+        </thead>
+        <tbody id="unconfirmedVisits">
+        </tbody>
+    </table>
+`;
+
+const body = document.getElementById('unconfirmedVisits');
 
             visite.forEach(v => {
                 const row = document.createElement('tr');
@@ -282,7 +304,6 @@ async function caricaPaginaVisiteNonConfermate(pagina) {
                     <td>${conferma}</td>`;
                 body.appendChild(row);
             });
-        }
 
         let row = document.createElement('tr');
         row.innerHTML = '';
