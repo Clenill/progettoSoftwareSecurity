@@ -21,7 +21,7 @@ async def get_users(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user) # aggiunto controllo
 ):
-    return await UserService.get_users_with_role(ruolo.MEDICO, db)
+    return await UserService.get_active_users_with_role(ruolo.MEDICO, db)
 
 @router.get("/getusers/me")
 async def get_me(current_user: User = Depends(get_current_user)):

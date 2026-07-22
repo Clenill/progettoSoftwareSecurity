@@ -108,10 +108,14 @@ class UserService:
     @staticmethod
     async def get_users(db: AsyncSession):
         return await UserRepository.get_all(db)
-    
+
     @staticmethod
     async def get_users_with_role(role: ruolo, db: AsyncSession):
         return await UserRepository.get_all_with_role(db, role)
+    
+    @staticmethod
+    async def get_active_users_with_role(role: ruolo, db: AsyncSession):
+        return await UserRepository.get_all_active_with_role(db, role)
 
     @staticmethod
     async def authenticate_user(login_data: LoginRequest, db: AsyncSession):
@@ -171,4 +175,8 @@ class UserService:
     @staticmethod
     async def get_all(db: AsyncSession):
         return await UserRepository.get_all(db)
+
+    @staticmethod
+    async def get_active_users(db: AsyncSession):
+        return await UserRepository.get_all_active(db)
 

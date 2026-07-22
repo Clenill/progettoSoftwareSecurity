@@ -44,7 +44,7 @@ class ContractRepository:
         name: str, 
         *args, 
         use_transaction: bool = False
-    ):
+    ) -> Any:
         try:
             fn = contract.get_function_by_name(name)
         except:

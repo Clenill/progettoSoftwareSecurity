@@ -56,6 +56,10 @@ class User(Base):
 class Visit(Base):
     __tablename__ = "visits"
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.probabilita: float | None = None
+
     confermata: Mapped[bool] = mapped_column(
         Boolean, 
         default=False
@@ -98,7 +102,7 @@ class Visit(Base):
         lazy="selectin"
     )
 
-    probabilita: ClassVar[Optional[float] | None]
+    #probabilita: Optional[float] | None
 
     __table_args__ = (
         ForeignKeyConstraint(

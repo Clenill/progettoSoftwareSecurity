@@ -64,7 +64,6 @@ services:
 volumes:
     blockchain_artifacts:
     blockchain_deployments:
-    blockchain_cache:
 
 networks:
     internal-network:

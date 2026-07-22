@@ -39,4 +39,10 @@ __pycache__
 
 # Logs
 *.log
+logs
+
+# Generated configuration
+blockchain/config/networkFiles
+blockchain/config/qbftConfigFile.json
+compose-prod.yml
 

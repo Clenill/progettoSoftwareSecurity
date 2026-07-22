@@ -118,10 +118,9 @@ async def admin_get_visit(
     db: AsyncSession = Depends(get_db)
 ):
     visit = await VisitService.get_visit_by_id(id, None, db)
-    (bc_visit, probabilita) = await ContractService.get_visit(id)
-    visit_hash = ContractService.visit_hash(visit)
-    # if bc_hash[0] != visit_hash: print('visit mismatch')
-    visit.probabilita = probabilita
+    bc_visit = await ContractService.get_visit(id)
+    #visit_hash = ContractService.visit_hash(visit)
+    visit.probabilita = bc_visit[4]
     return visit
 
 @router.put("/updatevisits/{id}", response_model=VisitResponse)
@@ -241,6 +240,13 @@ async def revoke_contract_permissions(
 ):
     await ContractService.remove_permissioned_account(account.address)
     return { "message": "permessi rimossi" }
+
+@router.get("/allactiveusers", response_model=list[UserResponse])
+async def get_active_users(
+    current_user: User = Depends(has_role_in([ruolo.AUTORITY])), 
+    db: AsyncSession = Depends(get_db)
+):
+    return await UserService.get_active_users(db)
 
 @router.get("/allusers", response_model=list[UserResponse])
 async def get_users(

@@ -136,28 +136,29 @@ class ContractService:
 
     @staticmethod
     async def get_visit(id: UUID):
+        visit: Any = None
         try:
             visit = await ContractRepository.call_function(
                 CONTRACT, 
                 "getVisit", 
                 id.bytes
             )
-            return visit
         except ContractLogicError as e:
             error = ContractRepository._get_error_name(CONTRACT, e)
             if error == "VisitNotFound":
                 raise VisitNotFoundException()
             elif error == "LikelihoodNotFound":
                 raise ProbabilityNotFoundException()
+        return visit
 
     @staticmethod
     async def get_visits_in(ids: list[UUID]):
         try:
-            ids = list(map(lambda id: id.bytes, ids))
+            ids_bytes = list(map(lambda id: id.bytes, ids))
             visits = await ContractRepository.call_function(
                 CONTRACT, 
                 "getVisits", 
-                ids
+                ids_bytes
             )
             visits = list(map(lambda v: ContractService.extract_visit_data(v), visits))
             return dict(map(lambda v: (v['id'], v), visits))

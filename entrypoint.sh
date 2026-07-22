@@ -20,7 +20,10 @@ if [ ! -f /etc/ssl/cert.pem ] || [ ! -f /etc/ssl/key.pem ]; then
         -keyout /etc/ssl/key.pem \
         -out /etc/ssl/cert.pem \
         -config /usr/backend/localhost.cnf
-    chown -R ${USER_ID}:${GROUP_ID} /etc/ssl
+
+    if [ -n "${USER_ID}" ] && [ -n "${GROUP_ID}" ]; then
+        chown -R ${USER_ID}:${GROUP_ID} /etc/ssl
+    fi
 fi
 
 echo "Creazione tabelle del database..."
