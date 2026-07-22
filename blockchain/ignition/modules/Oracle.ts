@@ -18,8 +18,15 @@ if(process.env.SCALE === undefined || isNaN(parseInt(process.env.SCALE))) {
     process.exit(1);
 }
 
+if(process.env.INITIAL_PRIOR === undefined || isNaN(parseInt(process.env.INITIAL_PRIOR))) {
+    console.error("Variabile d'ambiente INITIAL_PRIOR invalida: deve essere un numero.");
+}
+
 export default buildModule("OracleModule", (m) => {
-  const oracle = m.contract("Oracle", [process.env.W3_ACCOUNT, process.env.SCALE]);
+    const account = process.env.W3_ACCOUNT || '';
+    const scale = parseInt(process.env.SCALE || '100000000');
+    const initialPrior = parseFloat(process.env.INITIAL_PRIOR || '0.5');
+    const oracle = m.contract("Oracle", [account, scale, initialPrior * scale]);
 
   return { oracle };
 });

@@ -21,8 +21,14 @@ async function main(): Promise<void> {
     console.log(`CONTRACT_NAME: ${process.env.CONTRACT_NAME}`);
     console.log(`W3_ACCOUNT: ${process.env.W3_ACCOUNT}\nSCALE: ${process.env.SCALE}\nNETWORK_ID: ${process.env.NETWORK_ID}`);
 
+    const account = process.env.W3_ACCOUNT || '';
+    const scale = parseInt(process.env.SCALE || '100000000');
+    const initialPrior = parseFloat(process.env.INITIAL_PRIOR || '0.5');
+
+    console.log('INITIAL PRIOR: ', initialPrior * scale);
+
     const factory = await ethers.getContractFactory(process.env.CONTRACT_NAME);
-    const contract = await factory.deploy(process.env.W3_ACCOUNT || '', parseInt(process.env.SCALE || '100000000'), {
+    const contract = await factory.deploy(account, scale, initialPrior * scale, {
         gasPrice: 0n, 
         gasLimit: 5000000n
     });

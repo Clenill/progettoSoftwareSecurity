@@ -13,11 +13,10 @@ services:
         volumes:
             - blockchain_artifacts:/usr/blockchain/output/artifacts
             - blockchain_deployments:/usr/blockchain/ignition/deployments
-            - blockchain_cache:/usr/blockchain/output/cache
         command: >
             sh -c "
             rm -rf /usr/blockchain/ignition/deployments/* &&
-            (while ! nc -z 127.0.0.1 8545; do sleep 1; done && npx hardhat compile && cp -r /usr/blockchain/artifacts/* /usr/blockchain/output/artifacts && cp -r /usr/blockchain/cache/* /usr/blockchain/output/cache && npx hardhat run scripts/deploy.ts --network besu_prod) & npx hardhat node --hostname 0.0.0.0 --chain-id ${NETWORK_ID}
+            (while ! nc -z 127.0.0.1 8545; do sleep 1; done && npx hardhat compile && cp -r /usr/blockchain/artifacts/* /usr/blockchain/output/artifacts && npx hardhat run scripts/deploy.ts --network besu_prod) & npx hardhat node --hostname 0.0.0.0 --chain-id ${NETWORK_ID}
             "
         networks:
             internal-network:

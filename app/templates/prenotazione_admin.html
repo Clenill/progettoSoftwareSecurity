@@ -201,7 +201,7 @@ let mioIdPaziente = null;
 
 async function caricaUtenti() {
     try {
-        const response = await fetch('/admin/allusers', {
+        const response = await fetch('/admin/allactiveusers', {
             credentials: 'same-origin'
         });
         // Controlla che la risposta è JSON

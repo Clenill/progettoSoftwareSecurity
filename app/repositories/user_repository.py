@@ -20,6 +20,13 @@ class UserRepository:
             select(User).where(User.ruolo == role)
         )
         return result.scalars().all()
+
+    @staticmethod
+    async def get_all_active_with_role(db: AsyncSession, role: ruolo):
+        result = await db.execute(
+            select(User).where(User.ruolo == role, User.attivo == True)
+        )
+        return result.scalars().all()
     
     @staticmethod
     async def create(db: AsyncSession, user: User):
@@ -33,6 +40,11 @@ class UserRepository:
     @staticmethod
     async def get_all(db: AsyncSession):
         result = await db.execute(select(User))
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_all_active(db: AsyncSession):
+        result = await db.execute(select(User).where(User.attivo == True))
         return result.scalars().all()
     
     @staticmethod
