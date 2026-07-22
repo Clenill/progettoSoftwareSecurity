@@ -98,6 +98,12 @@ class ContractService:
 
     @staticmethod
     async def set_likelihood(tipo: TipoProva, ptrue: float, pfalse: float):
+        
+        if not (0 < ptrue < 1):
+            raise InvalidProbabilityException()
+        if not (0 < pfalse < 1):
+            raise InvalidProbabilityException()
+        
         evidence_id = ID_PROVE[tipo]
         await ContractRepository.call_function(
             CONTRACT, 

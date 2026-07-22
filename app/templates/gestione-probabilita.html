@@ -106,25 +106,54 @@ const initialLikelihoodTableBody = `
 
 document.addEventListener('DOMContentLoaded', caricaVerosimiglianze);
 
+function probabilitaValida(valore) {
+    return !isNaN(valore) && valore > 0 && valore < 1;
+}
+
 async function addLikelihood() {
     try {
         // likelihood-type
         // likelihood-ptrue/pfalse
+        const ptrueInput = document.getElementById('likelihood-ptrue');
+        const pfalseInput = document.getElementById('likelihood-pfalse');
 
         let tipo = document.getElementById('likelihood-type').value;
-        let ptrue = document.getElementById('likelihood-ptrue').value;
-        let pfalse = document.getElementById('likelihood-pfalse').value;
+        const ptrue = parseFloat(ptrueInput.value);
+        const pfalse = parseFloat(pfalseInput.value);
+
+        if (!probabilitaValida(ptrue) || !probabilitaValida(pfalse)) {
+            showToast(
+                "✗ Valore non valido",
+                "Inserire probabilità comprese tra 0 e 1 (escluso 0).",
+                "toast-error"
+            );
+            ptrueInput.value = "";
+            pfalseInput.value = "";
+        }
+
         let response = await fetch(`/admin/probabilita/prova`, {
             method: 'POST', 
             credentials: 'same-origin', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify({
                 tipo: tipo, 
-                ptrue: parseFloat(ptrue), 
-                pfalse: parseFloat(pfalse)
+                ptrue, 
+                pfalse
             })
         });
-        if(!response.ok) throw new Error("Errore nell'invio della verosimiglianza");
+        if(!response.ok) {
+            const err = await response.json();
+            showToast(
+                "✗ Errore",
+                err.detail,
+                "toast-error"
+            );
+
+            ptrueInput.value = "";
+            pfalseInput.value = "";
+
+            return;
+        }
         showToast("✓ Probabilità inserite", "La probabilità sono state inserite correttamente.", "toast-success");
         setTimeout(() => location.reload(), 1000);
     }
@@ -198,22 +227,52 @@ async function setPrior() {
 async function setLikelihood(tipo) {
     try {
         console.log('tipo: ', tipo, '; ptrue: ', document.getElementById(`valore-${tipo}-ptrue`).value, '; pfalse: ', document.getElementById(`valore-${tipo}-pfalse`).value);
+        
+        const ptrueInput = document.getElementById(`valore-${tipo}-ptrue`);
+
+        const pfalseInput = document.getElementById(`valore-${tipo}-pfalse`);
+
+        const ptrue = parseFloat(ptrueInput.value);
+        const pfalse = parseFloat(pfalseInput.value);
+
+        if (!probabilitaValida(ptrue) || !probabilitaValida(pfalse)) {
+
+            showToast(
+                "✗ Valore non valido",
+                "Inserire probabilità comprese tra 0 e 1 (escluso 0).",
+                "toast-error"
+            );
+
+            ptrueInput.value = "";
+            pfalseInput.value = "";
+
+            return;
+        }
+        
         let response = await fetch(`/admin/probabilita/prova`, {
             method: 'POST', 
             credentials: 'same-origin', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify({
                 tipo: tipo, 
-                ptrue: parseFloat(
-                    document.getElementById(`valore-${tipo}-ptrue`).value
-                ), 
-                pfalse: parseFloat(
-                    document.getElementById(`valore-${tipo}-pfalse`).value
-                )
+                ptrue, 
+                pfalse
             })
         });
 
-        if(!response.ok) throw new Error("Errore nell'invio dei valori");
+        if(!response.ok) {
+            const err = await response.json();
+            showToast(
+                "✗ Errore",
+                err.detail,
+                "toast-error"
+            );
+
+            ptrueInput.value = "";
+            pfalseInput.value = "";
+
+            return;
+        }
         showToast("✓ Probabilità aggiornate", "Le probabilità sono state aggiornate correttamente.", "toast-success");
         setTimeout(() => location.reload(), 1000);
     }
