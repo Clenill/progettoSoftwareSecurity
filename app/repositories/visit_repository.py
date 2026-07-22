@@ -242,7 +242,7 @@ class VisitRepository:
                 "nome_paziente": nome_paziente,
                 "medico": str(visit.medico),
                 "nome_medico": nome_medico,
-                "prove": [{"tipo": p.tipo} for p in visit.prove]
+                "prove": [{"tipo": p.tipo, "valore": p.valore} for p in visit.prove]
             })
         return agenda
 
