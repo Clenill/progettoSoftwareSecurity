@@ -26,7 +26,7 @@
 <main class="main-container" style="max-width: 1200px;">
     <section class="welcome-section">
         <h1>Pannello di Controllo - Authority <span class="badge-auth">Authority</span></h1>
-        <p>Gestisci visite, utenti e prove del sistema.</p>
+        <p>Gestisci le visite confermate.</p>
     </section>
 
     <div style="overflow-x: auto;">
@@ -79,14 +79,7 @@
     </div>
 
     <section class="welcome-section">
-            <h1>Benvenuto admin!</h1>
-            <p>Cosa vuoi fare?</p>
-            
-            <!-- Azioni rapide collegate al menu -->
-            <div class="cta-buttons">
-                <a href="/admin/prenota" class="btn btn-primary">Prenota</a>
-                <a href="/lista-utenti" class="btn btn-primary">Lista utenti</a>
-            </div>
+            <h1>Sezione Visite pendenti</h1>
         </section>
 
         <div id="unconfirmedVisitsContainer" style="margin-top: 1rem; overflow-x: auto;">
@@ -364,7 +357,7 @@ async function addLikelihood() {
         });
         if(!response.ok) throw new Error("Errore nell'invio della verosimiglianza");
         showToast("✓ Probabilità inserite", "La probabilità sono state inserite correttamente.", "toast-success");
-        setTimeout(() => location.reload(), 1500);
+        setTimeout(() => location.reload(), 1000);
     }
     catch(err) {
         showToast("✗ Errore", err.detail || "Operazione non consentita.", "toast-error");
@@ -426,7 +419,7 @@ async function setPrior() {
 
         if(!response.ok) throw new Error("Errore nell'invio del nuovo valore");
         showToast("✓ Probabilità aggiornata", "La probabilità è stata aggiornata correttamente.", "toast-success");
-        setTimeout(() => location.reload(), 1500);
+        setTimeout(() => location.reload(), 1000);
     }
     catch(err) {
         showToast("✗ Errore", err.detail || "Operazione non consentita.", "toast-error");
@@ -453,7 +446,7 @@ async function setLikelihood(tipo) {
 
         if(!response.ok) throw new Error("Errore nell'invio dei valori");
         showToast("✓ Probabilità aggiornate", "Le probabilità sono state aggiornate correttamente.", "toast-success");
-        setTimeout(() => location.reload(), 1500);
+        setTimeout(() => location.reload(), 1000);
     }
     catch(err) {
         showToast("✗ Errore", err.detail || "Operazione non consentita.", "toast-error");
@@ -475,7 +468,7 @@ async function confermaVisita(id) {
     });
     if (response.ok) {
         showToast("✓ Visita confermata", "La visita è stata confermata.", "toast-success");
-        setTimeout(() => caricaTutteLeVisite(), 1500);
+        setTimeout(() => caricaTutteLeVisite(), 1000);
     } else {
         showToast("✗ Errore", "Impossibile confermare la visita.", "toast-error");
     }
@@ -487,7 +480,7 @@ async function rifiutaVisita(id) {
     });
     if (response.ok) {
         showToast("✓ Visita rifiutata", "La visita è stata rimossa.", "toast-success");
-        setTimeout(() => caricaTutteLeVisite(), 1500);
+        setTimeout(() => caricaTutteLeVisite(), 1000);
     } else {
         showToast("✗ Errore", "Impossibile rifiutare la visita.", "toast-error");
     }
@@ -516,7 +509,7 @@ async function forzaProva(id) {
 
         if (response.ok) {
             showToast("✓ Prova inserita", "La prova è stata aggiunta correttamente.", "toast-success");
-            setTimeout(() => caricaTutteLeVisite(), 1500);
+            setTimeout(() => caricaTutteLeVisite(), 1000);
             caricaTutteLeVisite();
         } else {
             const errData = await response.json();

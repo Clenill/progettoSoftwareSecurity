@@ -139,7 +139,7 @@ async function attivaUtente(id) {
 
          if (response.ok) {
             showToast("✓ Utente attivato", "L'utente è stato attivato correttamente.", "toast-success");
-            setTimeout(() => caricaUtenti(), 1500);
+            setTimeout(() => caricaUtenti(), 1000);
         } else {
             showToast("✗ Errore", "Impossibile attivare l'utente.", "toast-error");
         }

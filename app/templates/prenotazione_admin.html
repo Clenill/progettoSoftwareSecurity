@@ -271,7 +271,7 @@ async function prenotaVisita(pazienteId, medicoId, timestamp) {
 
     if (response.ok) {
         showToast("✓ Prenotazione effettuata", "La tua richiesta è stata inviata.", "toast-success");
-        setTimeout(() => caricaDisponibilita(), 3500);
+        setTimeout(() => caricaDisponibilita(), 1000);
     } else {
         showToast("✗ Errore nella prenotazione", "Qualcosa è andato storto. Riprova.", "toast-error");
     }

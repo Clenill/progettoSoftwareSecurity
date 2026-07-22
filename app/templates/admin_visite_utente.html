@@ -162,7 +162,7 @@ async function confermaPresenza(visitId) {
 
         if (response.ok) {
             showToast("✓ Prova inviata", "La conferma è stata registrata correttamente.", "toast-success");
-            setTimeout(() => caricaStorico(), 1500);
+            setTimeout(() => caricaStorico(), 1000);
         } else {
             const err = await response.json();
             showToast("✗ Errore", err.detail || "Salvataggio fallito.", "toast-error");

@@ -191,7 +191,7 @@ async function confermaVisita(id) {
     });
     if (response.ok) {
        showToast("✓ Visita confermata", "La visita è stata confermata correttamente.", "toast-success");
-        setTimeout(() => caricaDettagli(), 1500);
+        setTimeout(() => caricaDettagli(), 1000);
     } else {
         showToast("✗ Errore", "Impossibile confermare la visita.", "toast-error");
     }
@@ -204,7 +204,7 @@ async function rifiutaVisita(id) {
     });
     if (response.ok) {
         showToast("✓ Visita rifiutata", "La visita è stata rimossa.", "toast-success");
-        setTimeout(() => window.location.replace('/dashboard/staff'), 1500);
+        setTimeout(() => window.location.replace('/dashboard/staff'), 1000);
     } else {
         showToast("✗ Errore", "Impossibile rifiutare la visita.", "toast-error");
     }
@@ -234,7 +234,7 @@ document.getElementById('evidenceForm').addEventListener('submit', async (e) => 
         
         if (response.ok) {
             showToast("✓ Prova salvata", `La prova "${tipo}" è stata caricata con successo.`, "toast-success");
-            setTimeout(() => caricaDettagli(), 1500);
+            setTimeout(() => caricaDettagli(), 1000);
         } else {
             const errData = await response.json();
             showToast("✗ Errore", errData.detail || "Salvataggio fallito.", "toast-error");
