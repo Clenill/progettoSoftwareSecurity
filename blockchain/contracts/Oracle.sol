@@ -68,13 +68,34 @@ contract Oracle is AccessControl {
     error DuplicateEvidence(bytes16 visit, EvidenceType evidence);
 
     // constructor
-    constructor(address adminAccount, uint256 scaleValue, uint256 initialPrior) {
+    constructor(
+        address adminAccount, 
+        uint256 scaleValue, 
+        uint256 initialPrior, 
+        uint256 initialTrueLikelihood, 
+        uint256 initialFalseLikelihood
+    ) {
         _grantRole(DEFAULT_ADMIN_ROLE, adminAccount);
         _grantRole(PERMISSIONED_ROLE, adminAccount);
         scale = scaleValue;
         _visits.push();
         _likelihoods.push();
         _prior = initialPrior;
+        EvidenceInfo memory tmp;
+        tmp.ptrue = initialTrueLikelihood;
+        tmp.pfalse = initialFalseLikelihood;
+        tmp.active = true;
+
+        tmp.evidence = EvidenceType.SYMPTOMS;
+        setLikelihood(tmp);
+        tmp.evidence = EvidenceType.DEVICE_SIGNAL;
+        setLikelihood(tmp);
+        tmp.evidence = EvidenceType.PRESCRIPTION;
+        setLikelihood(tmp);
+        tmp.evidence = EvidenceType.CONFIRMATION;
+        setLikelihood(tmp);
+        tmp.evidence = EvidenceType.GPS_SIGNAL;
+        setLikelihood(tmp);
     }
 
     // modifiers
@@ -169,7 +190,7 @@ contract Oracle is AccessControl {
         return _likelihoods[_infoIds[evidence]];
     }
 
-    function setLikelihood(EvidenceInfo memory info) external isPermissioned {
+    function setLikelihood(EvidenceInfo memory info) public isPermissioned {
         uint256 index = _infoIds[info.evidence];
         info.active = true;
         if(index == 0) {

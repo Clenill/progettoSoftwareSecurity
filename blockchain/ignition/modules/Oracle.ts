@@ -26,7 +26,15 @@ export default buildModule("OracleModule", (m) => {
     const account = process.env.W3_ACCOUNT || '';
     const scale = parseInt(process.env.SCALE || '100000000');
     const initialPrior = parseFloat(process.env.INITIAL_PRIOR || '0.5');
-    const oracle = m.contract("Oracle", [account, scale, initialPrior * scale]);
+    const initialTrueLikelihood = parseFloat(process.env.INITIAL_TRUE_LIKELIHOOD || '0.5');
+    const initialFalseLikelihood = parseFloat(process.env.INITIAL_FALSE_LIKELIHOOD || '0.5');
+    const oracle = m.contract("Oracle", [
+        account, 
+        scale, 
+        initialPrior * scale, 
+        initialTrueLikelihood * scale, 
+        initialFalseLikelihood * scale
+    ]);
 
   return { oracle };
 });
