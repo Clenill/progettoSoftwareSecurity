@@ -23,6 +23,10 @@ class VisitService:
         db: AsyncSession, 
         commit: bool = True
     ):
+        
+        if user.id != visit_data.paziente:
+            raise InvalidNameException()
+        
         if visit_data.timestamp is None:
             raise MissingVisitDetailsException(detail="Timestamp visita obbligatorio.")
         

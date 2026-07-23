@@ -227,6 +227,7 @@ class VisitRepository:
             .join(PazienteUser, PazienteUser.id == Visit.paziente)
             .join(MedicoUser, MedicoUser.id == Visit.medico)
             .where(Visit.medico == doctor_id)
+            .order_by(Visit.timestamp.asc())
             .options(selectinload(Visit.prove))
         )
         rows = result.all()
