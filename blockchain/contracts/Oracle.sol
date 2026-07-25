@@ -38,9 +38,9 @@ contract Oracle is AccessControl {
 
     // attributes
     bytes32 public constant PERMISSIONED_ROLE = keccak256("PERMISSIONED_ROLE");
-    address private _adminAccount;
+    address private immutable _adminAccount;
 
-    uint256 public scale;
+    uint256 public immutable scale;
     uint256 private _prior;
     EvidenceInfo[] private _likelihoods;
     Visit[] private _visits;
@@ -77,6 +77,10 @@ contract Oracle is AccessControl {
         uint256 initialTrueLikelihood, 
         uint256 initialFalseLikelihood
     ) {
+        if(adminAccount == address(0)) {
+            revert Unauthorized();
+        }
+
         uint256 scaleCopy = scaleValue;
         while(scaleCopy > 1 && scaleCopy % 10 == 0) {
             scaleCopy /= 10;
@@ -106,10 +110,7 @@ contract Oracle is AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, _adminAccount);
         _grantRole(PERMISSIONED_ROLE, _adminAccount);
 
-        EvidenceInfo memory tmp;
-        tmp.ptrue = initialTrueLikelihood;
-        tmp.pfalse = initialFalseLikelihood;
-        tmp.active = true;
+        EvidenceInfo memory tmp = EvidenceInfo({ evidence: EvidenceType(0), ptrue: initialTrueLikelihood, pfalse: initialFalseLikelihood, active: true});
 
         uint256 evidenceTypeMax = uint256(type(EvidenceType).max);
         for(uint256 evidenceType = 0; evidenceType < evidenceTypeMax + 1; ++evidenceType) {
@@ -245,8 +246,9 @@ contract Oracle is AccessControl {
     }
 
     function getLikelihoods() external view isPermissioned returns (EvidenceInfo[] memory) {
+        uint256 cachedLength = _likelihoods.length;
         uint256 length = 0;
-        for(uint256 i = 1; i < _likelihoods.length; ++i) {
+        for(uint256 i = 1; i < cachedLength; ++i) {
             if(_likelihoods[i].active) {
                 ++length;
             }
@@ -254,7 +256,7 @@ contract Oracle is AccessControl {
 
         uint256 j = 0;
         EvidenceInfo[] memory likelihoods = new EvidenceInfo[](length);
-        for(uint256 i = 1; i < _likelihoods.length; ++i) {
+        for(uint256 i = 1; i < cachedLength; ++i) {
             if(_likelihoods[i].active) {
                 likelihoods[j] = _likelihoods[i];
                 ++j;

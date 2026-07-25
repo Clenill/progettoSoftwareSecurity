@@ -4,8 +4,6 @@ import dotenv from "dotenv";
 import crypto from "crypto";
 import { expect } from "chai";
 import { network } from "hardhat";
-//import { ethers } from "hardhat";
-//import networkHelpers, { loadFixture } from "@nomicfoundation/hardhat-toolbox-mocha-ethers/network-helpers";
 
 dotenv.config({
     path: path.join(
@@ -18,7 +16,7 @@ const ethers: any = connection.ethers;
 const networkHelpers: any = connection.networkHelpers;
 const loadFixture: any = networkHelpers.loadFixture;
 
-describe("Oracle - Test delle funzioni", function() {
+describe("Oracle", function() {
     let account: string;
     let _scale: number;
     let _initialPrior: number;
@@ -26,14 +24,7 @@ describe("Oracle - Test delle funzioni", function() {
     let _initialFalseLikelihood: number;
     let PERMISSIONED_ROLE: any;
 
-    //let ethers: any;
-    //let loadFixture: any;
-    //let networkHelpers: any;
-
     before(async function() {
-        //ethers = connection.ethers;
-        //networkHelpers = connection.networkHelpers;
-        //loadFixture = connection.networkHelpers.loadFixture;
         account = process.env.W3_ACCOUNT || '';
         _scale = parseInt(process.env.SCALE || '100000000');
         _initialPrior = Math.trunc(
@@ -85,6 +76,21 @@ describe("Oracle - Test delle funzioni", function() {
         it("Dovrebbe effettuare il deployment con successo", 
             async function() {
                 await loadFixture(deploy);
+            }
+        );
+
+        it("Dovrebbe fallire se l'account admin è nullo", 
+            async function() {
+                const factory = await ethers.getContractFactory(process.env.CONTRACT_NAME || '');
+                await expect(
+                    factory.deploy(
+                        ethers.ZeroAddress, 
+                        _scale, 
+                        _initialPrior, 
+                        _initialTrueLikelihood, 
+                        _initialFalseLikelihood
+                    )
+                ).to.revert(ethers);
             }
         );
 

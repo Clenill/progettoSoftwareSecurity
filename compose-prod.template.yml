@@ -12,6 +12,8 @@ services:
         container_name: hardhat-node
         build:
             dockerfile: ./Dockerfile.hardhat
+            args:
+                - RUN_TESTS=${RUN_TESTS}
         environment:
             RPC_URL: ${RPC_URL}
             NETWORK_ID: ${NETWORK_ID}
@@ -25,12 +27,14 @@ services:
         command: >
             sh -c '
             rm -rf /usr/blockchain/ignition/deployments/* &&
-            if [ -n "$RUN_TESTS" ]; then 
-                npx run lint && 
-                npx hardhat compile && 
+            if [ -n "$RUN_TESTS" ] && [ "$RUN_TESTS" == "true" ]; then 
+                npx hardhat clean && 
+                npm run lint && 
                 npx hardhat test --coverage && 
-                slither . --json report.json;
+                npx hardhat compile && 
+                slither ./contracts --solc-remaps "@openzeppelin/=node_modules/@openzeppelin/" --solc-args "--allow-paths ." --filter-paths "node_modules" --json report.json;
             else
+                npx hardhat clean && 
                 npx hardhat compile;
             fi &&
             while ! nc -z 172.20.0.11 8545; do sleep 1; done &&
@@ -73,7 +77,6 @@ services:
                 ipv4_address: 172.20.0.11
         ports:
             - "8545:8545"
-        restart: always
 
     besu-node-2:
         container_name: besu-node-2
@@ -100,7 +103,6 @@ services:
                 ipv4_address: 172.20.0.12
         depends_on:
             - besu-node-1
-        restart: always
 
     besu-node-3:
         container_name: besu-node-3
@@ -127,7 +129,6 @@ services:
                 ipv4_address: 172.20.0.13
         depends_on:
             - besu-node-1
-        restart: always
 
     besu-node-4:
         container_name: besu-node-4
@@ -154,5 +155,4 @@ services:
                 ipv4_address: 172.20.0.14
         depends_on:
             - besu-node-1
-        restart: always
 

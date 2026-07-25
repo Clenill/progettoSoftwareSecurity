@@ -4,13 +4,17 @@ WORKDIR /usr/blockchain
 COPY blockchain/*.json .
 RUN npm install
 ARG RUN_TESTS
-RUN apk add --no-cache netcat-openbsd python3 py3-pip curl && \
-    if [ -n "$RUN_TESTS" ]; then \
-        pip3 install --no-cache-dir slither-analyzer solc-select && \
-        solc-select install 0.8.28 && solc-select use 0.8.28; \
-    fi
+RUN apk add --no-cache netcat-openbsd python3 py3-pip curl gcompat libc6-compat && \
+    python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN if [ -n "$RUN_TESTS" ] && [ "$RUN_TESTS" == "true" ]; then \
+    chmod a+x /opt/venv/bin/* && \
+    pip3 install --no-cache-dir slither-analyzer solc-select && \
+    solc-select install 0.8.28 && solc-select use 0.8.28; \
+fi
 COPY blockchain/hardhat.config.ts .
 COPY blockchain/scripts/ ./scripts/
 COPY blockchain/ignition/modules ./ignition/modules/
 COPY blockchain/contracts/ ./contracts/
+COPY blockchain/test ./test/
 

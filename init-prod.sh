@@ -32,8 +32,7 @@ echo "Configurazione delle directory e dei permessi..."
 mkdir -p blockchain/artifacts
 mkdir -p blockchain/ignition/deployments/chain-"${NETWORK_ID}"
 mkdir -p logs
-mkdir -p ssl/certs
-mkdir -p ssl/private
+mkdir -p ssl
 chown -R "$USER_ID:$GROUP_ID" compose-prod.yml blockchain/ logs/ ssl/
 
 if ! grep -q "^\s*USER_ID" .env; then
