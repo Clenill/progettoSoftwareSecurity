@@ -12,6 +12,7 @@ RUN if [ -n "$RUN_TESTS" ] && [ "$RUN_TESTS" == "true" ]; then \
     pip3 install --no-cache-dir slither-analyzer solc-select && \
     solc-select install 0.8.28 && solc-select use 0.8.28; \
 fi
+COPY blockchain/.solhint.json .
 COPY blockchain/hardhat.config.ts .
 COPY blockchain/scripts/ ./scripts/
 COPY blockchain/ignition/modules ./ignition/modules/

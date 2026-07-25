@@ -2,7 +2,8 @@
   "extends": "solhint:recommended", 
   "rules": {
     "use-natspec": "off", 
-    "compiler-version": {"error": "^0.8.28"}, 
+    "compiler-version": ["error", "0.8.28"], 
+    "immutable-vars-naming": "off",
     "no-unused-vars": "error", 
     "const-name-snakecase": "error", 
     "quotes": ["error", "double"], 
@@ -15,5 +16,5 @@
     "check-send-result": "error", 
     "no-inline-assembly": "warn", 
     "not-rely-on-time": "warn"
-    }
+  }
 }
