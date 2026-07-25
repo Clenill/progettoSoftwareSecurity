@@ -138,7 +138,12 @@ class ContractService:
         )
         return list(
             map(
-                lambda info: { "tipo": ID_PROVE[info[0]], "ptrue": info[1] / SCALE, "pfalse": info[2] / SCALE }, 
+                lambda info: {
+                    "tipo": ID_PROVE[info[0]], 
+                    "ptrue": info[1] / SCALE, 
+                    "pfalse": info[2] / SCALE, 
+                    "active": bool(info[3])
+                }, 
                 info_prove
             )
         )

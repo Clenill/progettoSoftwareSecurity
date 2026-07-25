@@ -24,6 +24,9 @@ class ContractRepository:
                 ("LikelihoodNotFound", "uint8"), 
                 ("DuplicateLikelihood", "uint8"), 
                 ("DuplicateEvidence", "bytes16", "uint8"), 
+                ("InvalidPrior", "uint256"), 
+                ("InvalidLikelihood", "uint256"), 
+                ("InvalidScaleValue", "uint256"), 
             ]
         )
     )

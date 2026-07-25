@@ -23,13 +23,21 @@ services:
             - blockchain_artifacts:/usr/blockchain/output/artifacts
             - blockchain_deployments:/usr/blockchain/ignition/deployments
         command: >
-            sh -c "rm -rf /usr/blockchain/ignition/deployments/* &&
+            sh -c '
+            rm -rf /usr/blockchain/ignition/deployments/* &&
+            if [ -n "$RUN_TESTS" ]; then 
+                npx run lint && 
+                npx hardhat compile && 
+                npx hardhat test --coverage && 
+                slither . --json report.json;
+            else
+                npx hardhat compile;
+            fi &&
             while ! nc -z 172.20.0.11 8545; do sleep 1; done &&
-            npx hardhat compile &&
             cp -r /usr/blockchain/artifacts/* /usr/blockchain/output/artifacts &&
             npx hardhat run scripts/deploy.ts --network besu_prod &&
             chown -R ${USER_ID}:${GROUP_ID} /usr/blockchain
-            "
+            '
         networks:
             internal-network:
                 ipv4_address: 172.20.0.4
@@ -37,6 +45,7 @@ services:
     besu-node-1:
         container_name: besu-node-1
         image: hyperledger/besu:26.6.1
+        restart: unless-stopped
         environment:
             - BESU_LOGGING=INFO
             - CONTRACT_NAME=${CONTRACT_NAME}
@@ -69,6 +78,7 @@ services:
     besu-node-2:
         container_name: besu-node-2
         image: hyperledger/besu:26.6.1
+        restart: unless-stopped
         environment:
             - BESU_LOGGING=WARN
         volumes:
@@ -95,6 +105,7 @@ services:
     besu-node-3:
         container_name: besu-node-3
         image: hyperledger/besu:26.6.1
+        restart: unless-stopped
         environment:
             - BESU_LOGGING=WARN
         volumes:
@@ -121,6 +132,7 @@ services:
     besu-node-4:
         container_name: besu-node-4
         image: hyperledger/besu:26.6.1
+        restart: unless-stopped
         environment:
             - BESU_LOGGING=WARN
         volumes:

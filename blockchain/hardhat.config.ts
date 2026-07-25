@@ -1,3 +1,4 @@
+
 import hardhatToolboxMochaEthersPlugin from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
 import { configVariable, defineConfig } from "hardhat/config";
 import dotenv from "dotenv";
@@ -27,14 +28,14 @@ export default defineConfig({
   },
   networks: {
     hardhat: {
-        chainId: 1337, 
-        type: "edr-simulated", 
-        initialBaseFeePerGas: 0
+      chainId: 1337, 
+      type: "edr-simulated", 
+      initialBaseFeePerGas: 0
     }, 
     node: {
-        chainId: 1337, 
-        type: "edr-simulated", 
-        initialBaseFeePerGas: 0
+      chainId: 1337, 
+      type: "edr-simulated", 
+      initialBaseFeePerGas: 0
     }, 
     hardhatMainnet: {
       chainId: 1337, 

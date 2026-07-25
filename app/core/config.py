@@ -29,10 +29,17 @@ CLEANUP_INTERVAL_SECONDS = int(getenv("CLEANUP_INTERVAL", "10"))
 MAX_LOG_FILE_SIZE = getenv("MAX_LOG_FILE_SIZE", "10 MB")
 LOG_RETENTION = getenv("LOG_RETENTION", "30 days")
 ISOLATION_LEVEL = getenv("ISOLATION_LEVEL")
+DB_TIMEOUT_SECONDS = int(getenv("DB_TIMEOUT_SECONDS", 10))
+W3_TIMEOUT_SECONDS = int(getenv("W3_TIMEOUT_SECONDS", 10))
 
 # web3
 RPC_URL = getenv("RPC_URL", "")
-w3 = Web3(Web3.HTTPProvider(RPC_URL))
+w3 = Web3(
+    Web3.HTTPProvider(
+        RPC_URL, 
+        request_kwargs={ "timeout": W3_TIMEOUT_SECONDS }
+    )
+)
 w3.middleware_onion.inject(ExtraDataToPOAMiddleware, name="extradata_to_poa", layer=0)
 if not w3.is_connected():
     raise RuntimeError("Cannot connect to Web3 RPC provider")

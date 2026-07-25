@@ -38,6 +38,7 @@ contract Oracle is AccessControl {
 
     // attributes
     bytes32 public constant PERMISSIONED_ROLE = keccak256("PERMISSIONED_ROLE");
+    address private _adminAccount;
 
     uint256 public scale;
     uint256 private _prior;
@@ -48,8 +49,6 @@ contract Oracle is AccessControl {
     mapping(bytes16 => uint256) private _visitIds;
 
     // events
-    event PermissionedAccountAdded(address indexed grantor, address indexed account);
-    event PermissionedAccountRemoved(address indexed grantor, address indexed account);
     event VisitAdded(address indexed account, bytes16 author, bytes16 visit);
     event VisitEdited(address indexed account, bytes16 author, bytes16 visit);
     event VisitCancelled(address indexed account, bytes16 author, bytes16 visit);
@@ -66,6 +65,9 @@ contract Oracle is AccessControl {
     error LikelihoodNotFound(EvidenceType evidence);
     error DuplicateLikelihood(EvidenceType evidence);
     error DuplicateEvidence(bytes16 visit, EvidenceType evidence);
+    error InvalidScaleValue(uint256 value);
+    error InvalidLikelihood(uint256 value);
+    error InvalidPrior(uint256 value);
 
     // constructor
     constructor(
@@ -75,27 +77,45 @@ contract Oracle is AccessControl {
         uint256 initialTrueLikelihood, 
         uint256 initialFalseLikelihood
     ) {
-        _grantRole(DEFAULT_ADMIN_ROLE, adminAccount);
-        _grantRole(PERMISSIONED_ROLE, adminAccount);
+        uint256 scaleCopy = scaleValue;
+        while(scaleCopy > 1 && scaleCopy % 10 == 0) {
+            scaleCopy /= 10;
+        }
+
+        if(scaleCopy != 1) {
+            revert InvalidScaleValue(scaleValue);
+        }
+
+        if(initialTrueLikelihood > scaleValue) {
+            revert InvalidLikelihood(initialTrueLikelihood);
+        }
+
+        if(initialFalseLikelihood > scaleValue) {
+            revert InvalidLikelihood(initialFalseLikelihood);
+        }
+
+        if(initialPrior > scaleValue) {
+            revert InvalidPrior(initialPrior);
+        }
+
         scale = scaleValue;
         _visits.push();
         _likelihoods.push();
         _prior = initialPrior;
+        _adminAccount = adminAccount;
+        _grantRole(DEFAULT_ADMIN_ROLE, _adminAccount);
+        _grantRole(PERMISSIONED_ROLE, _adminAccount);
+
         EvidenceInfo memory tmp;
         tmp.ptrue = initialTrueLikelihood;
         tmp.pfalse = initialFalseLikelihood;
         tmp.active = true;
 
-        tmp.evidence = EvidenceType.SYMPTOMS;
-        setLikelihood(tmp);
-        tmp.evidence = EvidenceType.DEVICE_SIGNAL;
-        setLikelihood(tmp);
-        tmp.evidence = EvidenceType.PRESCRIPTION;
-        setLikelihood(tmp);
-        tmp.evidence = EvidenceType.CONFIRMATION;
-        setLikelihood(tmp);
-        tmp.evidence = EvidenceType.GPS_SIGNAL;
-        setLikelihood(tmp);
+        uint256 evidenceTypeMax = uint256(type(EvidenceType).max);
+        for(uint256 evidenceType = 0; evidenceType < evidenceTypeMax + 1; ++evidenceType) {
+            tmp.evidence = EvidenceType(evidenceType);
+            setLikelihood(tmp);
+        }
     }
 
     // modifiers
@@ -168,13 +188,15 @@ contract Oracle is AccessControl {
     function addPermissionedAccount(address account) external {
         _grantRole(DEFAULT_ADMIN_ROLE, account);
         grantRole(PERMISSIONED_ROLE, account);
-        emit PermissionedAccountAdded(msg.sender, account);
     }
 
     function removePermissionedAccount(address account) external {
+        if(account == _adminAccount) {
+            revert Unauthorized();
+        }
+
         _revokeRole(DEFAULT_ADMIN_ROLE, account);
         revokeRole(PERMISSIONED_ROLE, account);
-        emit PermissionedAccountRemoved(msg.sender, account);
     }
 
     function getFactPrior() external view isPermissioned returns (uint256) {
@@ -182,6 +204,10 @@ contract Oracle is AccessControl {
     }
 
     function setFactPrior(uint256 value) external isAdmin {
+        if(value > scale) {
+            revert InvalidPrior(value);
+        }
+
         _prior = value;
         emit PriorSet(msg.sender);
     }
@@ -191,6 +217,14 @@ contract Oracle is AccessControl {
     }
 
     function setLikelihood(EvidenceInfo memory info) public isPermissioned {
+        if(info.ptrue > scale) {
+            revert InvalidLikelihood(info.ptrue);
+        }
+
+        if(info.pfalse > scale) {
+            revert InvalidLikelihood(info.pfalse);
+        }
+
         uint256 index = _infoIds[info.evidence];
         info.active = true;
         if(index == 0) {
@@ -211,9 +245,20 @@ contract Oracle is AccessControl {
     }
 
     function getLikelihoods() external view isPermissioned returns (EvidenceInfo[] memory) {
-        EvidenceInfo[] memory likelihoods = new EvidenceInfo[](_likelihoods.length - 1);
-        for(uint256 i = 0; i < likelihoods.length; ++i) {
-            likelihoods[i] = _likelihoods[i+1];
+        uint256 length = 0;
+        for(uint256 i = 1; i < _likelihoods.length; ++i) {
+            if(_likelihoods[i].active) {
+                ++length;
+            }
+        }
+
+        uint256 j = 0;
+        EvidenceInfo[] memory likelihoods = new EvidenceInfo[](length);
+        for(uint256 i = 1; i < _likelihoods.length; ++i) {
+            if(_likelihoods[i].active) {
+                likelihoods[j] = _likelihoods[i];
+                ++j;
+            }
         }
 
         return likelihoods;
@@ -292,7 +337,7 @@ contract Oracle is AccessControl {
         Visit storage visit = _visits[_visitIds[id]];
         visit.physician = physician;
         visit.patient = patient;
-        emit VisitAdded(msg.sender, author, id);
+        emit VisitEdited(msg.sender, author, id);
     }
 
     function addEvidence(bytes16 author, bytes16 id, EvidenceType evidence, bool value) external isPermissioned visitExists(id) {

@@ -2,6 +2,7 @@
 services:
     hardhat-node:
         container_name: hardhat-node
+        restart: unless-stopped
         build:
             dockerfile: ./Dockerfile.hardhat
         environment:
@@ -14,10 +15,18 @@ services:
             - blockchain_artifacts:/usr/blockchain/output/artifacts
             - blockchain_deployments:/usr/blockchain/ignition/deployments
         command: >
-            sh -c "
+            sh -c '
             rm -rf /usr/blockchain/ignition/deployments/* &&
-            (while ! nc -z 127.0.0.1 8545; do sleep 1; done && npx hardhat compile && cp -r /usr/blockchain/artifacts/* /usr/blockchain/output/artifacts && npx hardhat run scripts/deploy.ts --network besu_prod) & npx hardhat node --hostname 0.0.0.0 --chain-id ${NETWORK_ID}
-            "
+            if [ -n "$RUN_TESTS" ]; then
+                npm run lint &&
+                npx hardhat compile && 
+                npx hardhat test --coverage && 
+                slither . --json report.json;
+            else
+                npx hardhat compile;
+            fi &&
+            (while ! nc -z 127.0.0.1 8545; do sleep 1; done && cp -r /usr/blockchain/artifacts/* /usr/blockchain/output/artifacts && npx hardhat run scripts/deploy.ts --network besu_prod) & npx hardhat node --hostname 0.0.0.0 --chain-id ${NETWORK_ID}
+            '
         networks:
             internal-network:
                 ipv4_address: 172.20.0.11

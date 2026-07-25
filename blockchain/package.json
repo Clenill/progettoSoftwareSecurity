@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "solhint \"contracts/**/*.sol\""
   },
   "keywords": [],
   "author": "",
@@ -24,6 +24,7 @@
     "forge-std": "github:foundry-rs/forge-std#v1.9.4",
     "hardhat": "^3.7.0",
     "mocha": "^11.7.6",
+    "solhint": "^6.2.3",
     "typescript": "~6.0.3"
   },
   "dependencies": {

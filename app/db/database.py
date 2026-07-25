@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool
 import os
 from dotenv import load_dotenv
-from app.core.config import ISOLATION_LEVEL
+from app.core.config import ISOLATION_LEVEL, DB_TIMEOUT_SECONDS
 
 load_dotenv()
 
@@ -19,7 +19,18 @@ DATABASE_URL = (
     f"{os.getenv('DB_NAME')}"
 )
 
-engine = create_async_engine(DATABASE_URL, echo=True, poolclass=NullPool)
+engine = create_async_engine(
+    DATABASE_URL, 
+    echo=True, 
+    poolclass=NullPool, 
+    connect_args={
+        "timeout": DB_TIMEOUT_SECONDS, 
+        "command_timeout": DB_TIMEOUT_SECONDS, 
+        "server_settings": {
+            "statement_timeout": f"{DB_TIMEOUT_SECONDS * 1000}"
+        }
+    }
+)
 
 SessionLocal = async_sessionmaker(
     bind=engine,
