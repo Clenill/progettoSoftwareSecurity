@@ -91,7 +91,7 @@ async def test_paziente_non_accede_a_rotta_medico():
         paziente = User(
             name="Test Paziente",
             email="paziente@test.com",
-            hashed_password=hash_password("Password123!"),
+            hashed_password=hash_password("Password123!").decode(),
             attivo=True,
             ruolo=ruolo.PAZIENTE
         )
@@ -140,7 +140,7 @@ async def test_paziente_non_accede_a_rotta_admin():
         paziente = User(
             name="Test Paziente",
             email="paziente@test.com",
-            hashed_password=hash_password("Password123!"),
+            hashed_password=hash_password("Password123!").decode(),
             attivo=True,
             ruolo=ruolo.PAZIENTE
         )
@@ -192,7 +192,7 @@ async def test_medico_non_accede_a_rotta_admin():
         medico = User(
             name="Test Medico",
             email="medico@test.com",
-            hashed_password=hash_password("Password123!"),
+            hashed_password=hash_password("Password123!").decode(),
             attivo=True,
             ruolo=ruolo.MEDICO
         )

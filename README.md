@@ -19,6 +19,5 @@ Progetto per l'esame di Software Security e Blockchain
 # Eseguire i test
 
 Per eseguire i test (nella directory `/tests`):
-1. Installare `pytest`, `pytest-asyncio` e `httpx` con `pip install pytest pytest-asyncio httpx`
-2. Eseguire il comando `pytest tests/<nome test>.py -v`
+1. Eseguire il comando nel terminale `sudo docker exec app pytest tests/ -v`
 

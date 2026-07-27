@@ -5,7 +5,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN apk add --no-cache openssl
 ENV PYTHONPATH=/usr/backend
-COPY entrypoint.sh localhost.cnf .
+COPY entrypoint.sh localhost.cnf ./
 RUN chmod a+x entrypoint.sh
 COPY app/ ./app/
+COPY tests/ ./tests/
+COPY pytest.ini ./
 
