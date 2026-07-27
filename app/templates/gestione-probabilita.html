@@ -129,6 +129,8 @@ async function addLikelihood() {
             );
             ptrueInput.value = "";
             pfalseInput.value = "";
+
+            return;
         }
 
         let response = await fetch(`/admin/probabilita/prova`, {
@@ -143,6 +145,7 @@ async function addLikelihood() {
         });
         if(!response.ok) {
             const err = await response.json();
+            console.log(err.detail);
             showToast(
                 "✗ Errore",
                 err.detail,

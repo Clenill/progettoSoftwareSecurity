@@ -101,6 +101,8 @@ class ContractService:
 
     @staticmethod
     async def set_likelihood(tipo: TipoProva, ptrue: float, pfalse: float):
+        if (ptrue is None or pfalse is None):
+            raise InvalidProbabilityException()
         
         if not (0 < ptrue < 1):
             raise InvalidProbabilityException()

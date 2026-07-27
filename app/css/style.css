@@ -160,13 +160,6 @@ button {
 }
 button:hover { background-color: #0056b3; }
 
-/* Bottoni specifici per slot */
-.slot-btn {
-    margin: 5px;
-    background-color: #28a745;
-}
-.slot-btn:hover { background-color: #218838; }
-
 /* Form e Select */
 select {
     width: 100%;
@@ -250,6 +243,7 @@ select {
 }
 
 .slot-btn {
+    margin: 5px;
     padding: 10px 20px;
     background-color: #ecf0f1;
     color: #2c3e50;
