@@ -60,6 +60,15 @@ class InvalidCredentials(AppException):
             error_code=ErrorCode.INVALID_CREDENTIAL
         )
 
+class InvalidPasswordCredentials(AppException):
+
+    def __init__(self):
+        super().__init__(
+            status_code=401,
+            detail="Password troppo semplice. Inserire almeno un numero, una maiuscola e minuscola.",
+            error_code=ErrorCode.INVALID_CREDENTIAL
+        )
+
 class MissingVisitDetailsException(AppException):
     DEFAULT_DETAIL = "Qualcosa è andato storto nella richiesta"
 

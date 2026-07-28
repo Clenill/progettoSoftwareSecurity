@@ -88,13 +88,13 @@ class UserService:
         has_lower = any(char.islower() for char in password)
 
         if not has_lower:
-            raise InvalidCredentials()
+            raise InvalidPasswordCredentials()
         
         if not has_upper:
-            raise InvalidCredentials()
+            raise InvalidPasswordCredentials()
 
         if not has_digit:
-            raise InvalidCredentials()
+            raise InvalidPasswordCredentials()
     
     @staticmethod
     async def get_user_by_email(email: str, db:AsyncSession):
