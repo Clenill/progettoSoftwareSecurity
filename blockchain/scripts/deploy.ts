@@ -57,11 +57,12 @@ async function main(): Promise<void> {
     fs.writeFileSync(path.join(outputPath, 'deployed_addresses.json'), JSON.stringify(outputData, null, 2), 'utf-8');
 }
 
-main()
-    .then(() => process.exit(0))
-    .catch((err: Error) => {
-        console.error("Errore:", err);
-        process.exit(1);
-    });
+try {
+    await main();
+    process.exit(0);
+}
 
+catch(err: any) {
+    console.error("Error:", err);
+}
 

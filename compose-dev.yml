@@ -1,35 +1,19 @@
 
 services:
     hardhat-node:
-        container_name: hardhat-node
         restart: unless-stopped
-        build:
-            dockerfile: ./Dockerfile.hardhat
-            args:
-                - RUN_TESTS=${RUN_TESTS}
-        environment:
-            W3_ACCOUNT: ${W3_ACCOUNT:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}
-            PRIVATE_KEY: ${PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
-            CONTRACT_NAME: ${CONTRACT_NAME}
-            SCALE: ${SCALE}
-            NETWORK_ID: ${NETWORK_ID}
-        volumes:
-            - blockchain_artifacts:/usr/blockchain/output/artifacts
-            - blockchain_deployments:/usr/blockchain/ignition/deployments
         command: >
             sh -c '
-            rm -rf /usr/blockchain/ignition/deployments/* &&
-            if [ -n "$RUN_TESTS" ] && [ "$RUN_TESTS" == "true" ]; then
-                npx hardhat clean &&
-                npm run lint &&
-                npx hardhat test --coverage && 
-                npx hardhat compile && 
-                slither ./contracts --solc-remaps "@openzeppelin/=node_modules/@openzeppelin/" --solc-args "--allow-paths ." --filter-paths "node_modules" --json report.json;
-            else
-                npx hardhat clean &&
-                npx hardhat compile;
-            fi &&
-            (while ! nc -z 127.0.0.1 8545; do sleep 1; done && cp -r /usr/blockchain/artifacts/* /usr/blockchain/output/artifacts && npx hardhat run scripts/deploy.ts --network besu_prod) & npx hardhat node --hostname 0.0.0.0 --chain-id ${NETWORK_ID}
+                rm -rf /usr/blockchain/ignition/deployments/* &&
+                npx hardhat clean && npx hardhat compile &&
+                if [ -n "$$RUN_TESTS" ] && [ "$$RUN_TESTS" = "true" ]; then
+                    npm run lint && npx hardhat test --coverage && 
+                    slither ./contracts --solc-remaps "@openzeppelin/=node_modules/@openzeppelin/" --solc-args "--allow-paths ." --filter-paths "node_modules" --json report.json;
+                fi &&
+                (while ! nc -z 172.20.0.11 8545; do sleep 1; done &&
+                cp -r /usr/blockchain/artifacts/* /usr/blockchain/output/artifacts &&
+                npx hardhat run scripts/deploy.ts --network besu_prod) & 
+                npx hardhat node --hostname 0.0.0.0 --chain-id $$NETWORK_ID
             '
         networks:
             internal-network:
@@ -38,8 +22,4 @@ services:
     app:
         depends_on:
             - hardhat-node
-        environment:
-            RPC_URL: http://172.20.0.11:8545
-            W3_ACCOUNT: ${DEV_ACCOUNT:-0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}
-            PRIVATE_KEY: ${DEV_PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
 

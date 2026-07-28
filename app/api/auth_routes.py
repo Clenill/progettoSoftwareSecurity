@@ -35,7 +35,7 @@ async def login(
         key="access_token", 
         value=token["access_token"], 
         httponly=True, 
-        secure=False, # solo HTTPS se true
+        secure=True, 
         samesite="lax", 
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60, 
         path="/"
@@ -52,7 +52,7 @@ async def logout(response: Response):
         key="access_token", 
         path="/", 
         httponly=True, 
-        secure=False, 
+        secure=True, 
         samesite="lax"
     )
     return { "message": "Logout effettuato con successo" }
