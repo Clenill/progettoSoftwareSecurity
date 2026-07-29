@@ -5,7 +5,7 @@ Progetto per l'esame di Software Security e Blockchain
 
 1. Installare Docker e Docker Compose.
 2. Clonare questa repository.
-3. Creare e modificare il file `.env` partendo dal file `.env.example` presente nella repository, inserendo i valori desiderati per la configurazione.
+3. Inserire il file `.env` nella directory principale del progetto, assicurarsi che il file sia rinominato in .env .
 4. (Opzionale) Inserire certificato e chiave privata da utilizzare nella directory `ssl`
 5. Inserire nel terminale, con permessi di superuser, i seguendi comandi:
     - Se si vuole eseguire la versione di test del progetto:
@@ -18,7 +18,7 @@ Progetto per l'esame di Software Security e Blockchain
 
 # Eseguire i test
 
-Per eseguire i test (l'uso di sudo dipende dal terminale che si esegue):
+Per eseguire i test (l'uso di sudo dipende dal terminale scelto):
 1. Eseguire il comando nel terminale per eseguire tutti i test`sudo docker exec app pytest tests/ -v`
 2. Per eseguire i singoli test invece usare: sudo docker exec app pytest tests/test_rate_limit.py -v
                                              sudo docker exec app pytest pytest tests/test_autenticazione.py -v
