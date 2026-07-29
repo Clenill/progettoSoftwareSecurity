@@ -18,6 +18,9 @@ Progetto per l'esame di Software Security e Blockchain
 
 # Eseguire i test
 
-Per eseguire i test (nella directory `/tests`):
-1. Eseguire il comando nel terminale `sudo docker exec app pytest tests/ -v`
-
+Per eseguire i test (l'uso di sudo dipende dal terminale che si esegue):
+1. Eseguire il comando nel terminale per eseguire tutti i test`sudo docker exec app pytest tests/ -v`
+2. Per eseguire i singoli test invece usare: sudo docker exec app pytest tests/test_rate_limit.py -v
+                                             sudo docker exec app pytest pytest tests/test_autenticazione.py -v
+                                             sudo docker exec app pytest pytest tests/test_sql_injection.py -v
+                                             sudo docker exec app pytest pytest tests/test_input_validation.py -v
