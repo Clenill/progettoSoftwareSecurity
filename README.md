@@ -18,6 +18,7 @@ Progetto per l'esame di Software Security e Blockchain
 Per eseguire i test aprire un nuovo terminale con l'applicazione in stato run (l'uso di sudo dipende dal terminale scelto):
 1. Eseguire il comando nel terminale per eseguire tutti i test`sudo docker exec app pytest tests/ -v`
 2. Per eseguire i singoli test invece usare: `sudo docker exec app pytest tests/test_rate_limit.py -v`
-                                             `sudo docker exec app pytest tests/test_autenticazione.py -v`
-                                             `sudo docker exec app pytest tests/test_sql_injection.py -v`
-                                             `sudo docker exec app pytest tests/test_input_validation.py -v`
+`sudo docker exec app pytest tests/test_autenticazione.py -v`
+`sudo docker exec app pytest tests/test_sql_injection.py -v`
+`sudo docker exec app pytest tests/test_input_validation.py -v`
+3. Per eseguire i test relativi allo smart contract impostare la variabile di ambiente `RUN_TESTS=true` nel `.env`
