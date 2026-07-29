@@ -5,7 +5,7 @@ Progetto per l'esame di Software Security e Blockchain
 
 1. Installare Docker e Docker Compose.
 2. Clonare questa repository.
-3. Inserire il file `.env` nella directory principale del progetto, assicurarsi che il file sia rinominato in .env .
+3. Inserire il file `.env` o utilizzare `.env.example` presente nella directory principale del progetto, assicurarsi che il file sia rinominato in `.env` .
 4. Inserire nel terminale, con permessi di superuser, i seguendi comandi: 
         1. Eseguire lo script `init-prod.sh`.
         2. `docker compose -f compose.yml -f compose-prod.yml up --build`
@@ -18,6 +18,6 @@ Progetto per l'esame di Software Security e Blockchain
 Per eseguire i test aprire un nuovo terminale con l'applicazione in stato run (l'uso di sudo dipende dal terminale scelto):
 1. Eseguire il comando nel terminale per eseguire tutti i test`sudo docker exec app pytest tests/ -v`
 2. Per eseguire i singoli test invece usare: `sudo docker exec app pytest tests/test_rate_limit.py -v`
-                                             `sudo docker exec app pytest pytest tests/test_autenticazione.py -v`
-                                             `sudo docker exec app pytest pytest tests/test_sql_injection.py -v`
-                                             `sudo docker exec app pytest pytest tests/test_input_validation.py -v`
+                                             `sudo docker exec app pytest tests/test_autenticazione.py -v`
+                                             `sudo docker exec app pytest tests/test_sql_injection.py -v`
+                                             `sudo docker exec app pytest tests/test_input_validation.py -v`
