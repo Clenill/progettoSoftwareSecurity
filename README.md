@@ -6,12 +6,13 @@ Progetto per l'esame di Software Security e Blockchain
 1. Installare Docker e Docker Compose.
 2. Clonare questa repository.
 3. Inserire il file `.env` o utilizzare `.env.example` presente nella directory principale del progetto, assicurarsi che il file sia rinominato in `.env` .
-4. Inserire nel terminale, con permessi di superuser, i seguendi comandi: 
-        1. Eseguire lo script `init-prod.sh`.
-        2. `docker compose -f compose.yml -f compose-prod.yml up --build`
-        3. Accedere all'URL `https://127.0.0.1:8000` attraverso un browser web per interagire con il software.
-        4. Il primo utente per ogni ruolo è attivo, si consiglia di creare almeno un utente user, medico e autority.
-5. Per terminare l'esecuzione, `docker compose down -v --remove-orphans`.
+4. Inserire nel terminale, con permessi di superuser, i seguendi comandi:
+
+        - Eseguire lo script `init-prod.sh`.
+        - `docker compose -f compose.yml -f compose-prod.yml up --build`
+        - Accedere all'URL `https://127.0.0.1:8000` attraverso un browser web per interagire con il software.
+        - Il primo utente per ogni ruolo è attivo, si consiglia di creare almeno un utente user, medico e autority. 
+6. Per terminare l'esecuzione, `docker compose down -v --remove-orphans`.
 
 # Eseguire i test
 
