@@ -166,3 +166,30 @@ async def app_exception_handler_http(
         }, 
         headers=headers
     )
+
+@app.exception_handler(Exception)
+async def app_exception(
+    request: Request,
+    exc: Exception
+):    
+    if request.url.path.startswith(("/api", "/auth", "/visit", "/admin")):
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status_code": 500,
+                "detail": 'Internal Server Error'
+            }
+        )
+    
+    return templates.TemplateResponse(
+        request=request, 
+        name="pagina_errore.html",
+        status_code=500,
+        context= {
+            "status_code" : 500,
+            "content" : {
+                "status_code": 500,
+                "detail": 'Internal Server Error'
+            }
+        }
+    )
